@@ -1,0 +1,87 @@
+############################################
+# Compilação Java
+############################################
+*.class
+*.log
+*.ctxt
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+replay_pid*
+
+############################################
+# Maven
+############################################
+/target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+
+############################################
+# Gradle
+############################################
+.gradle/
+/build/
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+
+############################################
+# Spring Boot
+############################################
+application-local.yml
+application-local.properties
+application-dev.yml
+application-dev.properties
+application-prod.yml
+application-prod.properties
+.env
+*.env
+
+############################################
+# Logs
+############################################
+logs/
+*.log
+
+############################################
+# IDE - IntelliJ
+############################################
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+############################################
+# IDE - Eclipse
+############################################
+.project
+.classpath
+.settings/
+.springBeans
+.sts4-cache/
+
+############################################
+# IDE - VS Code
+############################################
+.vscode/
+
+############################################
+# Sistema Operacional
+############################################
+.DS_Store
+Thumbs.db
+
+############################################
+# Arquivos temporários
+############################################
+*.swp
+*.swo
+*~
