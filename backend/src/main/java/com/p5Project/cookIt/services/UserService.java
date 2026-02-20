@@ -17,12 +17,12 @@ public class UserService {
     @Autowired
     private UserRepository repository;
 
-    public UserDTO findById(UUID id) {
+    public UserDTO findUserById(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
         return Mapper.parseItem(entity, UserDTO.class);
     }
 
-    public List<UserDTO> findAll() {
+    public List<UserDTO> findAllUsers() {
         var entities = repository.findAll();
         return Mapper.parseItemsList(entities, UserDTO.class);
     }
@@ -42,7 +42,7 @@ public class UserService {
         return Mapper.parseItem(entity, UserDTO.class);
     }
 
-    public UserDTO updateFieldUser(UUID id, UserDTO user) {
+    public UserDTO updateUserField(UUID id, UserDTO user) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
 
         Mapper.mapNonNullFields(user, entity);
@@ -51,7 +51,7 @@ public class UserService {
         return Mapper.parseItem(entity, UserDTO.class);
     }
 
-    public void delete(UUID id) {
+    public void deleteUser(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found"));
         repository.delete(entity);
     }

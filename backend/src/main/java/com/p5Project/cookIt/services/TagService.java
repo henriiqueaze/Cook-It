@@ -17,12 +17,12 @@ public class TagService {
     @Autowired
     private TagRepository repository;
 
-    public TagDTO findById(UUID id) {
+    public TagDTO findTagById(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
         return Mapper.parseItem(entity, TagDTO.class);
     }
 
-    public List<TagDTO> findAll() {
+    public List<TagDTO> findAllTags() {
         var entities = repository.findAll();
         return Mapper.parseItemsList(entities, TagDTO.class);
     }
@@ -42,7 +42,7 @@ public class TagService {
         return Mapper.parseItem(entity, TagDTO.class);
     }
 
-    public TagDTO updateFieldTag(UUID id, TagDTO tag) {
+    public TagDTO updateTagField(UUID id, TagDTO tag) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
 
         Mapper.mapNonNullFields(tag, entity);
@@ -51,7 +51,7 @@ public class TagService {
         return Mapper.parseItem(entity, TagDTO.class);
     }
 
-    public void delete(UUID id) {
+    public void deleteTag(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found"));
         repository.delete(entity);
     }

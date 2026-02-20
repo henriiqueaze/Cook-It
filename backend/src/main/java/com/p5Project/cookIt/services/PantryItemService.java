@@ -17,12 +17,12 @@ public class PantryItemService {
     @Autowired
     private PantryItemRepository repository;
 
-    public PantryItemDTO findById(UUID id) {
+    public PantryItemDTO findPantryItemById(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
         return Mapper.parseItem(entity, PantryItemDTO.class);
     }
 
-    public List<PantryItemDTO> findAll() {
+    public List<PantryItemDTO> findAllPantryItems() {
         return Mapper.parseItemsList(repository.findAll(), PantryItemDTO.class);
     }
 
@@ -41,7 +41,7 @@ public class PantryItemService {
         return Mapper.parseItem(entity, PantryItemDTO.class);
     }
 
-    public PantryItemDTO updateFieldPantryItem(UUID id, PantryItemDTO pantryItem) {
+    public PantryItemDTO updatePantryItemField(UUID id, PantryItemDTO pantryItem) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
 
         Mapper.mapNonNullFields(pantryItem, entity);
@@ -50,7 +50,7 @@ public class PantryItemService {
         return Mapper.parseItem(entity, PantryItemDTO.class);
     }
 
-    public void delete(UUID id) {
+    public void deletePantryItem(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found"));
         repository.delete(entity);
     }

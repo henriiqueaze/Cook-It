@@ -17,14 +17,14 @@ public class CommentService {
     @Autowired
     private CommentRepository repository;
 
-    public CommentDTO findById(UUID id) {
+    public CommentDTO findCommentById(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
         var dto = Mapper.parseItem(entity, CommentDTO.class);
 
         return dto;
     }
 
-    public List<CommentDTO> findAll() {
+    public List<CommentDTO> findAllComments() {
         var entities = repository.findAll();
         var dto = Mapper.parseItemsList(entities, CommentDTO.class);
 
@@ -50,7 +50,7 @@ public class CommentService {
         return dto;
     }
 
-    public CommentDTO updateFieldComment(UUID id, CommentDTO comment) {
+    public CommentDTO updateCommentField(UUID id, CommentDTO comment) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
         Mapper.mapNonNullFields(comment, entity);
 
@@ -60,7 +60,7 @@ public class CommentService {
         return dto;
     }
 
-    public void delete(UUID id) {
+    public void deleteComment(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found"));
         var dto = Mapper.parseItem(entity, CommentDTO.class);
 

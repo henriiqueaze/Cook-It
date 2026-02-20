@@ -42,7 +42,7 @@ public class ImageService {
         return Mapper.parseItem(entity, ImageDTO.class);
     }
 
-    public ImageDTO updateFieldImage(UUID id, ImageDTO image) {
+    public ImageDTO updateImageField(UUID id, ImageDTO image) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
 
         Mapper.mapNonNullFields(image, entity);
@@ -51,7 +51,7 @@ public class ImageService {
         return Mapper.parseItem(entity, ImageDTO.class);
     }
 
-    public void delete(UUID id) {
+    public void deleteImage(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found"));
         repository.delete(entity);
     }

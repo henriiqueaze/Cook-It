@@ -17,12 +17,12 @@ public class RatingService {
     @Autowired
     private RatingRepository repository;
 
-    public RatingDTO findById(UUID id) {
+    public RatingDTO findRatingById(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
         return Mapper.parseItem(entity, RatingDTO.class);
     }
 
-    public List<RatingDTO> findAll() {
+    public List<RatingDTO> findAllRatings() {
         return Mapper.parseItemsList(repository.findAll(), RatingDTO.class);
     }
 
@@ -41,7 +41,7 @@ public class RatingService {
         return Mapper.parseItem(entity, RatingDTO.class);
     }
 
-    public RatingDTO updateFieldRating(UUID id, RatingDTO rating) {
+    public RatingDTO updateRatingField(UUID id, RatingDTO rating) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
 
         Mapper.mapNonNullFields(rating, entity);
@@ -50,7 +50,7 @@ public class RatingService {
         return Mapper.parseItem(entity, RatingDTO.class);
     }
 
-    public void delete(UUID id) {
+    public void deleteRating(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found"));
         repository.delete(entity);
     }

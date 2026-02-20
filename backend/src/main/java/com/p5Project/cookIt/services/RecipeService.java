@@ -17,12 +17,12 @@ public class RecipeService {
     @Autowired
     private RecipeRepository repository;
 
-    public RecipeDTO findById(UUID id) {
+    public RecipeDTO findRecipeById(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
         return Mapper.parseItem(entity, RecipeDTO.class);
     }
 
-    public List<RecipeDTO> findAll() {
+    public List<RecipeDTO> findAllRecipes() {
         return Mapper.parseItemsList(repository.findAll(), RecipeDTO.class);
     }
 
@@ -41,7 +41,7 @@ public class RecipeService {
         return Mapper.parseItem(entity, RecipeDTO.class);
     }
 
-    public RecipeDTO updateFieldRecipe(UUID id, RecipeDTO recipe) {
+    public RecipeDTO updateRecipeField(UUID id, RecipeDTO recipe) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
 
         Mapper.mapNonNullFields(recipe, entity);
@@ -50,7 +50,7 @@ public class RecipeService {
         return Mapper.parseItem(entity, RecipeDTO.class);
     }
 
-    public void delete(UUID id) {
+    public void deleteRecipe(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found"));
         repository.delete(entity);
     }
