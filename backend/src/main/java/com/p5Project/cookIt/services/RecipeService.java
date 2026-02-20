@@ -1,192 +1,57 @@
 package com.p5Project.cookIt.services;
 
-import com.p5Project.cookIt.exceptions.ResourceNotFoundException;
-import com.p5Project.cookIt.models.dtos.recipe.CreateRecipeDTO;
-import com.p5Project.cookIt.models.dtos.recipe.RecipeDTO;
-import com.p5Project.cookIt.models.dtos.recipe.UpdateRecipeDTO;
-import com.p5Project.cookIt.models.entities.*;
-import com.p5Project.cookIt.repositories.*;
-import org.modelmapper.ModelMapper;
+import com.p5Project.cookIt.exceptions.IdNotFoundException;
+import com.p5Project.cookIt.mappers.Mapper;
+import com.p5Project.cookIt.models.dtos.RecipeDTO;
+import com.p5Project.cookIt.models.entities.Recipe;
+import com.p5Project.cookIt.repositories.RecipeRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.UUID;
 
 @Service
 public class RecipeService {
 
-    private final RecipeRepository recipeRepo;
-    private final UserRepository userRepo;
-    private final IngredientRepository ingredientRepo;
-    private final RecipeIngredientRepository recipeIngredientRepo;
-    private final RecipeTagRepository recipeTagRepo;
-    private final TagRepository tagRepo;
-    private final ModelMapper mapper;
+    @Autowired
+    private RecipeRepository repository;
 
-    public RecipeService(
-            RecipeRepository recipeRepo,
-            UserRepository userRepo,
-            IngredientRepository ingredientRepo,
-            RecipeIngredientRepository recipeIngredientRepo,
-            RecipeTagRepository recipeTagRepo,
-            TagRepository tagRepo,
-            ModelMapper mapper
-    ) {
-        this.recipeRepo = recipeRepo;
-        this.userRepo = userRepo;
-        this.ingredientRepo = ingredientRepo;
-        this.recipeIngredientRepo = recipeIngredientRepo;
-        this.recipeTagRepo = recipeTagRepo;
-        this.tagRepo = tagRepo;
-        this.mapper = mapper;
-    }
-
-    @Transactional
-    public RecipeDTO create(CreateRecipeDTO dto) {
-
-        Recipe recipe = mapper.map(dto, Recipe.class);
-
-        if (dto.getAuthorId() != null) {
-            recipe.setAuthor(userRepo.getReferenceById(dto.getAuthorId()));
-        }
-
-        Recipe saved = recipeRepo.save(recipe);
-
-        if (dto.getIngredients() != null && !dto.getIngredients().isEmpty()) {
-
-            List<RecipeIngredient> ris = dto.getIngredients().stream().map(iDto -> {
-
-                RecipeIngredient ri = mapper.map(iDto, RecipeIngredient.class);
-                ri.setRecipe(saved);
-
-                if (iDto.getIngredientId() != null) {
-                    ri.setIngredient(
-                            ingredientRepo.getReferenceById(iDto.getIngredientId())
-                    );
-                }
-
-                return ri;
-            }).collect(Collectors.toList());
-
-            recipeIngredientRepo.saveAll(ris);
-            saved.setRecipeIngredients(ris);
-        }
-
-        if (dto.getTagIds() != null && !dto.getTagIds().isEmpty()) {
-
-            List<RecipeTag> rts = dto.getTagIds().stream().map(tagId -> {
-
-                RecipeTag rt = new RecipeTag();
-                rt.setRecipe(saved);
-                rt.setTag(tagRepo.getReferenceById(tagId));
-
-                return rt;
-            }).collect(Collectors.toList());
-
-            recipeTagRepo.saveAll(rts);
-            saved.setRecipeTags(rts);
-        }
-
-        return mapper.map(saved, RecipeDTO.class);
-    }
-
-    @Transactional(readOnly = true)
     public RecipeDTO findById(UUID id) {
-
-        Recipe recipe = recipeRepo.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Recipe not found"));
-
-        return mapper.map(recipe, RecipeDTO.class);
+        var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
+        return Mapper.parseItem(entity, RecipeDTO.class);
     }
 
-    @Transactional(readOnly = true)
     public List<RecipeDTO> findAll() {
-
-        return recipeRepo.findAll()
-                .stream()
-                .map(recipe -> mapper.map(recipe, RecipeDTO.class))
-                .collect(Collectors.toList());
+        return Mapper.parseItemsList(repository.findAll(), RecipeDTO.class);
     }
 
-    @Transactional
-    public RecipeDTO update(UUID id, UpdateRecipeDTO dto) {
-
-        Recipe recipe = recipeRepo.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Recipe not found"));
-
-        mapper.map(dto, recipe);
-
-        Recipe saved = recipeRepo.save(recipe);
-
-        if (dto.getIngredients() != null) {
-
-            List<RecipeIngredient> oldIngredients =
-                    recipeIngredientRepo.findAll()
-                            .stream()
-                            .filter(ri -> ri.getRecipe() != null &&
-                                    ri.getRecipe().getId().equals(saved.getId()))
-                            .collect(Collectors.toList());
-
-            recipeIngredientRepo.deleteAll(oldIngredients);
-
-            List<RecipeIngredient> newIngredients =
-                    dto.getIngredients().stream().map(iDto -> {
-
-                        RecipeIngredient ri = mapper.map(iDto, RecipeIngredient.class);
-                        ri.setRecipe(saved);
-
-                        if (iDto.getIngredientId() != null) {
-                            ri.setIngredient(
-                                    ingredientRepo.getReferenceById(iDto.getIngredientId())
-                            );
-                        }
-
-                        return ri;
-
-                    }).collect(Collectors.toList());
-
-            recipeIngredientRepo.saveAll(newIngredients);
-            saved.setRecipeIngredients(newIngredients);
-        }
-
-        if (dto.getTagIds() != null) {
-
-            List<RecipeTag> oldTags =
-                    recipeTagRepo.findAll()
-                            .stream()
-                            .filter(rt -> rt.getRecipe() != null &&
-                                    rt.getRecipe().getId().equals(saved.getId()))
-                            .collect(Collectors.toList());
-
-            recipeTagRepo.deleteAll(oldTags);
-
-            List<RecipeTag> newTags =
-                    dto.getTagIds().stream().map(tagId -> {
-
-                        RecipeTag rt = new RecipeTag();
-                        rt.setRecipe(saved);
-                        rt.setTag(tagRepo.getReferenceById(tagId));
-
-                        return rt;
-
-                    }).collect(Collectors.toList());
-
-            recipeTagRepo.saveAll(newTags);
-            saved.setRecipeTags(newTags);
-        }
-
-        return mapper.map(saved, RecipeDTO.class);
+    public RecipeDTO createRecipe(RecipeDTO recipe) {
+        var entity = Mapper.parseItem(recipe, Recipe.class);
+        repository.save(entity);
+        return Mapper.parseItem(entity, RecipeDTO.class);
     }
 
+    public RecipeDTO updateRecipe(RecipeDTO recipe) {
+        var entity = repository.findById(recipe.getId()).orElseThrow(() -> new IdNotFoundException("Id not found!"));
 
-    @Transactional
+        Mapper.mapNonNullFields(recipe, entity);
+        repository.save(entity);
+
+        return Mapper.parseItem(entity, RecipeDTO.class);
+    }
+
+    public RecipeDTO updateFieldRecipe(UUID id, RecipeDTO recipe) {
+        var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
+
+        Mapper.mapNonNullFields(recipe, entity);
+        repository.save(entity);
+
+        return Mapper.parseItem(entity, RecipeDTO.class);
+    }
+
     public void delete(UUID id) {
-
-        if (!recipeRepo.existsById(id)) {
-            throw new ResourceNotFoundException("Recipe not found");
-        }
-
-        recipeRepo.deleteById(id);
+        var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found"));
+        repository.delete(entity);
     }
 }

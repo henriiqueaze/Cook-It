@@ -1,17 +1,22 @@
-package com.p5Project.cookIt.models.dtos.rating;
+package com.p5Project.cookIt.models.dtos;
 
+import com.p5Project.cookIt.models.entities.Recipe;
+import com.p5Project.cookIt.models.entities.User;
 import lombok.*;
+
 import java.time.Instant;
 import java.util.UUID;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class RatingDTO {
+
     private UUID id;
-    private UUID recipeId;
-    private UUID userId;
+    private Recipe recipe;
+    private User user;
     private Short score;
     private String review;
     private Instant createdAt;

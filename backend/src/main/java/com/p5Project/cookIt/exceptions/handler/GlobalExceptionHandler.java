@@ -1,5 +1,6 @@
 package com.p5Project.cookIt.exceptions.handler;
 
+import com.p5Project.cookIt.exceptions.IdNotFoundException;
 import com.p5Project.cookIt.exceptions.ResourceNotFoundException;
 import com.p5Project.cookIt.exceptions.model.RestErrorMessage;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,6 +16,22 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<RestErrorMessage> resourceNotFoundHandler(ResourceNotFoundException ex, HttpServletRequest request) {
+        RestErrorMessage error = RestErrorMessage.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.NOT_FOUND.value())
+                .error(HttpStatus.NOT_FOUND.getReasonPhrase())
+                .errorCode("RESOURCE_NOT_FOUND")
+                .message(ex.getMessage())
+                .path(request.getRequestURI())
+                .method(request.getMethod())
+                .traceId(request.getHeader("X-Trace-Id"))
+                .build();
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(IdNotFoundException.class)
+    public ResponseEntity<RestErrorMessage> idNotFoundHandler(IdNotFoundException ex, HttpServletRequest request) {
         RestErrorMessage error = RestErrorMessage.builder()
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.NOT_FOUND.value())

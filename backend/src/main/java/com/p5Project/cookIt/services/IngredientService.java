@@ -1,58 +1,57 @@
 package com.p5Project.cookIt.services;
 
-import com.p5Project.cookIt.exceptions.ResourceNotFoundException;
-import com.p5Project.cookIt.models.dtos.ingredient.CreateIngredientDTO;
-import com.p5Project.cookIt.models.dtos.ingredient.IngredientDTO;
+import com.p5Project.cookIt.exceptions.IdNotFoundException;
+import com.p5Project.cookIt.mappers.Mapper;
+import com.p5Project.cookIt.models.dtos.IngredientDTO;
 import com.p5Project.cookIt.models.entities.Ingredient;
 import com.p5Project.cookIt.repositories.IngredientRepository;
-import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class IngredientService {
 
-    private final IngredientRepository repo;
-    private final ModelMapper mapper;
+    @Autowired
+    private IngredientRepository repository;
 
-    public IngredientService(IngredientRepository repo, ModelMapper mapper) {
-        this.repo = repo;
-        this.mapper = mapper;
-    }
-
-    @Transactional
-    public IngredientDTO create(CreateIngredientDTO dto) {
-        Ingredient ent = mapper.map(dto, Ingredient.class);
-        Ingredient saved = repo.save(ent);
-        return mapper.map(saved, IngredientDTO.class);
-    }
-
-    @Transactional(readOnly = true)
     public IngredientDTO findById(UUID id) {
-        Ingredient ent = repo.findById(id).orElseThrow(() -> new ResourceNotFoundException("Ingredient not found"));
-        return mapper.map(ent, IngredientDTO.class);
+        var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
+        return Mapper.parseItem(entity, IngredientDTO.class);
     }
 
-    @Transactional(readOnly = true)
     public List<IngredientDTO> findAll() {
-        return repo.findAll().stream().map(i -> mapper.map(i, IngredientDTO.class)).collect(Collectors.toList());
+        return Mapper.parseItemsList(repository.findAll(), IngredientDTO.class);
     }
 
-    @Transactional
-    public IngredientDTO update(UUID id, CreateIngredientDTO dto) {
-        Ingredient ent = repo.findById(id).orElseThrow(() -> new ResourceNotFoundException("Ingredient not found"));
-        mapper.map(dto, ent);
-        Ingredient saved = repo.save(ent);
-        return mapper.map(saved, IngredientDTO.class);
+    public IngredientDTO createIngredient(IngredientDTO ingredient) {
+        var entity = Mapper.parseItem(ingredient, Ingredient.class);
+        repository.save(entity);
+        return Mapper.parseItem(entity, IngredientDTO.class);
     }
 
-    @Transactional
+    public IngredientDTO updateIngredient(IngredientDTO ingredient) {
+        var entity = repository.findById(ingredient.getId()).orElseThrow(() -> new IdNotFoundException("Id not found!"));
+
+        Mapper.mapNonNullFields(ingredient, entity);
+        repository.save(entity);
+
+        return Mapper.parseItem(entity, IngredientDTO.class);
+    }
+
+    public IngredientDTO updateFieldIngredient(UUID id, IngredientDTO ingredient) {
+        var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
+
+        Mapper.mapNonNullFields(ingredient, entity);
+        repository.save(entity);
+
+        return Mapper.parseItem(entity, IngredientDTO.class);
+    }
+
     public void delete(UUID id) {
-        if (!repo.existsById(id)) throw new ResourceNotFoundException("Ingredient not found");
-        repo.deleteById(id);
+        var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found"));
+        repository.delete(entity);
     }
 }

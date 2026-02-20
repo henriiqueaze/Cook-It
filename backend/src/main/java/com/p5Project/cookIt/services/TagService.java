@@ -1,58 +1,58 @@
 package com.p5Project.cookIt.services;
 
-import com.p5Project.cookIt.exceptions.ResourceNotFoundException;
-import com.p5Project.cookIt.models.dtos.tag.CreateTagDTO;
-import com.p5Project.cookIt.models.dtos.tag.TagDTO;
+import com.p5Project.cookIt.exceptions.IdNotFoundException;
+import com.p5Project.cookIt.mappers.Mapper;
+import com.p5Project.cookIt.models.dtos.TagDTO;
 import com.p5Project.cookIt.models.entities.Tag;
 import com.p5Project.cookIt.repositories.TagRepository;
-import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class TagService {
 
-    private final TagRepository repo;
-    private final ModelMapper mapper;
+    @Autowired
+    private TagRepository repository;
 
-    public TagService(TagRepository repo, ModelMapper mapper) {
-        this.repo = repo;
-        this.mapper = mapper;
-    }
-
-    @Transactional
-    public TagDTO create(CreateTagDTO dto) {
-        Tag t = mapper.map(dto, Tag.class);
-        Tag saved = repo.save(t);
-        return mapper.map(saved, TagDTO.class);
-    }
-
-    @Transactional(readOnly = true)
     public TagDTO findById(UUID id) {
-        Tag t = repo.findById(id).orElseThrow(() -> new ResourceNotFoundException("Tag not found"));
-        return mapper.map(t, TagDTO.class);
+        var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
+        return Mapper.parseItem(entity, TagDTO.class);
     }
 
-    @Transactional(readOnly = true)
     public List<TagDTO> findAll() {
-        return repo.findAll().stream().map(x -> mapper.map(x, TagDTO.class)).collect(Collectors.toList());
+        var entities = repository.findAll();
+        return Mapper.parseItemsList(entities, TagDTO.class);
     }
 
-    @Transactional
-    public TagDTO update(UUID id, CreateTagDTO dto) {
-        Tag entity = repo.findById(id).orElseThrow(() -> new ResourceNotFoundException("Tag not found"));
-        mapper.map(dto, entity);
-        Tag saved = repo.save(entity);
-        return mapper.map(saved, TagDTO.class);
+    public TagDTO createTag(TagDTO tag) {
+        var entity = Mapper.parseItem(tag, Tag.class);
+        repository.save(entity);
+        return Mapper.parseItem(entity, TagDTO.class);
     }
 
-    @Transactional
+    public TagDTO updateTag(TagDTO tag) {
+        var entity = repository.findById(tag.getId()).orElseThrow(() -> new IdNotFoundException("Id not found!"));
+
+        Mapper.mapNonNullFields(tag, entity);
+        repository.save(entity);
+
+        return Mapper.parseItem(entity, TagDTO.class);
+    }
+
+    public TagDTO updateFieldTag(UUID id, TagDTO tag) {
+        var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
+
+        Mapper.mapNonNullFields(tag, entity);
+        repository.save(entity);
+
+        return Mapper.parseItem(entity, TagDTO.class);
+    }
+
     public void delete(UUID id) {
-        if (!repo.existsById(id)) throw new ResourceNotFoundException("Tag not found");
-        repo.deleteById(id);
+        var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found"));
+        repository.delete(entity);
     }
 }
