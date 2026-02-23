@@ -34,6 +34,12 @@ The application also allows anyone to add new recipes and share their kitchen id
 
 ---
 
+## API Documentation
+The API documentation is available through **Swagger UI**, which allows you to visualize and test all available endpoints in an interactive interface.  
+
+After running the application, access:
+    ```http://localhost:8080/swagger-ui.html```
+
 ## Authors  
 
 - [Henrique Azevedo Dutra](https://github.com/henriiqueaze)  
