@@ -25,7 +25,10 @@ public class UserService {
 
     public UserDTO findUserById(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
-        return Mapper.parseItem(entity, UserDTO.class);
+        var dto = Mapper.parseItem(entity, UserDTO.class);
+        addHATEOASLinks(dto);
+
+        return dto;
     }
 
     public List<UserDTO> findAllUsers() {
@@ -36,7 +39,10 @@ public class UserService {
     public UserDTO createUser(UserDTO user) {
         var entity = Mapper.parseItem(user, User.class);
         repository.save(entity);
-        return Mapper.parseItem(entity, UserDTO.class);
+        var dto = Mapper.parseItem(entity, UserDTO.class);
+        addHATEOASLinks(dto);
+
+        return dto;
     }
 
     public UserDTO updateUser(UserDTO user) {
@@ -45,7 +51,10 @@ public class UserService {
         Mapper.mapNonNullFields(user, entity);
         repository.save(entity);
 
-        return Mapper.parseItem(entity, UserDTO.class);
+        var dto = Mapper.parseItem(entity, UserDTO.class);
+        addHATEOASLinks(dto);
+
+        return dto;
     }
 
     public UserDTO updateUserField(UUID id, UserDTO user) {
@@ -54,11 +63,16 @@ public class UserService {
         Mapper.mapNonNullFields(user, entity);
         repository.save(entity);
 
-        return Mapper.parseItem(entity, UserDTO.class);
+        var dto = Mapper.parseItem(entity, UserDTO.class);
+        addHATEOASLinks(dto);
+
+        return dto;
     }
 
     public void deleteUser(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found"));
+        var dto = Mapper.parseItem(entity, UserDTO.class);
+        addHATEOASLinks(dto);
         repository.delete(entity);
     }
 
