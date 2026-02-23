@@ -14,6 +14,22 @@ import java.time.LocalDateTime;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<RestErrorMessage> exceptionHandler(Exception ex, HttpServletRequest request) {
+        RestErrorMessage error = RestErrorMessage.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
+                .errorCode("BAD_REQUEST")
+                .message(ex.getMessage())
+                .path(request.getRequestURI())
+                .method(request.getMethod())
+                .traceId(request.getHeader("X-Trace-Id"))
+                .build();
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<RestErrorMessage> resourceNotFoundHandler(ResourceNotFoundException ex, HttpServletRequest request) {
         RestErrorMessage error = RestErrorMessage.builder()
