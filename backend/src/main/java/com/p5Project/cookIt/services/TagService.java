@@ -25,7 +25,10 @@ public class TagService {
 
     public TagDTO findTagById(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
-        return Mapper.parseItem(entity, TagDTO.class);
+        var dto = Mapper.parseItem(entity, TagDTO.class);
+        addHATEOASLinks(dto);
+
+        return dto;
     }
 
     public List<TagDTO> findAllTags() {
@@ -36,7 +39,10 @@ public class TagService {
     public TagDTO createTag(TagDTO tag) {
         var entity = Mapper.parseItem(tag, Tag.class);
         repository.save(entity);
-        return Mapper.parseItem(entity, TagDTO.class);
+        var dto = Mapper.parseItem(entity, TagDTO.class);
+        addHATEOASLinks(dto);
+
+        return dto;
     }
 
     public TagDTO updateTag(TagDTO tag) {
@@ -45,7 +51,10 @@ public class TagService {
         Mapper.mapNonNullFields(tag, entity);
         repository.save(entity);
 
-        return Mapper.parseItem(entity, TagDTO.class);
+        var dto = Mapper.parseItem(entity, TagDTO.class);
+        addHATEOASLinks(dto);
+
+        return dto;
     }
 
     public TagDTO updateTagField(UUID id, TagDTO tag) {
@@ -54,11 +63,16 @@ public class TagService {
         Mapper.mapNonNullFields(tag, entity);
         repository.save(entity);
 
-        return Mapper.parseItem(entity, TagDTO.class);
+        var dto = Mapper.parseItem(entity, TagDTO.class);
+        addHATEOASLinks(dto);
+
+        return dto;
     }
 
     public void deleteTag(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found"));
+        var dto = Mapper.parseItem(entity, TagDTO.class);
+        addHATEOASLinks(dto);
         repository.delete(entity);
     }
 
