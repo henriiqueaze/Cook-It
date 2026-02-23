@@ -24,6 +24,7 @@ public class CommentService {
     public CommentDTO findCommentById(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
         var dto = Mapper.parseItem(entity, CommentDTO.class);
+        addHATEOASLinks(dto);
 
         return dto;
     }
@@ -40,6 +41,8 @@ public class CommentService {
         repository.save(entity);
 
         var dto = Mapper.parseItem(entity, CommentDTO.class);
+        addHATEOASLinks(dto);
+
         return dto;
     }
 
@@ -51,6 +54,8 @@ public class CommentService {
         repository.save(entity);
 
         var dto = Mapper.parseItem(entity, CommentDTO.class);
+        addHATEOASLinks(dto);
+
         return dto;
     }
 
@@ -61,12 +66,15 @@ public class CommentService {
         repository.save(entity);
 
         var dto = Mapper.parseItem(entity, CommentDTO.class);
+        addHATEOASLinks(dto);
+
         return dto;
     }
 
     public void deleteComment(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found"));
         var dto = Mapper.parseItem(entity, CommentDTO.class);
+        addHATEOASLinks(dto);
 
         repository.delete(entity);
     }

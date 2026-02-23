@@ -25,7 +25,11 @@ public class RatingService {
 
     public RatingDTO findRatingById(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
-        return Mapper.parseItem(entity, RatingDTO.class);
+
+        var dto = Mapper.parseItem(entity, RatingDTO.class);
+        addHATEOASLinks(dto);
+
+        return dto;
     }
 
     public List<RatingDTO> findAllRatings() {
@@ -35,7 +39,11 @@ public class RatingService {
     public RatingDTO createRating(RatingDTO rating) {
         var entity = Mapper.parseItem(rating, Rating.class);
         repository.save(entity);
-        return Mapper.parseItem(entity, RatingDTO.class);
+
+        var dto = Mapper.parseItem(entity, RatingDTO.class);
+        addHATEOASLinks(dto);
+
+        return dto;
     }
 
     public RatingDTO updateRating(RatingDTO rating) {
@@ -44,7 +52,10 @@ public class RatingService {
         Mapper.mapNonNullFields(rating, entity);
         repository.save(entity);
 
-        return Mapper.parseItem(entity, RatingDTO.class);
+        var dto = Mapper.parseItem(entity, RatingDTO.class);
+        addHATEOASLinks(dto);
+
+        return dto;
     }
 
     public RatingDTO updateRatingField(UUID id, RatingDTO rating) {
@@ -53,11 +64,17 @@ public class RatingService {
         Mapper.mapNonNullFields(rating, entity);
         repository.save(entity);
 
-        return Mapper.parseItem(entity, RatingDTO.class);
+        var dto = Mapper.parseItem(entity, RatingDTO.class);
+        addHATEOASLinks(dto);
+
+        return dto;
     }
 
     public void deleteRating(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found"));
+        var dto = Mapper.parseItem(entity, RatingDTO.class);
+        addHATEOASLinks(dto);
+
         repository.delete(entity);
     }
 

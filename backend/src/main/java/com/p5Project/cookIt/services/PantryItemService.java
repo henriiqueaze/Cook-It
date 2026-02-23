@@ -4,6 +4,7 @@ import com.p5Project.cookIt.controllers.IngredientController;
 import com.p5Project.cookIt.controllers.PantryItemController;
 import com.p5Project.cookIt.exceptions.IdNotFoundException;
 import com.p5Project.cookIt.mappers.Mapper;
+import com.p5Project.cookIt.models.dtos.CommentDTO;
 import com.p5Project.cookIt.models.dtos.IngredientDTO;
 import com.p5Project.cookIt.models.dtos.PantryItemDTO;
 import com.p5Project.cookIt.models.entities.PantryItem;
@@ -25,7 +26,11 @@ public class PantryItemService {
 
     public PantryItemDTO findPantryItemById(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
-        return Mapper.parseItem(entity, PantryItemDTO.class);
+
+        var dto = Mapper.parseItem(entity, PantryItemDTO.class);
+        addHATEOASLinks(dto);
+
+        return dto;
     }
 
     public List<PantryItemDTO> findAllPantryItems() {
@@ -35,7 +40,11 @@ public class PantryItemService {
     public PantryItemDTO createPantryItem(PantryItemDTO pantryItem) {
         var entity = Mapper.parseItem(pantryItem, PantryItem.class);
         repository.save(entity);
-        return Mapper.parseItem(entity, PantryItemDTO.class);
+
+        var dto = Mapper.parseItem(entity, PantryItemDTO.class);
+        addHATEOASLinks(dto);
+
+        return dto;
     }
 
     public PantryItemDTO updatePantryItem(PantryItemDTO pantryItem) {
@@ -44,7 +53,10 @@ public class PantryItemService {
         Mapper.mapNonNullFields(pantryItem, entity);
         repository.save(entity);
 
-        return Mapper.parseItem(entity, PantryItemDTO.class);
+        var dto = Mapper.parseItem(entity, PantryItemDTO.class);
+        addHATEOASLinks(dto);
+
+        return dto;
     }
 
     public PantryItemDTO updatePantryItemField(UUID id, PantryItemDTO pantryItem) {
@@ -53,11 +65,17 @@ public class PantryItemService {
         Mapper.mapNonNullFields(pantryItem, entity);
         repository.save(entity);
 
-        return Mapper.parseItem(entity, PantryItemDTO.class);
+        var dto = Mapper.parseItem(entity, PantryItemDTO.class);
+        addHATEOASLinks(dto);
+
+        return dto;
     }
 
     public void deletePantryItem(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found"));
+        var dto = Mapper.parseItem(entity, PantryItemDTO.class);
+        addHATEOASLinks(dto);
+
         repository.delete(entity);
     }
 

@@ -25,7 +25,11 @@ public class ImageService {
 
     public ImageDTO findById(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
-        return Mapper.parseItem(entity, ImageDTO.class);
+
+        var dto = Mapper.parseItem(entity, ImageDTO.class);
+        addHATEOASLinks(dto);
+
+        return dto;
     }
 
     public List<ImageDTO> findAll() {
@@ -36,7 +40,11 @@ public class ImageService {
     public ImageDTO createImage(ImageDTO image) {
         var entity = Mapper.parseItem(image, Image.class);
         repository.save(entity);
-        return Mapper.parseItem(entity, ImageDTO.class);
+
+        var dto = Mapper.parseItem(entity, ImageDTO.class);
+        addHATEOASLinks(dto);
+
+        return dto;
     }
 
     public ImageDTO updateImage(ImageDTO image) {
@@ -45,7 +53,10 @@ public class ImageService {
         Mapper.mapNonNullFields(image, entity);
         repository.save(entity);
 
-        return Mapper.parseItem(entity, ImageDTO.class);
+        var dto = Mapper.parseItem(entity, ImageDTO.class);
+        addHATEOASLinks(dto);
+
+        return dto;
     }
 
     public ImageDTO updateImageField(UUID id, ImageDTO image) {
@@ -54,11 +65,17 @@ public class ImageService {
         Mapper.mapNonNullFields(image, entity);
         repository.save(entity);
 
-        return Mapper.parseItem(entity, ImageDTO.class);
+        var dto = Mapper.parseItem(entity, ImageDTO.class);
+        addHATEOASLinks(dto);
+
+        return dto;
     }
 
     public void deleteImage(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found"));
+        var dto = Mapper.parseItem(entity, ImageDTO.class);
+        addHATEOASLinks(dto);
+
         repository.delete(entity);
     }
 

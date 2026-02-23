@@ -25,7 +25,11 @@ public class IngredientService {
 
     public IngredientDTO findIngredientById(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
-        return Mapper.parseItem(entity, IngredientDTO.class);
+
+        var dto = Mapper.parseItem(entity, IngredientDTO.class);
+        addHATEOASLinks(dto);
+
+        return dto;
     }
 
     public List<IngredientDTO> findAllIngredients() {
@@ -35,7 +39,11 @@ public class IngredientService {
     public IngredientDTO createIngredient(IngredientDTO ingredient) {
         var entity = Mapper.parseItem(ingredient, Ingredient.class);
         repository.save(entity);
-        return Mapper.parseItem(entity, IngredientDTO.class);
+
+        var dto = Mapper.parseItem(entity, IngredientDTO.class);
+        addHATEOASLinks(dto);
+
+        return dto;
     }
 
     public IngredientDTO updateIngredient(IngredientDTO ingredient) {
@@ -44,7 +52,10 @@ public class IngredientService {
         Mapper.mapNonNullFields(ingredient, entity);
         repository.save(entity);
 
-        return Mapper.parseItem(entity, IngredientDTO.class);
+        var dto = Mapper.parseItem(entity, IngredientDTO.class);
+        addHATEOASLinks(dto);
+
+        return dto;
     }
 
     public IngredientDTO updateIngredientField(UUID id, IngredientDTO ingredient) {
@@ -53,11 +64,17 @@ public class IngredientService {
         Mapper.mapNonNullFields(ingredient, entity);
         repository.save(entity);
 
-        return Mapper.parseItem(entity, IngredientDTO.class);
+        var dto = Mapper.parseItem(entity, IngredientDTO.class);
+        addHATEOASLinks(dto);
+
+        return dto;
     }
 
     public void deleteIngredient(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found"));
+        var dto = Mapper.parseItem(entity, IngredientDTO.class);
+        addHATEOASLinks(dto);
+
         repository.delete(entity);
     }
 
