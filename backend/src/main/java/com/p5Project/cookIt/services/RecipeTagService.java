@@ -25,7 +25,10 @@ public class RecipeTagService {
 
     public RecipeTagDTO findRecipeTagById(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
-        return Mapper.parseItem(entity, RecipeTagDTO.class);
+        var dto = Mapper.parseItem(entity, RecipeTagDTO.class);
+        addHATEOASLinks(dto);
+
+        return dto;
     }
 
     public List<RecipeTagDTO> findAllRecipeTags() {
@@ -36,7 +39,10 @@ public class RecipeTagService {
     public RecipeTagDTO createRecipeTag(RecipeTagDTO recipeTag) {
         var entity = Mapper.parseItem(recipeTag, RecipeTag.class);
         repository.save(entity);
-        return Mapper.parseItem(entity, RecipeTagDTO.class);
+        var dto = Mapper.parseItem(entity, RecipeTagDTO.class);
+        addHATEOASLinks(dto);
+
+        return dto;
     }
 
     public RecipeTagDTO updateRecipeTag(RecipeTagDTO recipeTag) {
@@ -45,7 +51,10 @@ public class RecipeTagService {
         Mapper.mapNonNullFields(recipeTag, entity);
         repository.save(entity);
 
-        return Mapper.parseItem(entity, RecipeTagDTO.class);
+        var dto = Mapper.parseItem(entity, RecipeTagDTO.class);
+        addHATEOASLinks(dto);
+
+        return dto;
     }
 
     public RecipeTagDTO updateRecipeTagField(UUID id, RecipeTagDTO recipeTag) {
@@ -54,11 +63,16 @@ public class RecipeTagService {
         Mapper.mapNonNullFields(recipeTag, entity);
         repository.save(entity);
 
-        return Mapper.parseItem(entity, RecipeTagDTO.class);
+        var dto = Mapper.parseItem(entity, RecipeTagDTO.class);
+        addHATEOASLinks(dto);
+
+        return dto;
     }
 
     public void deleteRecipeTag(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found"));
+        var dto = Mapper.parseItem(entity, RecipeTagDTO.class);
+        addHATEOASLinks(dto);
         repository.delete(entity);
     }
 
