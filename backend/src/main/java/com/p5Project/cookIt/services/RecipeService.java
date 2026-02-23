@@ -43,7 +43,10 @@ public class RecipeService {
         Mapper.mapNonNullFields(recipe, entity);
         repository.save(entity);
 
-        return Mapper.parseItem(entity, RecipeDTO.class);
+        var dto = Mapper.parseItem(entity, RecipeDTO.class);
+        addHATEOASLinks(dto);
+
+        return dto;
     }
 
     public RecipeDTO updateRecipeField(UUID id, RecipeDTO recipe) {
@@ -52,11 +55,16 @@ public class RecipeService {
         Mapper.mapNonNullFields(recipe, entity);
         repository.save(entity);
 
-        return Mapper.parseItem(entity, RecipeDTO.class);
+        var dto = Mapper.parseItem(entity, RecipeDTO.class);
+        addHATEOASLinks(dto);
+
+        return dto;
     }
 
     public void deleteRecipe(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found"));
+        var dto = Mapper.parseItem(entity, RecipeDTO.class);
+        addHATEOASLinks(dto);
         repository.delete(entity);
     }
 
