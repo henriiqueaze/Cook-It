@@ -1,8 +1,10 @@
 package com.p5Project.cookIt.services;
 
+import com.p5Project.cookIt.controllers.RecipeController;
 import com.p5Project.cookIt.exceptions.IdNotFoundException;
 import com.p5Project.cookIt.mappers.Mapper;
 import com.p5Project.cookIt.models.dtos.RecipeDTO;
+import com.p5Project.cookIt.models.dtos.RecipeIngredientDTO;
 import com.p5Project.cookIt.models.entities.Recipe;
 import com.p5Project.cookIt.repositories.RecipeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +12,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @Service
 public class RecipeService {
@@ -53,5 +58,14 @@ public class RecipeService {
     public void deleteRecipe(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found"));
         repository.delete(entity);
+    }
+
+    private void addHATEOASLinks(RecipeDTO recipe) {
+        recipe.add(linkTo(methodOn(RecipeController.class).findRatingById(recipe.getId())).withSelfRel().withType("GET"));
+        //comment.add(linkTo(methodOn(CommentController.class).findAllComments(0, 12, "asc")).withRel("findAll").withType("GET"));
+        recipe.add(linkTo(methodOn(RecipeController.class).createRating(recipe)).withRel("create").withType("POST"));
+        recipe.add(linkTo(methodOn(RecipeController.class).updateRating(recipe)).withRel("update").withType("PUT"));
+        recipe.add(linkTo(methodOn(RecipeController.class).updateRatingField(recipe.getId(), recipe)).withRel("patch").withType("PATCH"));
+        recipe.add(linkTo(methodOn(RecipeController.class).deleteRating(recipe.getId())).withRel("delete").withType("DELETE"));
     }
 }

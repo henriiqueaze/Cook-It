@@ -3,6 +3,7 @@ package com.p5Project.cookIt.models.dtos;
 import com.p5Project.cookIt.models.entities.Ingredient;
 import com.p5Project.cookIt.models.entities.User;
 import lombok.*;
+import org.springframework.hateoas.RepresentationModel;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -12,7 +13,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PantryItemDTO {
+public class PantryItemDTO extends RepresentationModel<PantryItemDTO> {
 
     private UUID id;
     private User user;

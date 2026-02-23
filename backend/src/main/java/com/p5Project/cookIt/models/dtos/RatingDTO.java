@@ -3,6 +3,7 @@ package com.p5Project.cookIt.models.dtos;
 import com.p5Project.cookIt.models.entities.Recipe;
 import com.p5Project.cookIt.models.entities.User;
 import lombok.*;
+import org.springframework.hateoas.RepresentationModel;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -12,7 +13,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class RatingDTO {
+public class RatingDTO extends RepresentationModel<RatingDTO> {
 
     private UUID id;
     private Recipe recipe;
