@@ -2,6 +2,7 @@ package com.p5Project.cookIt.services;
 
 import com.p5Project.cookIt.controllers.RatingController;
 import com.p5Project.cookIt.controllers.RecipeController;
+import com.p5Project.cookIt.controllers.RecipeIngredientController;
 import com.p5Project.cookIt.exceptions.IdNotFoundException;
 import com.p5Project.cookIt.mappers.Mapper;
 import com.p5Project.cookIt.models.dtos.RatingDTO;
@@ -62,11 +63,11 @@ public class RecipeIngredientService {
     }
 
     private void addHATEOASLinks(RecipeIngredientDTO recipeIngredient) {
-        recipeIngredient.add(linkTo(methodOn(RecipeIngredientService.class).findRecipeIngredientById(recipeIngredient.getId())).withSelfRel().withType("GET"));
+        recipeIngredient.add(linkTo(methodOn(RecipeIngredientController.class).findRecipeIngredientById(recipeIngredient.getId())).withSelfRel().withType("GET"));
         //comment.add(linkTo(methodOn(CommentController.class).findAllComments(0, 12, "asc")).withRel("findAll").withType("GET"));
-        recipeIngredient.add(linkTo(methodOn(RecipeIngredientService.class).createRecipeIngredient(recipeIngredient)).withRel("create").withType("POST"));
-        recipeIngredient.add(linkTo(methodOn(RecipeIngredientService.class).updateRecipeIngredient(recipeIngredient)).withRel("update").withType("PUT"));
-        recipeIngredient.add(linkTo(methodOn(RecipeIngredientService.class).updateRecipeIngredientField(recipeIngredient.getId(), recipeIngredient)).withRel("patch").withType("PATCH"));
-        recipeIngredient.add(linkTo(methodOn(RecipeIngredientService.class).deleteRecipeIngredient(recipeIngredient.getId())).withRel("delete").withType("DELETE"));
+        recipeIngredient.add(linkTo(methodOn(RecipeIngredientController.class).createRecipeIngredient(recipeIngredient)).withRel("create").withType("POST"));
+        recipeIngredient.add(linkTo(methodOn(RecipeIngredientController.class).updateRecipeIngredient(recipeIngredient)).withRel("update").withType("PUT"));
+        recipeIngredient.add(linkTo(methodOn(RecipeIngredientController.class).updateRecipeIngredientField(recipeIngredient.getId(), recipeIngredient)).withRel("patch").withType("PATCH"));
+        recipeIngredient.add(linkTo(methodOn(RecipeIngredientController.class).deleteRecipeIngredient(recipeIngredient.getId())).withRel("delete").withType("DELETE"));
     }
 }
