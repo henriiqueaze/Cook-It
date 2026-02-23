@@ -19,77 +19,44 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/recipeTag")
 @Tag(name = "RecipeTag", description = "Endpoints para gerenciamento de tags vinculadas às receitas")
-public class RecipeTagController {
+public class RecipeTagController implements com.p5Project.cookIt.controllers.docs.RecipeTagControllerDocs {
 
     @Autowired
     private RecipeTagService service;
 
-    @Operation(summary = "Buscar RecipeTag por ID", description = "Retorna uma RecipeTag específica com base no UUID informado")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "RecipeTag encontrada",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = RecipeTagDTO.class))),
-            @ApiResponse(responseCode = "404", description = "RecipeTag não encontrada", content = @Content)
-    })
     @GetMapping(value = "/{id}", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE})
+    @Override
     public ResponseEntity<RecipeTagDTO> findRecipeTagById(@PathVariable UUID id) {
         return ResponseEntity.ok(service.findRecipeTagById(id));
     }
 
-    @Operation(summary = "Listar todas as RecipeTags", description = "Retorna todas as tags cadastradas no sistema")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Lista de RecipeTags retornada com sucesso",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = RecipeTagDTO.class)))
-    })
     @GetMapping(produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE})
+    @Override
     public ResponseEntity<List<RecipeTagDTO>> findAllRecipeTags() {
         return ResponseEntity.ok(service.findAllRecipeTags());
     }
 
-    @Operation(summary = "Criar RecipeTag", description = "Cria uma nova tag e associa a uma receita")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "RecipeTag criada com sucesso",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = RecipeTagDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Dados inválidos", content = @Content)
-    })
     @PostMapping(produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE}, consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE})
+    @Override
     public ResponseEntity<RecipeTagDTO> createRecipeTag(@org.springframework.web.bind.annotation.RequestBody RecipeTagDTO recipeTag) {
         return ResponseEntity.ok(service.createRecipeTag(recipeTag));
     }
 
-    @Operation(summary = "Atualizar RecipeTag", description = "Atualiza completamente uma tag existente")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "RecipeTag atualizada com sucesso",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = RecipeTagDTO.class))),
-            @ApiResponse(responseCode = "404", description = "RecipeTag não encontrada", content = @Content)
-    })
     @PutMapping(produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE}, consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE})
+    @Override
     public ResponseEntity<RecipeTagDTO> updateRecipeTag(@org.springframework.web.bind.annotation.RequestBody RecipeTagDTO recipeTag) {
         return ResponseEntity.ok(service.updateRecipeTag(recipeTag));
     }
 
-    @Operation(summary = "Atualizar campo específico da RecipeTag", description = "Atualiza parcialmente uma tag existente com base no ID informado")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "RecipeTag atualizada com sucesso",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = RecipeTagDTO.class))),
-            @ApiResponse(responseCode = "404", description = "RecipeTag não encontrada", content = @Content)
-    })
     @PatchMapping(value = "/{id}", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE}, consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE})
+    @Override
     public ResponseEntity<RecipeTagDTO> updateRecipeTagField(@PathVariable UUID id,
                                                              @org.springframework.web.bind.annotation.RequestBody RecipeTagDTO recipeTag) {
         return ResponseEntity.ok(service.updateRecipeTagField(id, recipeTag));
     }
 
-    @Operation(summary = "Deletar RecipeTag", description = "Remove uma tag com base no ID informado")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "RecipeTag removida com sucesso"),
-            @ApiResponse(responseCode = "404", description = "RecipeTag não encontrada", content = @Content)
-    })
     @DeleteMapping(value = "/{id}")
+    @Override
     public ResponseEntity<?> deleteRecipeTag(@PathVariable UUID id) {
         service.deleteRecipeTag(id);
         return ResponseEntity.noContent().build();
