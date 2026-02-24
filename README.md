@@ -40,6 +40,8 @@ The API documentation is available through **Swagger UI**, which allows you to v
 After running the application, access:
     ```http://localhost:8080/swagger-ui.html```
 
+---
+
 ## Authors  
 
 - [Henrique Azevedo Dutra](https://github.com/henriiqueaze)  

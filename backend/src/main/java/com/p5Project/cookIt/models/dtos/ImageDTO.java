@@ -2,6 +2,7 @@ package com.p5Project.cookIt.models.dtos;
 
 import com.p5Project.cookIt.models.entities.Recipe;
 import lombok.*;
+import org.springframework.hateoas.RepresentationModel;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -11,7 +12,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ImageDTO {
+public class ImageDTO extends RepresentationModel<ImageDTO> {
 
     private UUID id;
     private Recipe recipe;
