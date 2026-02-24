@@ -7,6 +7,12 @@ import com.p5Project.cookIt.models.dtos.CommentDTO;
 import com.p5Project.cookIt.models.entities.Comment;
 import com.p5Project.cookIt.repositories.CommentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedResourcesAssembler;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.Link;
+import org.springframework.hateoas.PagedModel;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,6 +27,9 @@ public class CommentService {
     @Autowired
     private CommentRepository repository;
 
+    @Autowired
+    private PagedResourcesAssembler<CommentDTO> assembler;
+
     public CommentDTO findCommentById(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
         var dto = Mapper.parseItem(entity, CommentDTO.class);
@@ -29,11 +38,17 @@ public class CommentService {
         return dto;
     }
 
-    public List<CommentDTO> findAllComments() {
-        var entities = repository.findAll();
-        var dto = Mapper.parseItemsList(entities, CommentDTO.class);
+    public PagedModel<EntityModel<CommentDTO>> findAllComments(Pageable pageable) {
+        var entities = repository.findAll(pageable);
 
-        return dto;
+        var commentsWithLinks = entities.map(comment -> {
+            var dto = Mapper.parseItem(comment, CommentDTO.class);
+            addHATEOASLinks(dto);
+            return dto;
+        });
+
+        Link findAllLink = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(CommentController.class).findAllComments(pageable.getPageNumber(), pageable.getPageSize(), String.valueOf(pageable.getSort()))).withSelfRel();
+        return assembler.toModel(commentsWithLinks, findAllLink);
     }
 
     public CommentDTO createComment(CommentDTO comment) {

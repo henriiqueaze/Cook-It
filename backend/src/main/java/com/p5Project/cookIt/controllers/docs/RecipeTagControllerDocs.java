@@ -1,11 +1,14 @@
 package com.p5Project.cookIt.controllers.docs;
 
+import com.p5Project.cookIt.models.dtos.RecipeIngredientDTO;
 import com.p5Project.cookIt.models.dtos.RecipeTagDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.PagedModel;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,7 +32,7 @@ public interface RecipeTagControllerDocs {
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = RecipeTagDTO.class)))
     })
-    ResponseEntity<List<RecipeTagDTO>> findAllRecipeTags();
+    ResponseEntity<PagedModel<EntityModel<RecipeTagDTO>>> findAllRecipeTags(Integer page, Integer size, String direction);
 
     @Operation(summary = "Criar RecipeTag", description = "Cria uma nova tag e associa a uma receita")
     @ApiResponses(value = {

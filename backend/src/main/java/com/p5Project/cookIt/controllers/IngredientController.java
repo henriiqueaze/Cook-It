@@ -1,5 +1,6 @@
 package com.p5Project.cookIt.controllers;
 
+import com.p5Project.cookIt.controllers.docs.IngredientControllerDocs;
 import com.p5Project.cookIt.models.dtos.IngredientDTO;
 import com.p5Project.cookIt.services.IngredientService;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -8,17 +9,21 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.PagedModel;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/ingredient")
 @Tag(name = "Ingredient", description = "Endpoints para gerenciamento de ingredientes")
-public class IngredientController implements com.p5Project.cookIt.controllers.docs.IngredientControllerDocs {
+public class IngredientController implements IngredientControllerDocs {
 
     @Autowired
     private IngredientService service;
@@ -31,8 +36,10 @@ public class IngredientController implements com.p5Project.cookIt.controllers.do
 
     @GetMapping(produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE})
     @Override
-    public List<IngredientDTO> findAllIngredients() {
-        return service.findAllIngredients();
+    public ResponseEntity<PagedModel<EntityModel<IngredientDTO>>> findAllIngredients(@RequestParam(value = "page", defaultValue = "0") Integer page, @RequestParam(value = "size", defaultValue = "12") Integer size, @RequestParam(value = "direction", defaultValue = "asc") String direction) {
+        var sortDirection = "desc".equalsIgnoreCase(direction) ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, "name"));
+        return ResponseEntity.ok(service.findAllIngredients(pageable));
     }
 
     @PostMapping(produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE}, consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE})

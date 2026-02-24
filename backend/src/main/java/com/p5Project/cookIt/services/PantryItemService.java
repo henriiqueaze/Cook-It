@@ -5,11 +5,18 @@ import com.p5Project.cookIt.controllers.PantryItemController;
 import com.p5Project.cookIt.exceptions.IdNotFoundException;
 import com.p5Project.cookIt.mappers.Mapper;
 import com.p5Project.cookIt.models.dtos.CommentDTO;
+import com.p5Project.cookIt.models.dtos.ImageDTO;
 import com.p5Project.cookIt.models.dtos.IngredientDTO;
 import com.p5Project.cookIt.models.dtos.PantryItemDTO;
 import com.p5Project.cookIt.models.entities.PantryItem;
 import com.p5Project.cookIt.repositories.PantryItemRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedResourcesAssembler;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.Link;
+import org.springframework.hateoas.PagedModel;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,6 +31,9 @@ public class PantryItemService {
     @Autowired
     private PantryItemRepository repository;
 
+    @Autowired
+    private PagedResourcesAssembler<PantryItemDTO> assembler;
+
     public PantryItemDTO findPantryItemById(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
 
@@ -35,6 +45,19 @@ public class PantryItemService {
 
     public List<PantryItemDTO> findAllPantryItems() {
         return Mapper.parseItemsList(repository.findAll(), PantryItemDTO.class);
+    }
+
+    public PagedModel<EntityModel<PantryItemDTO>> findAllPantryItems(Pageable pageable) {
+        var entities = repository.findAll(pageable);
+
+        var commentsWithLinks = entities.map(pantryItem -> {
+            var dto = Mapper.parseItem(pantryItem, PantryItemDTO.class);
+            addHATEOASLinks(dto);
+            return dto;
+        });
+
+        Link findAllLink = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(PantryItemController.class).findAllPantryItems(pageable.getPageNumber(), pageable.getPageSize(), String.valueOf(pageable.getSort()))).withSelfRel();
+        return assembler.toModel(commentsWithLinks, findAllLink);
     }
 
     public PantryItemDTO createPantryItem(PantryItemDTO pantryItem) {

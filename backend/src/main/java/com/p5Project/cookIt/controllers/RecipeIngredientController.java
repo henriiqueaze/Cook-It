@@ -1,27 +1,29 @@
 package com.p5Project.cookIt.controllers;
 
+import com.p5Project.cookIt.controllers.docs.RecipeIngredientControllerDocs;
 import com.p5Project.cookIt.models.dtos.RecipeIngredientDTO;
 import com.p5Project.cookIt.services.RecipeIngredientService;
-import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.PagedModel;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/recipeIngredient")
 @Tag(name = "Recipe Ingredient", description = "Endpoints para gerenciamento da relação entre receitas e ingredientes")
-public class RecipeIngredientController implements com.p5Project.cookIt.controllers.docs.RecipeIngredientControllerDocs {
+public class RecipeIngredientController implements RecipeIngredientControllerDocs {
 
     @Autowired
     private RecipeIngredientService service;
@@ -34,8 +36,10 @@ public class RecipeIngredientController implements com.p5Project.cookIt.controll
 
     @GetMapping(produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE})
     @Override
-    public List<RecipeIngredientDTO> findAllRecipeIngredients() {
-        return service.findAllRecipeIngredients();
+    public ResponseEntity<PagedModel<EntityModel<RecipeIngredientDTO>>> findAllRecipeIngredients(@RequestParam(value = "page", defaultValue = "0") Integer page, @RequestParam(value = "size", defaultValue = "12") Integer size, @RequestParam(value = "direction", defaultValue = "asc") String direction) {
+        var sortDirection = "desc".equalsIgnoreCase(direction) ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, "name"));
+        return ResponseEntity.ok(service.findAllRecipeIngredients(pageable));
     }
 
     @PostMapping(produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE}, consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE})

@@ -1,5 +1,6 @@
 package com.p5Project.cookIt.controllers.docs;
 
+import com.p5Project.cookIt.models.dtos.ImageDTO;
 import com.p5Project.cookIt.models.dtos.RatingDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -8,6 +9,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.PagedModel;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,7 +30,7 @@ public interface RatingControllerDocs {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso", content = @Content(schema = @Schema(implementation = RatingDTO.class)))
     })
-    List<RatingDTO> findAllRating();
+    ResponseEntity<PagedModel<EntityModel<RatingDTO>>> findAllRatings(Integer page, Integer size, String direction);
 
     @Operation(summary = "Criar nova avaliação", description = "Cria uma nova avaliação no sistema")
     @ApiResponses(value = {

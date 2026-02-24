@@ -9,6 +9,12 @@ import com.p5Project.cookIt.models.dtos.IngredientDTO;
 import com.p5Project.cookIt.models.entities.Ingredient;
 import com.p5Project.cookIt.repositories.IngredientRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedResourcesAssembler;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.Link;
+import org.springframework.hateoas.PagedModel;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,6 +29,9 @@ public class IngredientService {
     @Autowired
     private IngredientRepository repository;
 
+    @Autowired
+    private PagedResourcesAssembler<IngredientDTO> assembler;
+
     public IngredientDTO findIngredientById(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
 
@@ -32,8 +41,17 @@ public class IngredientService {
         return dto;
     }
 
-    public List<IngredientDTO> findAllIngredients() {
-        return Mapper.parseItemsList(repository.findAll(), IngredientDTO.class);
+    public PagedModel<EntityModel<IngredientDTO>> findAllIngredients(Pageable pageable) {
+        var entities = repository.findAll(pageable);
+
+        var commentsWithLinks = entities.map(ingredient -> {
+            var dto = Mapper.parseItem(ingredient, IngredientDTO.class);
+            addHATEOASLinks(dto);
+            return dto;
+        });
+
+        Link findAllLink = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(IngredientController.class).findAllIngredients(pageable.getPageNumber(), pageable.getPageSize(), String.valueOf(pageable.getSort()))).withSelfRel();
+        return assembler.toModel(commentsWithLinks, findAllLink);
     }
 
     public IngredientDTO createIngredient(IngredientDTO ingredient) {

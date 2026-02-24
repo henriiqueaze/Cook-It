@@ -9,6 +9,12 @@ import com.p5Project.cookIt.models.dtos.RatingDTO;
 import com.p5Project.cookIt.models.entities.Rating;
 import com.p5Project.cookIt.repositories.RatingRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedResourcesAssembler;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.Link;
+import org.springframework.hateoas.PagedModel;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,6 +29,9 @@ public class RatingService {
     @Autowired
     private RatingRepository repository;
 
+    @Autowired
+    private PagedResourcesAssembler<RatingDTO> assembler;
+
     public RatingDTO findRatingById(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
 
@@ -32,8 +41,17 @@ public class RatingService {
         return dto;
     }
 
-    public List<RatingDTO> findAllRatings() {
-        return Mapper.parseItemsList(repository.findAll(), RatingDTO.class);
+    public PagedModel<EntityModel<RatingDTO>> findAllRatings(Pageable pageable) {
+        var entities = repository.findAll(pageable);
+
+        var commentsWithLinks = entities.map(rating -> {
+            var dto = Mapper.parseItem(rating, RatingDTO.class);
+            addHATEOASLinks(dto);
+            return dto;
+        });
+
+        Link findAllLink = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(RatingController.class).findAllRatings(pageable.getPageNumber(), pageable.getPageSize(), String.valueOf(pageable.getSort()))).withSelfRel();
+        return assembler.toModel(commentsWithLinks, findAllLink);
     }
 
     public RatingDTO createRating(RatingDTO rating) {

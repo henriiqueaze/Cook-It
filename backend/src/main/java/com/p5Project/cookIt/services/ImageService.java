@@ -9,9 +9,14 @@ import com.p5Project.cookIt.models.dtos.ImageDTO;
 import com.p5Project.cookIt.models.entities.Image;
 import com.p5Project.cookIt.repositories.ImageRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedResourcesAssembler;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.Link;
+import org.springframework.hateoas.PagedModel;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.UUID;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
@@ -23,7 +28,10 @@ public class ImageService {
     @Autowired
     private ImageRepository repository;
 
-    public ImageDTO findById(UUID id) {
+    @Autowired
+    private PagedResourcesAssembler<ImageDTO> assembler;
+
+    public ImageDTO findImageById(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
 
         var dto = Mapper.parseItem(entity, ImageDTO.class);
@@ -32,9 +40,17 @@ public class ImageService {
         return dto;
     }
 
-    public List<ImageDTO> findAll() {
-        var entities = repository.findAll();
-        return Mapper.parseItemsList(entities, ImageDTO.class);
+    public PagedModel<EntityModel<ImageDTO>> findAllImages(Pageable pageable) {
+        var entities = repository.findAll(pageable);
+
+        var commentsWithLinks = entities.map(image -> {
+            var dto = Mapper.parseItem(image, ImageDTO.class);
+            addHATEOASLinks(dto);
+            return dto;
+        });
+
+        Link findAllLink = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(ImageController.class).findAllImages(pageable.getPageNumber(), pageable.getPageSize(), String.valueOf(pageable.getSort()))).withSelfRel();
+        return assembler.toModel(commentsWithLinks, findAllLink);
     }
 
     public ImageDTO createImage(ImageDTO image) {

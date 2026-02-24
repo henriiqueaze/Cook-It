@@ -8,6 +8,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.PagedModel;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,7 +30,7 @@ public interface CommentControllerDocs {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso", content = @Content(schema = @Schema(implementation = CommentDTO.class)))
     })
-    List<CommentDTO> findAllComments();
+    ResponseEntity<PagedModel<EntityModel<CommentDTO>>> findAllComments(Integer page, Integer size, String direction);
 
     @Operation(summary = "Criar novo comentário", description = "Cria um novo comentário no sistema")
     @ApiResponses(value = {

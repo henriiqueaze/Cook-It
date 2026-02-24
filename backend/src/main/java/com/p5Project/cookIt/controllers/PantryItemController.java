@@ -1,27 +1,29 @@
 package com.p5Project.cookIt.controllers;
 
+import com.p5Project.cookIt.controllers.docs.PantryItemControllerDocs;
 import com.p5Project.cookIt.models.dtos.PantryItemDTO;
 import com.p5Project.cookIt.services.PantryItemService;
-import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.PagedModel;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/pantryItem")
 @Tag(name = "Pantry Item", description = "Endpoints para gerenciamento de itens da despensa do usuário")
-public class PantryItemController implements com.p5Project.cookIt.controllers.docs.PantryItemControllerDocs {
+public class PantryItemController implements PantryItemControllerDocs {
 
     @Autowired
     private PantryItemService service;
@@ -34,8 +36,10 @@ public class PantryItemController implements com.p5Project.cookIt.controllers.do
 
     @GetMapping(produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE})
     @Override
-    public List<PantryItemDTO> findAllPantryItems() {
-        return service.findAllPantryItems();
+    public ResponseEntity<PagedModel<EntityModel<PantryItemDTO>>> findAllPantryItems(@RequestParam(value = "page", defaultValue = "0") Integer page, @RequestParam(value = "size", defaultValue = "12") Integer size, @RequestParam(value = "direction", defaultValue = "asc") String direction) {
+        var sortDirection = "desc".equalsIgnoreCase(direction) ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, "name"));
+        return ResponseEntity.ok(service.findAllPantryItems(pageable));
     }
 
     @PostMapping(produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE}, consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE})

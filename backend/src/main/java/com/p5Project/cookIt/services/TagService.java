@@ -1,14 +1,22 @@
 package com.p5Project.cookIt.services;
 
+import com.p5Project.cookIt.controllers.RecipeController;
 import com.p5Project.cookIt.controllers.RecipeTagController;
 import com.p5Project.cookIt.controllers.TagController;
 import com.p5Project.cookIt.exceptions.IdNotFoundException;
 import com.p5Project.cookIt.mappers.Mapper;
+import com.p5Project.cookIt.models.dtos.RecipeDTO;
 import com.p5Project.cookIt.models.dtos.RecipeTagDTO;
 import com.p5Project.cookIt.models.dtos.TagDTO;
 import com.p5Project.cookIt.models.entities.Tag;
 import com.p5Project.cookIt.repositories.TagRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedResourcesAssembler;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.Link;
+import org.springframework.hateoas.PagedModel;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,6 +31,9 @@ public class TagService {
     @Autowired
     private TagRepository repository;
 
+    @Autowired
+    private PagedResourcesAssembler<TagDTO> assembler;
+
     public TagDTO findTagById(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
         var dto = Mapper.parseItem(entity, TagDTO.class);
@@ -31,9 +42,17 @@ public class TagService {
         return dto;
     }
 
-    public List<TagDTO> findAllTags() {
-        var entities = repository.findAll();
-        return Mapper.parseItemsList(entities, TagDTO.class);
+    public PagedModel<EntityModel<TagDTO>> findAllTags(Pageable pageable) {
+        var entities = repository.findAll(pageable);
+
+        var commentsWithLinks = entities.map(tag -> {
+            var dto = Mapper.parseItem(tag, TagDTO.class);
+            addHATEOASLinks(dto);
+            return dto;
+        });
+
+        Link findAllLink = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(TagController.class).findAllTags(pageable.getPageNumber(), pageable.getPageSize(), String.valueOf(pageable.getSort()))).withSelfRel();
+        return assembler.toModel(commentsWithLinks, findAllLink);
     }
 
     public TagDTO createTag(TagDTO tag) {

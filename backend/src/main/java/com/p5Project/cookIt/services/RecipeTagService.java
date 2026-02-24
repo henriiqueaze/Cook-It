@@ -9,6 +9,12 @@ import com.p5Project.cookIt.models.dtos.RecipeTagDTO;
 import com.p5Project.cookIt.models.entities.RecipeTag;
 import com.p5Project.cookIt.repositories.RecipeTagRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedResourcesAssembler;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.Link;
+import org.springframework.hateoas.PagedModel;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,6 +29,9 @@ public class RecipeTagService {
     @Autowired
     private RecipeTagRepository repository;
 
+    @Autowired
+    private PagedResourcesAssembler<RecipeTagDTO> assembler;
+
     public RecipeTagDTO findRecipeTagById(UUID id) {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
         var dto = Mapper.parseItem(entity, RecipeTagDTO.class);
@@ -31,9 +40,17 @@ public class RecipeTagService {
         return dto;
     }
 
-    public List<RecipeTagDTO> findAllRecipeTags() {
-        var entities = repository.findAll();
-        return Mapper.parseItemsList(entities, RecipeTagDTO.class);
+    public PagedModel<EntityModel<RecipeTagDTO>> findAllRecipeTags(Pageable pageable) {
+        var entities = repository.findAll(pageable);
+
+        var commentsWithLinks = entities.map(recipeTag -> {
+            var dto = Mapper.parseItem(recipeTag, RecipeTagDTO.class);
+            addHATEOASLinks(dto);
+            return dto;
+        });
+
+        Link findAllLink = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(RecipeTagController.class).findAllRecipeTags(pageable.getPageNumber(), pageable.getPageSize(), String.valueOf(pageable.getSort()))).withSelfRel();
+        return assembler.toModel(commentsWithLinks, findAllLink);
     }
 
     public RecipeTagDTO createRecipeTag(RecipeTagDTO recipeTag) {
