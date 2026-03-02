@@ -25,6 +25,6 @@ export const receitaService = {
   },
 
   minhasReceitas: () => {
-    api.get<Receitas[]>("/receitas/minhas");
+    api.get<Receita[]>("/receitas/minhas");
   },
 };
