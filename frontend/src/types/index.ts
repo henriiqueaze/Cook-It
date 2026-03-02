@@ -1,4 +1,4 @@
-export interface Ususario {
+export interface Usuario {
   id: number;
   nome: string;
   email: string;
@@ -22,7 +22,7 @@ export interface Receita {
   dificuldade: "FACIL" | "MEDIA" | "DIFICIL";
   categoria: string;
   avaliacao: number;
-  autor: Ususario;
+  autor: Usuario;
   ingredientes: Ingrediente[];
   instrucoes: string[];
   favoritada?: boolean;
@@ -33,11 +33,11 @@ export interface Comentario {
   id: number;
   conteudo: string;
   avaliacao: number;
-  autor: Ususario;
+  autor: Usuario;
   criadoEm: string;
 }
 
 export interface RespostaAuth {
   token: string;
-  usuario: Ususario;
+  usuario: Usuario;
 }
