@@ -1,12 +1,13 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Layout } from "@/components/Layout";
+import { Home } from "@/pages/Home";
 
 export function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
         <Route element={<Layout />}>
-          <Route path="/" element={<div>Home</div>} />
+          <Route path="/" element={<Home />} />
           <Route path="/busca" element={<div>Busca</div>} />
           <Route path="/receita/:id" element={<div>Detalhe da Receita</div>} />
           <Route path="/minhas-receitas" element={<div>Minhas receitas</div>} />

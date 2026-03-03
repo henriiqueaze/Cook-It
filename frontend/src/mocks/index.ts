@@ -7,6 +7,29 @@ export const usuarioMock: Usuario = {
   avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Arthur",
 };
 
+export const ingredientesMock = [
+  { id: 1, nome: "Frango" },
+  { id: 2, nome: "Carne moída" },
+  { id: 3, nome: "Ovo" },
+  { id: 4, nome: "Arroz" },
+  { id: 5, nome: "Feijão" },
+  { id: 6, nome: "Macarrão" },
+  { id: 7, nome: "Tomate" },
+  { id: 8, nome: "Cebola" },
+  { id: 9, nome: "Alho" },
+  { id: 10, nome: "Batata" },
+  { id: 11, nome: "Cenoura" },
+  { id: 12, nome: "Abobrinha" },
+  { id: 13, nome: "Manjericão" },
+  { id: 14, nome: "Parmesão" },
+  { id: 15, nome: "Azeite" },
+  { id: 16, nome: "Manteiga" },
+  { id: 17, nome: "Leite" },
+  { id: 18, nome: "Farinha de trigo" },
+  { id: 19, nome: "Açúcar" },
+  { id: 20, nome: "Chocolate em pó" },
+];
+
 export const receitasMock: Receita[] = [
   {
     id: 1,
