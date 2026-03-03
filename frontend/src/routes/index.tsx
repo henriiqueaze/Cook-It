@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { Home } from "@/pages/Home";
+import { ResultadosBusca } from "@/pages/ResultadosBusca";
 
 export function AppRoutes() {
   return (
@@ -8,7 +9,7 @@ export function AppRoutes() {
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
-          <Route path="/busca" element={<div>Busca</div>} />
+          <Route path="/busca" element={<ResultadosBusca />} />
           <Route path="/receita/:id" element={<div>Detalhe da Receita</div>} />
           <Route path="/minhas-receitas" element={<div>Minhas receitas</div>} />
           <Route path="/favoritos" element={<div>Favoritos</div>} />

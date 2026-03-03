@@ -4,8 +4,12 @@ import type { Receita } from "@/types";
 export const receitaService = {
   listar: () => api.get<Receita[]>("/receitas"),
 
-  buscar: (query: string) => {
-    api.get<Receita>(`/receitas/buscar/q=${query}`);
+  buscarPorIngredientes: (ingredientes: string[]) => {
+    api.post<Receita[]>("/recipes/search", {
+      ingredients: ingredientes,
+      exactMatch: false,
+      sortBy: "compatibility",
+    });
   },
 
   buscarPorId: (id: number) => {
