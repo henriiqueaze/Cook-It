@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Search, ChefHat } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { ingredientesMock } from "../mocks";
+import { ingredientesMock, receitasMock } from "../mocks";
 import { IngredientTag } from "@/components/IngredientTag";
 
 export function Home() {
@@ -11,6 +11,7 @@ export function Home() {
   >([]);
   const [busca, setBusca] = useState("");
   const [mostrarSugestoes, setMostrarSugestoes] = useState(false);
+  const totalReceitas = receitasMock.length;
 
   const sugestoesFiltradas = useMemo(() => {
     if (!busca) return [];
@@ -118,11 +119,14 @@ export function Home() {
 
         <div className="mt-8 grid grid-cols-2 gap-4">
           <div className="bg-white rounded-xl p-4 text-center shadow-sm">
-            <div className="text-3xl font-bold text-green-600 mb-1">500+</div>
+            <div className="text-3xl font-bold text-green-600 mb-1">
+              {totalReceitas - 1}+
+            </div>
             <div className="text-sm text-gray-600">Receitas</div>
           </div>
           <div className="bg-white rounded-xl p-4 text-center shadow-sm">
             <div className="text-3xl font-bold text-green-600 mb-1">1000+</div>
+            {/* Lembrar de ao final mudar para pegar o tanto de user */}
             <div className="text-sm text-gray-600">Usuários</div>
           </div>
         </div>
