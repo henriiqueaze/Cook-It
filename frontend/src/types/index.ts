@@ -19,7 +19,7 @@ export interface Receita {
   imagemUrl?: string;
   tempoPreparo: number;
   porcoes: number;
-  dificuldade: "FACIL" | "MEDIA" | "DIFICIL";
+  dificuldade: "FACIL" | "MEDIO" | "DIFICIL";
   categoria: string;
   avaliacao: number;
   autor: Usuario;
