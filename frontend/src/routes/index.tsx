@@ -4,6 +4,7 @@ import { Home } from "@/pages/Home";
 import { ResultadosBusca } from "@/pages/ResultadosBusca";
 import { DetalheReceita } from "@/pages/DetalheDeReceita";
 import { Login } from "@/pages/Login";
+import { Cadastro } from "@/pages/Cadastro";
 
 export function AppRoutes() {
   return (
@@ -20,7 +21,7 @@ export function AppRoutes() {
         </Route>
 
         <Route path="/login" element={<Login />} />
-        <Route path="/cadastro" element={<div>Cadastro</div>} />
+        <Route path="/cadastro" element={<Cadastro />} />
         <Route path="*" element={<div>Página não encontrada</div>} />
       </Routes>
     </BrowserRouter>
