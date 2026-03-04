@@ -20,6 +20,12 @@ export function Login() {
       return;
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    if (!emailRegex) {
+      setErro("Digite um e-mail válido.");
+      return;
+    }
+
     setCarregando(true);
     setErro("");
 
