@@ -1,6 +1,5 @@
 package com.p5Project.cookIt.controllers.docs;
 
-import com.p5Project.cookIt.models.dtos.ImageDTO;
 import com.p5Project.cookIt.models.dtos.RecipeIngredientDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -9,15 +8,15 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.PagedModel;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
+@Tag(name = "Recipe Ingredient", description = "Endpoints para gerenciamento da relação entre receitas e ingredientes")
 public interface RecipeIngredientControllerDocs {
     @Operation(summary = "Buscar relação receita-ingrediente por ID", description = "Retorna uma relação específica entre receita e ingrediente com base no ID informado")
     @ApiResponses(value = {

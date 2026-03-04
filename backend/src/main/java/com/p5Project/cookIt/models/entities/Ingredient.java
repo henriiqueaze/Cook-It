@@ -3,6 +3,7 @@ package com.p5Project.cookIt.models.entities;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -16,9 +17,11 @@ public class Ingredient {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
-    @Column(name="name", nullable = false)
+    @Column(nullable = false, unique = true)
     private String name;
+
+    @OneToMany(mappedBy = "ingredient")
+    private List<RecipeIngredient> recipes;
 }

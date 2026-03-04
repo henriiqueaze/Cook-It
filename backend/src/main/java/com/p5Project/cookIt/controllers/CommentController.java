@@ -21,8 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/comment")
-@Tag(name = "Comment", description = "Endpoints para gerenciamento de comentários das receitas")
+@RequestMapping("/api/comments")
 public class CommentController implements CommentControllerDocs {
 
     @Autowired
@@ -38,7 +37,7 @@ public class CommentController implements CommentControllerDocs {
     @Override
     public ResponseEntity<PagedModel<EntityModel<CommentDTO>>> findAllComments(@RequestParam(value = "page", defaultValue = "0") Integer page, @RequestParam(value = "size", defaultValue = "12") Integer size, @RequestParam(value = "direction", defaultValue = "asc") String direction) {
         var sortDirection = "desc".equalsIgnoreCase(direction) ? Sort.Direction.DESC : Sort.Direction.ASC;
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, "name"));
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, "content"));
         return ResponseEntity.ok(service.findAllComments(pageable));
     }
 

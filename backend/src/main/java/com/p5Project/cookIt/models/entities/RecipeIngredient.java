@@ -16,15 +16,19 @@ public class RecipeIngredient {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
-    @Column(name="ingredient", nullable = false)
+    @ManyToOne
+    @JoinColumn(name = "recipe_id", nullable = false)
+    private Recipe recipe;
+
+    @ManyToOne
+    @JoinColumn(name = "ingredient_id", nullable = false)
     private Ingredient ingredient;
 
-    @Column(name="quantity", nullable = false)
+    @Column(nullable = false)
     private Double quantity;
 
-    @Column(name="unit", nullable = false)
+    @Column(nullable = false)
     private String unit;
 }

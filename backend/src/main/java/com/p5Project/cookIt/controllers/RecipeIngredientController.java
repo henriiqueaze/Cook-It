@@ -21,8 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/recipeIngredient")
-@Tag(name = "Recipe Ingredient", description = "Endpoints para gerenciamento da relação entre receitas e ingredientes")
+@RequestMapping("/api/recipeIngredients")
 public class RecipeIngredientController implements RecipeIngredientControllerDocs {
 
     @Autowired
@@ -38,7 +37,7 @@ public class RecipeIngredientController implements RecipeIngredientControllerDoc
     @Override
     public ResponseEntity<PagedModel<EntityModel<RecipeIngredientDTO>>> findAllRecipeIngredients(@RequestParam(value = "page", defaultValue = "0") Integer page, @RequestParam(value = "size", defaultValue = "12") Integer size, @RequestParam(value = "direction", defaultValue = "asc") String direction) {
         var sortDirection = "desc".equalsIgnoreCase(direction) ? Sort.Direction.DESC : Sort.Direction.ASC;
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, "name"));
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, "id"));
         return ResponseEntity.ok(service.findAllRecipeIngredients(pageable));
     }
 

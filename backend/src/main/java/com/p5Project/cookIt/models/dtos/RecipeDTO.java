@@ -1,10 +1,13 @@
 package com.p5Project.cookIt.models.dtos;
 
+import com.p5Project.cookIt.models.entities.Comment;
 import com.p5Project.cookIt.models.entities.RecipeIngredient;
 import com.p5Project.cookIt.models.entities.User;
+import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.hateoas.RepresentationModel;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,8 +24,10 @@ public class RecipeDTO extends RepresentationModel<RecipeDTO> {
     private Integer prepTime;
     private Double rating;
     private Integer ratingsCount;
-    private List<RecipeIngredient> ingredients;
     private String instructions;
     private User author;
-    private String createdAt;
+    private List<RecipeIngredient> ingredients;
+    private List<Comment> comments;
+    private List<User> favoritedBy;
+    private LocalDateTime createdAt;
 }

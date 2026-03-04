@@ -17,8 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/user")
-@Tag(name = "User", description = "Endpoints para gerenciamento de usuários")
+@RequestMapping("/api/users")
 public class UserController implements UserControllerDocs {
 
     @Autowired

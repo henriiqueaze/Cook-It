@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -18,34 +19,37 @@ public class Recipe {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
-    @Column(name="title", nullable = false)
+    @Column(nullable = false)
     private String title;
 
-    @Column(name="image", nullable = false)
+    @Column(nullable = false)
     private String image;
 
-    @Column(name="prepTime", nullable = false)
+    @Column(nullable = false)
     private Integer prepTime;
 
-    @Column(name="rating", nullable = false)
     private Double rating;
-
-    @Column(name="ratingsCount")
     private Integer ratingsCount;
 
-    @Column(name="ingredients", nullable = false)
-    private List<RecipeIngredient> ingredients;
-
-    @Column(name="instructions", nullable = false)
+    @Column(nullable = false)
     private String instructions;
 
-    @Column(name="author", nullable = false)
+    @ManyToOne
+    @JoinColumn(name = "author_id", nullable = false)
     private User author;
 
-    @Column(name="createdAt", nullable = false)
+    @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<RecipeIngredient> ingredients;
+
+    @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL)
+    private List<Comment> comments;
+
+    @ManyToMany(mappedBy = "favoriteRecipes")
+    private List<User> favoritedBy;
+
     @CreationTimestamp
-    private String createdAt;
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 }

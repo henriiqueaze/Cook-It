@@ -1,6 +1,7 @@
 package com.p5Project.cookIt.models.dtos;
 
 import com.p5Project.cookIt.models.entities.Ingredient;
+import com.p5Project.cookIt.models.entities.Recipe;
 import lombok.*;
 import org.springframework.hateoas.RepresentationModel;
 
@@ -14,6 +15,7 @@ import java.util.UUID;
 public class RecipeIngredientDTO extends RepresentationModel<RecipeIngredientDTO> {
 
     private UUID id;
+    private Recipe recipe;
     private Ingredient ingredient;
     private Double quantity;
     private String unit;

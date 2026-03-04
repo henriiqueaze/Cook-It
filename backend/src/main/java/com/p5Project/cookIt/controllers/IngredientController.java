@@ -21,8 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/ingredient")
-@Tag(name = "Ingredient", description = "Endpoints para gerenciamento de ingredientes")
+@RequestMapping("/api/ingredients")
 public class IngredientController implements IngredientControllerDocs {
 
     @Autowired
