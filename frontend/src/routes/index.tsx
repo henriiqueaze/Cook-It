@@ -3,6 +3,7 @@ import { Layout } from "@/components/Layout";
 import { Home } from "@/pages/Home";
 import { ResultadosBusca } from "@/pages/ResultadosBusca";
 import { DetalheReceita } from "@/pages/DetalheDeReceita";
+import { Login } from "@/pages/Login";
 
 export function AppRoutes() {
   return (
@@ -18,7 +19,7 @@ export function AppRoutes() {
           <Route path="/perfil" element={<div>Perfil</div>} />
         </Route>
 
-        <Route path="/login" element={<div>Login</div>} />
+        <Route path="/login" element={<Login />} />
         <Route path="/cadastro" element={<div>Cadastro</div>} />
         <Route path="*" element={<div>Página não encontrada</div>} />
       </Routes>
