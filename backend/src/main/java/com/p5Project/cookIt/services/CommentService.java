@@ -96,7 +96,7 @@ public class CommentService {
 
     private void addHATEOASLinks(CommentDTO comment) {
         comment.add(linkTo(methodOn(CommentController.class).findCommentById(comment.getId())).withSelfRel().withType("GET"));
-        //comment.add(linkTo(methodOn(CommentController.class).findAllComments(0, 12, "asc")).withRel("findAll").withType("GET"));
+        comment.add(linkTo(methodOn(CommentController.class).findAllComments(0, 12, "asc")).withRel("findAll").withType("GET"));
         comment.add(linkTo(methodOn(CommentController.class).createComment(comment)).withRel("create").withType("POST"));
         comment.add(linkTo(methodOn(CommentController.class).updateComment(comment)).withRel("update").withType("PUT"));
         comment.add(linkTo(methodOn(CommentController.class).updateCommentField(comment.getId(), comment)).withRel("patch").withType("PATCH"));

@@ -6,7 +6,7 @@ import com.p5Project.cookIt.models.entities.User;
 import lombok.*;
 import org.springframework.hateoas.RepresentationModel;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Getter
@@ -20,5 +20,7 @@ public class CommentDTO extends RepresentationModel<CommentDTO> {
     private Recipe recipe;
     private User user;
     private String content;
-    private Instant createdAt;
+    private LocalDateTime createdAt;
+
 }
+

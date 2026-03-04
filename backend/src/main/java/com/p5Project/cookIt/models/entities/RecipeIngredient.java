@@ -19,18 +19,12 @@ public class RecipeIngredient {
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "recipe_id", nullable = false)
-    private Recipe recipe;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ingredient_id", nullable = false)
+    @Column(name="ingredient", nullable = false)
     private Ingredient ingredient;
 
+    @Column(name="quantity", nullable = false)
     private Double quantity;
 
+    @Column(name="unit", nullable = false)
     private String unit;
-
-    @Column(columnDefinition = "text")
-    private String notes;
 }

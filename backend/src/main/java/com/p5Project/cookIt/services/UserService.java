@@ -93,7 +93,7 @@ public class UserService {
 
     private void addHATEOASLinks(UserDTO user) {
         user.add(linkTo(methodOn(UserController.class).findUserById(user.getId())).withSelfRel().withType("GET"));
-        //comment.add(linkTo(methodOn(CommentController.class).findAllComments(0, 12, "asc")).withRel("findAll").withType("GET"));
+        user.add(linkTo(methodOn(UserController.class).findAllUsers(0, 12, "asc")).withRel("findAll").withType("GET"));
         user.add(linkTo(methodOn(UserController.class).createUser(user)).withRel("create").withType("POST"));
         user.add(linkTo(methodOn(UserController.class).updateUser(user)).withRel("update").withType("PUT"));
         user.add(linkTo(methodOn(UserController.class).updateUserField(user.getId(), user)).withRel("patch").withType("PATCH"));

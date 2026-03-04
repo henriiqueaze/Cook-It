@@ -46,7 +46,7 @@ public class RecipeService {
             return dto;
         });
 
-        Link findAllLink = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(RecipeController.class).findAllRating(pageable.getPageNumber(), pageable.getPageSize(), String.valueOf(pageable.getSort()))).withSelfRel();
+        Link findAllLink = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(RecipeController.class).findAllRecipes(pageable.getPageNumber(), pageable.getPageSize(), String.valueOf(pageable.getSort()))).withSelfRel();
         return assembler.toModel(commentsWithLinks, findAllLink);
     }
 
@@ -88,11 +88,11 @@ public class RecipeService {
     }
 
     private void addHATEOASLinks(RecipeDTO recipe) {
-        recipe.add(linkTo(methodOn(RecipeController.class).findRatingById(recipe.getId())).withSelfRel().withType("GET"));
-        //comment.add(linkTo(methodOn(CommentController.class).findAllComments(0, 12, "asc")).withRel("findAll").withType("GET"));
-        recipe.add(linkTo(methodOn(RecipeController.class).createRating(recipe)).withRel("create").withType("POST"));
-        recipe.add(linkTo(methodOn(RecipeController.class).updateRating(recipe)).withRel("update").withType("PUT"));
-        recipe.add(linkTo(methodOn(RecipeController.class).updateRatingField(recipe.getId(), recipe)).withRel("patch").withType("PATCH"));
-        recipe.add(linkTo(methodOn(RecipeController.class).deleteRating(recipe.getId())).withRel("delete").withType("DELETE"));
+        recipe.add(linkTo(methodOn(RecipeController.class).findRecipeById(recipe.getId())).withSelfRel().withType("GET"));
+        recipe.add(linkTo(methodOn(RecipeController.class).findAllRecipes(0, 12, "asc")).withRel("findAll").withType("GET"));
+        recipe.add(linkTo(methodOn(RecipeController.class).createRecipe(recipe)).withRel("create").withType("POST"));
+        recipe.add(linkTo(methodOn(RecipeController.class).updateRecipe(recipe)).withRel("update").withType("PUT"));
+        recipe.add(linkTo(methodOn(RecipeController.class).updateRecipeField(recipe.getId(), recipe)).withRel("patch").withType("PATCH"));
+        recipe.add(linkTo(methodOn(RecipeController.class).deleteRecipe(recipe.getId())).withRel("delete").withType("DELETE"));
     }
 }

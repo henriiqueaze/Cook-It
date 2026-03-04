@@ -2,11 +2,9 @@ package com.p5Project.cookIt.models.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Entity
@@ -23,35 +21,22 @@ public class User {
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
-    @Column(nullable = false, unique = true)
+    @Column(name = "name", nullable = false)
+    private String name;
+
+    @Column(name = "email", nullable = false, unique = true)
     private String email;
 
-    @Column(name = "password_hash", nullable = false)
-    private String passwordHash;
+    @Column(name = "password", nullable = false)
+    private String password;
 
-    @Column(name = "display_name")
-    private String displayName;
+    @Column(name = "photo")
+    private String photo;
 
-    @Column(name = "avatar_url")
-    private String avatarUrl;
+    @OneToMany(mappedBy = "author")
+    private List<Recipe> createdRecipes;
 
-    @CreationTimestamp
-    @Column(name = "created_at", updatable = false)
-    private Instant createdAt;
+    private List<Recipe> favoriteRecipes;
 
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    private Instant updatedAt;
-
-    @OneToMany(mappedBy = "author", fetch = FetchType.LAZY)
-    private List<Recipe> recipes;
-
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
-    private List<Comment> comments;
-
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
-    private List<Rating> ratings;
-
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
-    private List<PantryItem> pantryItems;
+    private Map<String, Integer> ratings;
 }

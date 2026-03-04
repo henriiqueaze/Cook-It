@@ -1,14 +1,11 @@
 package com.p5Project.cookIt.models.dtos;
 
-import com.p5Project.cookIt.models.entities.Comment;
-import com.p5Project.cookIt.models.entities.PantryItem;
-import com.p5Project.cookIt.models.entities.Rating;
 import com.p5Project.cookIt.models.entities.Recipe;
 import lombok.*;
 import org.springframework.hateoas.RepresentationModel;
 
-import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Getter
@@ -19,14 +16,11 @@ import java.util.UUID;
 public class UserDTO extends RepresentationModel<UserDTO> {
 
     private UUID id;
+    private String name;
     private String email;
-    private String passwordHash;
-    private String displayName;
-    private String avatarUrl;
-    private Instant createdAt;
-    private Instant updatedAt;
-    private List<Recipe> recipes;
-    private List<Comment> comments;
-    private List<Rating> ratings;
-    private List<PantryItem> pantryItems;
+    private String password;
+    private String photo;
+    private List<Recipe> createdRecipes;
+    private List<Recipe> favoriteRecipes;
+    private Map<String, Integer> ratings;
 }

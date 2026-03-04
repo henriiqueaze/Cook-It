@@ -1,12 +1,8 @@
 package com.p5Project.cookIt.services;
 
-import com.p5Project.cookIt.controllers.RatingController;
-import com.p5Project.cookIt.controllers.RecipeController;
 import com.p5Project.cookIt.controllers.RecipeIngredientController;
 import com.p5Project.cookIt.exceptions.IdNotFoundException;
 import com.p5Project.cookIt.mappers.Mapper;
-import com.p5Project.cookIt.models.dtos.PantryItemDTO;
-import com.p5Project.cookIt.models.dtos.RatingDTO;
 import com.p5Project.cookIt.models.dtos.RecipeIngredientDTO;
 import com.p5Project.cookIt.models.entities.RecipeIngredient;
 import com.p5Project.cookIt.repositories.RecipeIngredientRepository;
@@ -98,7 +94,7 @@ public class RecipeIngredientService {
 
     private void addHATEOASLinks(RecipeIngredientDTO recipeIngredient) {
         recipeIngredient.add(linkTo(methodOn(RecipeIngredientController.class).findRecipeIngredientById(recipeIngredient.getId())).withSelfRel().withType("GET"));
-        //comment.add(linkTo(methodOn(CommentController.class).findAllComments(0, 12, "asc")).withRel("findAll").withType("GET"));
+        recipeIngredient.add(linkTo(methodOn(RecipeIngredientController.class).findAllRecipeIngredients(0, 12, "asc")).withRel("findAll").withType("GET"));
         recipeIngredient.add(linkTo(methodOn(RecipeIngredientController.class).createRecipeIngredient(recipeIngredient)).withRel("create").withType("POST"));
         recipeIngredient.add(linkTo(methodOn(RecipeIngredientController.class).updateRecipeIngredient(recipeIngredient)).withRel("update").withType("PUT"));
         recipeIngredient.add(linkTo(methodOn(RecipeIngredientController.class).updateRecipeIngredientField(recipeIngredient.getId(), recipeIngredient)).withRel("patch").withType("PATCH"));
