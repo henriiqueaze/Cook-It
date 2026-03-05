@@ -10,6 +10,7 @@ import { Favoritos } from "@/pages/Favoritos";
 import { CriarReceita } from "@/pages/CriarReceita";
 import { Perfil } from "@/pages/Perfil";
 import { EditarPerfil } from "@/pages/EditarPerfil";
+import { RotaProtegida } from "@/components/RotaProtegida";
 
 export function AppRoutes() {
   return (
@@ -19,13 +20,48 @@ export function AppRoutes() {
           <Route path="/" element={<Home />} />
           <Route path="/busca" element={<ResultadosBusca />} />
           <Route path="/receita/:id" element={<DetalheReceita />} />
-          <Route path="/minhas-receitas" element={<MinhasReceitas />} />
-          <Route path="/favoritos" element={<Favoritos />} />
-          <Route path="/criar-receita" element={<CriarReceita />} />
-          <Route path="/perfil" element={<Perfil />} />
+          <Route
+            path="/minhas-receitas"
+            element={
+              <RotaProtegida>
+                <MinhasReceitas />
+              </RotaProtegida>
+            }
+          />
+          <Route
+            path="/favoritos"
+            element={
+              <RotaProtegida>
+                <Favoritos />
+              </RotaProtegida>
+            }
+          />
+          <Route
+            path="/criar-receita"
+            element={
+              <RotaProtegida>
+                <CriarReceita />
+              </RotaProtegida>
+            }
+          />
+          <Route
+            path="/perfil"
+            element={
+              <RotaProtegida>
+                <Perfil />
+              </RotaProtegida>
+            }
+          />
         </Route>
 
-        <Route path="/editar-perfil" element={<EditarPerfil />} />
+        <Route
+          path="/editar-perfil"
+          element={
+            <RotaProtegida>
+              <EditarPerfil />
+            </RotaProtegida>
+          }
+        />
         <Route path="/login" element={<Login />} />
         <Route path="/cadastro" element={<Cadastro />} />
         <Route path="*" element={<div>Página não encontrada</div>} />
