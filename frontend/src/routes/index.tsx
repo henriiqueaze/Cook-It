@@ -6,6 +6,7 @@ import { DetalheReceita } from "@/pages/DetalheDeReceita";
 import { Login } from "@/pages/Login";
 import { Cadastro } from "@/pages/Cadastro";
 import { MinhasReceitas } from "@/pages/MinhasReceitas";
+import { Favoritos } from "@/pages/Favoritos";
 
 export function AppRoutes() {
   return (
@@ -16,7 +17,7 @@ export function AppRoutes() {
           <Route path="/busca" element={<ResultadosBusca />} />
           <Route path="/receita/:id" element={<DetalheReceita />} />
           <Route path="/minhas-receitas" element={<MinhasReceitas />} />
-          <Route path="/favoritos" element={<div>Favoritos</div>} />
+          <Route path="/favoritos" element={<Favoritos />} />
           <Route path="/criar-receita" element={<div>Criar Receita</div>} />
           <Route path="/perfil" element={<div>Perfil</div>} />
         </Route>
