@@ -8,6 +8,7 @@ import { Cadastro } from "@/pages/Cadastro";
 import { MinhasReceitas } from "@/pages/MinhasReceitas";
 import { Favoritos } from "@/pages/Favoritos";
 import { CriarReceita } from "@/pages/CriarReceita";
+import { Perfil } from "@/pages/Perfil";
 
 export function AppRoutes() {
   return (
@@ -20,7 +21,7 @@ export function AppRoutes() {
           <Route path="/minhas-receitas" element={<MinhasReceitas />} />
           <Route path="/favoritos" element={<Favoritos />} />
           <Route path="/criar-receita" element={<CriarReceita />} />
-          <Route path="/perfil" element={<div>Perfil</div>} />
+          <Route path="/perfil" element={<Perfil />} />
         </Route>
 
         <Route path="/login" element={<Login />} />
