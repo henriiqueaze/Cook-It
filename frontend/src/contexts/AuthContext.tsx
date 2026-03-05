@@ -8,6 +8,7 @@ interface AuthContextData {
   estaAutenticado: boolean;
   salvarAuth: (token: string, usuario: Usuario) => void;
   sair: () => void;
+  atualizarUsuario: (usuario: Usuario) => void;
 }
 
 const AuthContext = createContext<AuthContextData>({} as AuthContextData);
@@ -36,6 +37,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("usuario");
   }
 
+  function atualizarUsuario(novoUsuario: Usuario) {
+    setUsuario(novoUsuario);
+    localStorage.setItem("usuario", JSON.stringify(novoUsuario));
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -44,6 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         estaAutenticado: !!token,
         salvarAuth,
         sair,
+        atualizarUsuario,
       }}
     >
       {children}
