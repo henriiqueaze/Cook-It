@@ -1,4 +1,4 @@
-const base_URL = "http://localhost:8080/api";
+const base_URL = import.meta.env.VITE_API_URL;
 
 async function requisicao<T>(
   endpoint: string,
