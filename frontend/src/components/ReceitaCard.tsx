@@ -4,19 +4,25 @@ import type { Receita } from "../types";
 
 interface ReceitaCardProps {
   receita: Receita;
+  compatibilidade?: number;
 }
 
-export function ReceitaCard({ receita }: ReceitaCardProps) {
+export function ReceitaCard({ receita, compatibilidade }: ReceitaCardProps) {
   return (
     <Link to={`/receita/${receita.id}`}>
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-        <div className="w-full h-40 bg-gray-200">
+        <div className="w-full h-40 bg-gray-200 relative">
           {receita.imagemUrl && (
             <img
               src={receita.imagemUrl}
               alt={receita.titulo}
               className="w-full h-full object-cover"
             />
+          )}
+          {compatibilidade !== undefined && (
+            <div className="absolute top-2 right-2 bg-green-600 text-white text-xs px-2 py-1 rounded-full font-medium">
+              {compatibilidade}% compatível
+            </div>
           )}
         </div>
 

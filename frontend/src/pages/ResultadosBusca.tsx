@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Search, ChefHat } from "lucide-react";
+import { Search, ChefHat, SlidersHorizontal } from "lucide-react";
 import { ReceitaCard } from "@/components/ReceitaCard";
 import { IngredientTag } from "@/components/IngredientTag";
 import { ingredientesMock, receitasMock } from "@/mocks";
+import type { Receita } from "@/types";
+
+type OpcaoOrdenacao = "compatibilidade" | "tempo" | "avaliacao";
 
 export function ResultadosBusca() {
   const navigate = useNavigate();
@@ -19,6 +22,8 @@ export function ResultadosBusca() {
     useState<string[]>(ingredientesDaUrl);
   const [busca, setBusca] = useState("");
   const [mostrarSugestoes, setMostrarSugestoes] = useState(false);
+  const [mostrarFiltros, setMostrarFiltros] = useState(false);
+  const [ordenacao, setOrdenacao] = useState<OpcaoOrdenacao>("compatibilidade");
 
   useEffect(() => {
     setIngredientesSelecionados(ingredientesDaUrl);
@@ -27,7 +32,6 @@ export function ResultadosBusca() {
 
   const sugestoesFiltradas = useMemo(() => {
     if (!busca) return [];
-
     return ingredientesMock
       .filter(
         (ing) =>
@@ -40,14 +44,36 @@ export function ResultadosBusca() {
   const resultados = useMemo(() => {
     if (ingredientesBuscados.length === 0) return [];
 
-    return receitasMock.filter((receita) =>
-      ingredientesBuscados.some((ingred) =>
-        receita.ingredientes.some((i) =>
-          i.nome.toLowerCase().includes(ingred.toLowerCase()),
-        ),
-      ),
-    );
-  }, [ingredientesBuscados]);
+    const comCompatibilidade = receitasMock
+      .map((receita) => {
+        const matches = receita.ingredientes.filter((i) =>
+          ingredientesBuscados.some((ingred) =>
+            i.nome.toLowerCase().includes(ingred.toLowerCase()),
+          ),
+        ).length;
+        const compatibilidade = Math.round(
+          (matches / receita.ingredientes.length) * 100,
+        );
+        return { ...receita, compatibilidade };
+      })
+      .filter((r) => r.compatibilidade > 0);
+
+    switch (ordenacao) {
+      case "tempo":
+        return [...comCompatibilidade].sort(
+          (a, b) => a.tempoPreparo - b.tempoPreparo,
+        );
+      case "avaliacao":
+        return [...comCompatibilidade].sort(
+          (a, b) => b.avaliacao - a.avaliacao,
+        );
+      case "compatibilidade":
+      default:
+        return [...comCompatibilidade].sort(
+          (a, b) => b.compatibilidade - a.compatibilidade,
+        );
+    }
+  }, [ingredientesBuscados, ordenacao]);
 
   function adicionarIngrediente(nome: string) {
     if (!ingredientesSelecionados.includes(nome)) {
@@ -65,11 +91,9 @@ export function ResultadosBusca() {
 
   function handleBuscar() {
     const params = new URLSearchParams();
-
     if (ingredientesSelecionados.length > 0) {
       params.set("ingredientes", ingredientesSelecionados.join(","));
     }
-
     setIngredientesBuscados(ingredientesSelecionados);
     navigate(`/busca${params.toString() ? `?${params.toString()}` : ""}`);
   }
@@ -77,14 +101,47 @@ export function ResultadosBusca() {
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       <div className="bg-linear-to-br from-orange-500 via-orange-600 to-red-600 text-white pt-12 pb-6 px-6 rounded-b-3xl shadow-lg">
-        <div className="flex items-center gap-3 mb-2">
-          <ChefHat className="w-7 h-7" />
-          <h1 className="text-xl font-bold">Resultados da Busca</h1>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-3">
+            <ChefHat className="w-7 h-7" />
+            <h1 className="text-xl font-bold">Resultados da Busca</h1>
+          </div>
+          <button
+            onClick={() => setMostrarFiltros(!mostrarFiltros)}
+            className="p-2 bg-white/20 rounded-lg hover:bg-white/30 transition-colors cursor-pointer"
+          >
+            <SlidersHorizontal size={20} />
+          </button>
         </div>
         <p className="text-orange-100 text-sm">
           Adicione ingredientes e clique em buscar para ver as receitas
         </p>
       </div>
+
+      {mostrarFiltros && (
+        <div className="bg-white border-b border-gray-200 px-6 py-4">
+          <p className="text-sm font-medium text-gray-700 mb-2">Ordenar por</p>
+          <div className="flex gap-2">
+            {[
+              { valor: "compatibilidade", label: "Compatibilidade" },
+              { valor: "tempo", label: "Tempo" },
+              { valor: "avaliacao", label: "Avaliação" },
+            ].map(({ valor, label }) => (
+              <button
+                key={valor}
+                onClick={() => setOrdenacao(valor as OpcaoOrdenacao)}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer ${
+                  ordenacao === valor
+                    ? "bg-orange-600 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="px-6 -mt-4">
         <form
@@ -178,11 +235,22 @@ export function ResultadosBusca() {
           ) : (
             <>
               <p className="text-sm text-gray-500 mb-4">
-                {resultados.length} receita(s) encontrada(s).
+                {resultados.length} receita(s) encontrada(s) — ordenado por{" "}
+                <span className="text-orange-600 font-medium">
+                  {ordenacao === "compatibilidade"
+                    ? "compatibilidade"
+                    : ordenacao === "tempo"
+                      ? "tempo de preparo"
+                      : "avaliação"}
+                </span>
               </p>
               <div className="grid grid-cols-2 gap-3">
                 {resultados.map((receita) => (
-                  <ReceitaCard key={receita.id} receita={receita} />
+                  <ReceitaCard
+                    key={receita.id}
+                    receita={receita as Receita}
+                    compatibilidade={receita.compatibilidade}
+                  />
                 ))}
               </div>
             </>
