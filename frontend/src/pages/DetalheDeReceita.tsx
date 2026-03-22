@@ -1,12 +1,29 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Clock, Users, Star, Heart } from "lucide-react";
+import {
+  ArrowLeft,
+  Clock,
+  Users,
+  Heart,
+  Minus,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { receitasMock } from "../mocks";
+import { useAuth } from "../contexts/AuthContext";
+import { RatingStars } from "../components/AvaliacaoEstrelas";
+import { toast } from "sonner";
 
 export function DetalheReceita() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { usuario, estaAutenticado } = useAuth();
 
   const receita = receitasMock.find((r) => r.id === Number(id));
+  const [multiplicador, setMultiplicador] = useState(1);
+  const [novoComentario, setNovoComentario] = useState("");
+  const [avaliacaoUsuario, setAvaliacaoUsuario] = useState(0);
+  const [favoritada, setFavoritada] = useState(receita?.favoritada ?? false);
 
   if (!receita) {
     return (
@@ -22,6 +39,46 @@ export function DetalheReceita() {
     );
   }
 
+  const ehMinhaReceita = usuario?.id === receita.autor.id;
+
+  function handleFavoritar() {
+    if (!estaAutenticado) {
+      toast.error("Faça login para favoritar receitas");
+      navigate("/login");
+      return;
+    }
+    setFavoritada(!favoritada);
+    toast.success(
+      favoritada ? "Removido dos favoritos" : "Adicionado aos favoritos!",
+    );
+  }
+
+  function handleAvaliar(nota: number) {
+    if (!estaAutenticado) {
+      toast.error("Faça login para avaliar receitas");
+      navigate("/login");
+      return;
+    }
+    setAvaliacaoUsuario(nota);
+    toast.success("Avaliação enviada!");
+  }
+
+  function handleComentario() {
+    if (!estaAutenticado) {
+      toast.error("Faça login para comentar");
+      navigate("/login");
+      return;
+    }
+    if (!novoComentario.trim()) return;
+    toast.success("Comentário adicionado!");
+    setNovoComentario("");
+  }
+
+  function handleDeletar() {
+    toast.success("Receita deletada!");
+    navigate("/minhas-receitas");
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       <div className="relative w-full h-64 bg-gray-200">
@@ -34,52 +91,93 @@ export function DetalheReceita() {
         )}
         <button
           onClick={() => navigate(-1)}
-          className="absolute top-4 left-4 bg-white rounded-full p-2 shadow-md cursor-pointer"
+          className="absolute top-4 left-4 bg-white/90 rounded-full p-2 shadow-md cursor-pointer"
         >
           <ArrowLeft size={20} className="text-gray-700" />
         </button>
-        <button className="absolute top-4 right-4 bg-white rounded-full p-2 shadow-md cursor-pointer">
+        <button
+          onClick={handleFavoritar}
+          className="absolute top-4 right-4 bg-white/90 rounded-full p-2 shadow-md cursor-pointer"
+        >
           <Heart
             size={20}
             className={
-              receita.favoritada ? "text-red-500 fill-red-500" : "text-gray-400"
+              favoritada ? "text-red-500 fill-red-500" : "text-gray-400"
             }
           />
         </button>
+        {ehMinhaReceita && (
+          <button
+            onClick={handleDeletar}
+            className="absolute top-4 right-16 bg-white/90 rounded-full p-2 shadow-md cursor-pointer"
+          >
+            <Trash2 size={20} className="text-red-500" />
+          </button>
+        )}
       </div>
 
-      <div className="px-6 py-4">
-        <div className="flex items-start justify-between gap-2 mb-2">
-          <h1 className="text-xl font-bold text-gray-800 flex-1">
-            {receita.titulo}
-          </h1>
+      <div className="px-6 py-4 space-y-4">
+        <div>
+          <h1 className="text-xl font-bold text-gray-800">{receita.titulo}</h1>
+          <p className="text-sm text-gray-500 mt-1">{receita.descricao}</p>
         </div>
 
-        <p className="text-sm text-gray-500 mb-4">{receita.descricao}</p>
-
-        <div className="flex gap-4 mb-6">
+        <div className="flex gap-4">
           <div className="flex items-center gap-1 text-sm text-gray-500">
             <Clock size={16} className="text-orange-600" />
             {receita.tempoPreparo} min
           </div>
           <div className="flex items-center gap-1 text-sm text-gray-500">
             <Users size={16} className="text-orange-600" />
-            {receita.porcoes} porções
+            {receita.porcoes * multiplicador} porções
           </div>
           <div className="flex items-center gap-1 text-sm text-gray-500">
-            <Star size={16} className="text-yellow-400 fill-yellow-400" />
-            {receita.avaliacao}
+            <RatingStars
+              avaliacao={receita.avaliacao}
+              somenteLeitura
+              tamanho="sm"
+            />
+            <span className="text-xs text-gray-400">
+              ({receita.totalAvaliacoes})
+            </span>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl p-4 shadow-sm mb-4">
+        <div className="bg-white rounded-2xl p-4 shadow-sm">
+          <h2 className="font-semibold text-gray-800 mb-3">Ajustar Porções</h2>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setMultiplicador(Math.max(1, multiplicador - 1))}
+              className="w-8 h-8 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-orange-200 transition-colors"
+            >
+              <Minus size={16} />
+            </button>
+            <span className="text-lg font-semibold text-gray-800">
+              {multiplicador}x
+            </span>
+            <button
+              onClick={() => setMultiplicador(multiplicador + 1)}
+              className="w-8 h-8 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-orange-200 transition-colors"
+            >
+              <Plus size={16} />
+            </button>
+            <span className="text-sm text-gray-500">
+              {receita.porcoes * multiplicador} porções no total
+            </span>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl p-4 shadow-sm">
           <h2 className="font-semibold text-gray-800 mb-3">Ingredientes</h2>
           <ul className="space-y-2">
             {receita.ingredientes.map((ing) => (
               <li key={ing.id} className="flex justify-between text-sm">
                 <span className="text-gray-700">{ing.nome}</span>
                 <span className="text-gray-400">
-                  {ing.quantidade} {ing.unidade}
+                  {(Number(ing.quantidade) * multiplicador).toFixed(
+                    Number(ing.quantidade) % 1 === 0 ? 0 : 1,
+                  )}{" "}
+                  {ing.unidade}
                 </span>
               </li>
             ))}
@@ -98,6 +196,48 @@ export function DetalheReceita() {
               </li>
             ))}
           </ol>
+        </div>
+
+        <div className="bg-white rounded-2xl p-4 shadow-sm">
+          <h2 className="font-semibold text-gray-800 mb-3">
+            Avalie esta receita
+          </h2>
+          <RatingStars
+            avaliacao={avaliacaoUsuario}
+            onChange={handleAvaliar}
+            tamanho="lg"
+          />
+          {avaliacaoUsuario > 0 && (
+            <p className="text-sm text-gray-500 mt-2">
+              Você avaliou com {avaliacaoUsuario} estrela
+              {avaliacaoUsuario > 1 ? "s" : ""}
+            </p>
+          )}
+        </div>
+
+        <div className="bg-white rounded-2xl p-4 shadow-sm">
+          <h2 className="font-semibold text-gray-800 mb-3">Comentários</h2>
+
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={novoComentario}
+              onChange={(e) => setNovoComentario(e.target.value)}
+              placeholder="Deixe seu comentário..."
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm"
+            />
+            <button
+              onClick={handleComentario}
+              disabled={!novoComentario.trim()}
+              className="bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            >
+              Enviar
+            </button>
+          </div>
+
+          <div className="mt-4 text-center py-8 text-gray-400 text-sm">
+            Nenhum comentário ainda. Seja o primeiro!
+          </div>
         </div>
       </div>
     </div>

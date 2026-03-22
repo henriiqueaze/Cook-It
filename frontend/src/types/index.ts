@@ -21,6 +21,7 @@ export interface Receita {
   porcoes: number;
   categoria: string;
   avaliacao: number;
+  totalAvaliacoes: number;
   autor: Usuario;
   ingredientes: Ingrediente[];
   instrucoes: string[];

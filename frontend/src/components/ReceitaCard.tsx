@@ -35,7 +35,7 @@ export function ReceitaCard({ receita }: ReceitaCardProps) {
             </span>
             <span className="flex items-center gap-1">
               <Users size={12} />
-              {receita.porcoes} porções
+              {receita.porcoes} porç.
             </span>
             <span className="flex items-center gap-1">
               <Star size={12} className="text-yellow-400 fill-yellow-400" />

@@ -41,6 +41,7 @@ export const receitasMock: Receita[] = [
     porcoes: 2,
     categoria: "Almoço",
     avaliacao: 4.5,
+    totalAvaliacoes: 12,
     autor: usuarioMock,
     ingredientes: [
       { id: 1, nome: "Frango", quantidade: "500", unidade: "g" },
@@ -68,6 +69,7 @@ export const receitasMock: Receita[] = [
     porcoes: 8,
     categoria: "Sobremesa",
     avaliacao: 5,
+    totalAvaliacoes: 28,
     autor: usuarioMock,
     ingredientes: [
       { id: 5, nome: "Cenoura", quantidade: "3", unidade: "unidades" },
@@ -97,6 +99,7 @@ export const receitasMock: Receita[] = [
     porcoes: 4,
     categoria: "Massas",
     avaliacao: 4,
+    totalAvaliacoes: 8,
     autor: usuarioMock,
     ingredientes: [
       { id: 10, nome: "Macarrão", quantidade: "400", unidade: "g" },

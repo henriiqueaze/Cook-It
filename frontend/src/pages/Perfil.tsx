@@ -84,7 +84,7 @@ export function Perfil() {
           className="mt-4 w-full flex items-center justify-center gap-2 bg-white/20 hover:bg-white/30 py-2 px-4 rounded-lg font-medium transition-colors"
         >
           <Edit size={16} />
-          Editar Perfil
+          Configurações
         </Link>
       </div>
 
