@@ -11,6 +11,7 @@ import { CriarReceita } from "@/pages/CriarReceita";
 import { Perfil } from "@/pages/Perfil";
 import { EditarPerfil } from "@/pages/EditarPerfil";
 import { RotaProtegida } from "@/components/RotaProtegida";
+import { NaoEncontrado } from "@/pages/NaoEncontrado";
 
 export function AppRoutes() {
   return (
@@ -64,7 +65,7 @@ export function AppRoutes() {
         />
         <Route path="/login" element={<Login />} />
         <Route path="/cadastro" element={<Cadastro />} />
-        <Route path="*" element={<div>Página não encontrada</div>} />
+        <Route path="*" element={<NaoEncontrado />} />
       </Routes>
     </BrowserRouter>
   );
