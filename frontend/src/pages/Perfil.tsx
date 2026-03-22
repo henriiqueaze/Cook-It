@@ -1,13 +1,5 @@
 import { useNavigate, Link } from "react-router-dom";
-import {
-  LogOut,
-  User,
-  BookOpen,
-  Heart,
-  Star,
-  Edit,
-  Settings,
-} from "lucide-react";
+import { LogOut, User, BookOpen, Heart, Star, Edit } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { receitasMock } from "../mocks";
 import { toast } from "sonner";
@@ -51,12 +43,6 @@ export function Perfil() {
       <div className="bg-linear-to-b from-orange-500 to-orange-600 text-white pt-12 pb-12 px-6 rounded-b-3xl">
         <div className="flex items-start justify-between mb-6">
           <h1 className="text-2xl font-bold">Perfil</h1>
-          <Link
-            to="/configuracoes"
-            className="p-2 hover:bg-orange-700 rounded-lg transition-colors"
-          >
-            <Settings size={20} />
-          </Link>
         </div>
 
         <div className="flex items-center gap-4">
