@@ -38,7 +38,7 @@ export function Perfil() {
         </p>
         <button
           onClick={() => navigate("/login")}
-          className="bg-green-600 text-white px-6 py-3 rounded-lg font-medium cursor-pointer"
+          className="bg-orange-600 text-white px-6 py-3 rounded-lg font-medium cursor-pointer"
         >
           Fazer login
         </button>
@@ -48,12 +48,12 @@ export function Perfil() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <div className="bg-linear-to-b from-green-600 to-green-500 text-white pt-12 pb-12 px-6 rounded-b-3xl">
+      <div className="bg-linear-to-b from-orange-500 to-orange-600 text-white pt-12 pb-12 px-6 rounded-b-3xl">
         <div className="flex items-start justify-between mb-6">
           <h1 className="text-2xl font-bold">Perfil</h1>
           <Link
             to="/configuracoes"
-            className="p-2 hover:bg-green-700 rounded-lg transition-colors"
+            className="p-2 hover:bg-orange-700 rounded-lg transition-colors"
           >
             <Settings size={20} />
           </Link>
@@ -69,13 +69,13 @@ export function Perfil() {
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
-                <User size={36} className="text-green-600" />
+                <User size={36} className="text-orange-600" />
               </div>
             )}
           </div>
           <div className="flex-1">
             <h2 className="text-xl font-bold">{usuario?.nome}</h2>
-            <p className="text-green-100 text-sm">{usuario?.email}</p>
+            <p className="text-orange-100 text-sm">{usuario?.email}</p>
           </div>
         </div>
 
@@ -91,19 +91,19 @@ export function Perfil() {
       <div className="px-6 mt-6 space-y-4">
         <div className="bg-white rounded-2xl shadow-sm p-4 grid grid-cols-3 gap-4 text-center">
           <div>
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-orange-600">
               {minhasReceitas.length}
             </div>
             <div className="text-xs text-gray-500 mt-1">Receitas</div>
           </div>
           <div>
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-orange-600">
               {meusFavoritos.length}
             </div>
             <div className="text-xs text-gray-500 mt-1">Favoritos</div>
           </div>
           <div>
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-orange-600">
               {totalAvaliacoes}
             </div>
             <div className="text-xs text-gray-500 mt-1">Avaliações</div>
@@ -115,8 +115,8 @@ export function Perfil() {
             to="/minhas-receitas"
             className="flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors"
           >
-            <div className="p-2 bg-green-100 rounded-lg">
-              <BookOpen size={20} className="text-green-600" />
+            <div className="p-2 bg-orange-100 rounded-lg">
+              <BookOpen size={20} className="text-orange-600" />
             </div>
             <div className="flex-1">
               <h3 className="font-medium">Minhas Receitas</h3>
@@ -158,7 +158,7 @@ export function Perfil() {
           <div>
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-semibold text-gray-800">Minhas Receitas</h2>
-              <Link to="/minhas-receitas" className="text-sm text-green-600">
+              <Link to="/minhas-receitas" className="text-sm text-orange-600">
                 Ver todas
               </Link>
             </div>

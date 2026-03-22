@@ -14,7 +14,7 @@ export function DetalheReceita() {
         <p className="text-gray-500">Receita não encontrada.</p>
         <button
           onClick={() => navigate(-1)}
-          className="mt-4 text-green-600 font-medium"
+          className="mt-4 text-orange-600 font-medium"
         >
           Voltar
         </button>
@@ -59,11 +59,11 @@ export function DetalheReceita() {
 
         <div className="flex gap-4 mb-6">
           <div className="flex items-center gap-1 text-sm text-gray-500">
-            <Clock size={16} className="text-green-600" />
+            <Clock size={16} className="text-orange-600" />
             {receita.tempoPreparo} min
           </div>
           <div className="flex items-center gap-1 text-sm text-gray-500">
-            <Users size={16} className="text-green-600" />
+            <Users size={16} className="text-orange-600" />
             {receita.porcoes} porções
           </div>
           <div className="flex items-center gap-1 text-sm text-gray-500">
@@ -91,7 +91,7 @@ export function DetalheReceita() {
           <ol className="space-y-3">
             {receita.instrucoes.map((passo, index) => (
               <li key={index} className="flex gap-3 text-sm">
-                <span className="shrink-0 w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                <span className="shrink-0 w-6 h-6 bg-orange-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
                   {index + 1}
                 </span>
                 <span className="text-gray-600 pt-0.5">{passo}</span>

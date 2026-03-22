@@ -116,7 +116,7 @@ export function EditarPerfil() {
                   <User size={40} className="text-gray-400" />
                 </div>
               )}
-              <div className="absolute bottom-0 right-0 p-2 bg-green-600 rounded-full shadow-lg">
+              <div className="absolute bottom-0 right-0 p-2 bg-orange-600 rounded-full shadow-lg">
                 <Camera size={18} className="text-white" />
               </div>
             </div>
@@ -126,7 +126,7 @@ export function EditarPerfil() {
               onChange={handleFotoChange}
               className="hidden"
             />
-            <span className="text-sm text-green-600 font-medium">
+            <span className="text-sm text-orange-600 font-medium">
               Alterar Foto
             </span>
           </label>
@@ -144,7 +144,7 @@ export function EditarPerfil() {
               name="nome"
               value={formData.nome}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500 text-sm"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm"
             />
           </div>
 
@@ -157,7 +157,7 @@ export function EditarPerfil() {
               name="email"
               value={formData.email}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500 text-sm"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm"
             />
           </div>
         </div>
@@ -178,7 +178,7 @@ export function EditarPerfil() {
               value={formData.senhaAtual}
               onChange={handleInputChange}
               placeholder="••••••••"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500 text-sm"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm"
             />
           </div>
 
@@ -192,7 +192,7 @@ export function EditarPerfil() {
               value={formData.novaSenha}
               onChange={handleInputChange}
               placeholder="Mínimo 6 caracteres"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500 text-sm"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm"
             />
           </div>
 
@@ -206,7 +206,7 @@ export function EditarPerfil() {
               value={formData.confirmarSenha}
               onChange={handleInputChange}
               placeholder="••••••••"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500 text-sm"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm"
             />
           </div>
         </div>
@@ -221,7 +221,7 @@ export function EditarPerfil() {
         <button
           onClick={handleSalvar}
           disabled={carregando}
-          className="w-full flex items-center justify-center gap-2 bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors cursor-pointer"
+          className="w-full flex items-center justify-center gap-2 bg-linear-to-r from-orange-500 to-orange-600 text-white py-3 rounded-lg font-medium hover:from-orange-600 hover:to-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all cursor-pointer"
         >
           <Save size={18} />
           {carregando ? "Salvando..." : "Salvar Alterações"}

@@ -22,7 +22,7 @@ export function Favoritos() {
         </p>
         <button
           onClick={() => navigate("/login")}
-          className="bg-green-600 text-white px-6 py-3 rounded-lg font-medium cursor-pointer"
+          className="bg-orange-600 text-white px-6 py-3 rounded-lg font-medium cursor-pointer"
         >
           Fazer login
         </button>
@@ -32,9 +32,9 @@ export function Favoritos() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <div className="bg-green-600 text-white pt-12 pb-6 px-6 rounded-b-3xl">
+      <div className="bg-linear-to-br from-orange-500 via-orange-600 to-red-600 text-white pt-12 pb-6 px-6 rounded-b-3xl shadow-lg">
         <h1 className="text-xl font-bold">Favoritos</h1>
-        <p className="text-green-100 text-sm mt-1">
+        <p className="text-orange-100 text-sm mt-1">
           {receitasFavoritas.length} receita
           {receitasFavoritas.length !== 1 ? "s" : ""} favorita
           {receitasFavoritas.length !== 1 ? "s" : ""}
@@ -53,7 +53,7 @@ export function Favoritos() {
             </p>
             <button
               onClick={() => navigate("/")}
-              className="bg-green-600 text-white px-6 py-3 rounded-lg font-medium cursor-pointer"
+              className="bg-orange-600 text-white px-6 py-3 rounded-lg font-medium cursor-pointer"
             >
               Explorar receitas
             </button>

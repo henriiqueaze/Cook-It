@@ -22,7 +22,7 @@ export function MinhasReceitas() {
         </p>
         <button
           onClick={() => navigate("/login")}
-          className="bg-green-600 text-white px-6 py-3 rounded-lg font-medium cursor-pointer"
+          className="bg-orange-600 text-white px-6 py-3 rounded-lg font-medium cursor-pointer"
         >
           Fazer login
         </button>
@@ -32,9 +32,9 @@ export function MinhasReceitas() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <div className="bg-green-600 text-white pt-12 pb-6 px-6 rounded-b-3xl">
+      <div className="bg-linear-to-br from-orange-500 via-orange-600 to-red-600 text-white pt-12 pb-6 px-6 rounded-b-3xl shadow-lg">
         <h1 className="text-xl font-bold">Minhas Receitas</h1>
-        <p className="text-green-100 text-sm mt-1">
+        <p className="text-orange-100 text-sm mt-1">
           {minhasReceitas.length} receita
           {minhasReceitas.length !== 1 ? "s" : ""} publicada
           {minhasReceitas.length !== 1 ? "s" : ""}
@@ -53,7 +53,7 @@ export function MinhasReceitas() {
             </p>
             <button
               onClick={() => navigate("/criar-receita")}
-              className="bg-green-600 text-white px-6 py-3 rounded-lg font-medium cursor-pointer"
+              className="bg-orange-600 text-white px-6 py-3 rounded-lg font-medium cursor-pointer"
             >
               Criar receita
             </button>
@@ -72,7 +72,7 @@ export function MinhasReceitas() {
       {minhasReceitas.length > 0 && (
         <button
           onClick={() => navigate("/criar-receita")}
-          className="fixed bottom-20 right-6 bg-green-600 text-white rounded-full p-4 shadow-lg cursor-pointer"
+          className="fixed bottom-20 right-6 bg-orange-600 text-white rounded-full p-4 shadow-lg cursor-pointer"
         >
           <Plus size={24} />
         </button>

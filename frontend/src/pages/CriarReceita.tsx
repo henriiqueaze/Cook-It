@@ -90,7 +90,7 @@ export function CriarReceita() {
         </p>
         <button
           onClick={() => navigate("/login")}
-          className="bg-green-600 text-white px-6 py-3 rounded-lg font-medium cursor-pointer"
+          className="bg-orange-600 text-white px-6 py-3 rounded-lg font-medium cursor-pointer"
         >
           Fazer login
         </button>
@@ -100,7 +100,7 @@ export function CriarReceita() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <div className="bg-green-600 text-white pt-12 pb-6 px-6 rounded-b-3xl flex items-center gap-3">
+      <div className="bg-linear-to-br from-orange-500 via-orange-600 to-red-600 text-white pt-12 pb-6 px-6 rounded-b-3xl flex items-center gap-3 shadow-lg">
         <button onClick={() => navigate(-1)} className="cursor-pointer">
           <ArrowLeft size={22} />
         </button>
@@ -126,7 +126,7 @@ export function CriarReceita() {
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
               placeholder="Ex: Frango grelhado com legumes"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500 text-sm"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm"
             />
           </div>
 
@@ -139,7 +139,7 @@ export function CriarReceita() {
               onChange={(e) => setDescricao(e.target.value)}
               placeholder="Descreva brevemente sua receita..."
               rows={3}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500 text-sm resize-none"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm resize-none"
             />
           </div>
 
@@ -153,7 +153,7 @@ export function CriarReceita() {
               value={imagemUrl}
               onChange={(e) => setImagemUrl(e.target.value)}
               placeholder="https://exemplo.com/imagem.jpg"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500 text-sm"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm"
             />
             {imagemUrl && (
               <img
@@ -174,7 +174,7 @@ export function CriarReceita() {
                 value={tempoPreparo}
                 onChange={(e) => setTempoPreparo(e.target.value)}
                 placeholder="Ex: 30"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm"
               />
             </div>
             <div>
@@ -186,7 +186,7 @@ export function CriarReceita() {
                 value={porcoes}
                 onChange={(e) => setPorcoes(e.target.value)}
                 placeholder="Ex: 4"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm"
               />
             </div>
           </div>
@@ -205,7 +205,7 @@ export function CriarReceita() {
                     atualizarIngrediente(index, "nome", e.target.value)
                   }
                   placeholder="Nome"
-                  className="col-span-1 px-3 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                  className="col-span-1 px-3 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm"
                 />
                 <input
                   type="text"
@@ -214,7 +214,7 @@ export function CriarReceita() {
                     atualizarIngrediente(index, "quantidade", e.target.value)
                   }
                   placeholder="Quantidade (ex: 1, 2, 500, etc)"
-                  className="px-3 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                  className="px-3 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm"
                 />
                 <input
                   type="text"
@@ -223,7 +223,7 @@ export function CriarReceita() {
                     atualizarIngrediente(index, "unidade", e.target.value)
                   }
                   placeholder="Unidade (g, kg, litros, colher, pitada, etc)"
-                  className="px-3 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                  className="px-3 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm"
                 />
               </div>
               {ingredientes.length > 1 && (
@@ -239,7 +239,7 @@ export function CriarReceita() {
 
           <button
             onClick={adicionarIngrediente}
-            className="flex items-center gap-2 text-green-600 text-sm font-medium cursor-pointer"
+            className="flex items-center gap-2 text-orange-600 text-sm font-medium cursor-pointer"
           >
             <Plus size={16} />
             Adicionar ingrediente
@@ -251,7 +251,7 @@ export function CriarReceita() {
 
           {instrucoes.map((instrucao, index) => (
             <div key={index} className="flex gap-2 items-start">
-              <span className="shrink-0 w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs font-bold mt-2">
+              <span className="shrink-0 w-6 h-6 bg-orange-600 text-white rounded-full flex items-center justify-center text-xs font-bold mt-2">
                 {index + 1}
               </span>
               <textarea
@@ -259,7 +259,7 @@ export function CriarReceita() {
                 onChange={(e) => atualizarInstrucao(index, e.target.value)}
                 placeholder={`Passo ${index + 1}...`}
                 rows={2}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-green-500 text-sm resize-none"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm resize-none"
               />
               {instrucoes.length > 1 && (
                 <button
@@ -274,7 +274,7 @@ export function CriarReceita() {
 
           <button
             onClick={adicionarInstrucao}
-            className="flex items-center gap-2 text-green-600 text-sm font-medium cursor-pointer"
+            className="flex items-center gap-2 text-orange-600 text-sm font-medium cursor-pointer"
           >
             <Plus size={16} />
             Adicionar passo
@@ -284,7 +284,7 @@ export function CriarReceita() {
         <button
           onClick={handleSalvar}
           disabled={carregando}
-          className="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors cursor-pointer"
+          className="w-full bg-linear-to-r from-orange-500 to-orange-600 text-white py-3 rounded-lg font-medium hover:from-orange-600 hover:to-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all cursor-pointer"
         >
           {carregando ? "Salvando..." : "Salvar Receita"}
         </button>

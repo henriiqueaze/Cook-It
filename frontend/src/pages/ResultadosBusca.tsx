@@ -76,12 +76,12 @@ export function ResultadosBusca() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <div className="bg-green-600 text-white pt-12 pb-6 px-6 rounded-b-3xl">
+      <div className="bg-linear-to-br from-orange-500 via-orange-600 to-red-600 text-white pt-12 pb-6 px-6 rounded-b-3xl shadow-lg">
         <div className="flex items-center gap-3 mb-2">
           <ChefHat className="w-7 h-7" />
           <h1 className="text-xl font-bold">Resultados da Busca</h1>
         </div>
-        <p className="text-green-100 text-sm">
+        <p className="text-orange-100 text-sm">
           Adicione ingredientes e clique em buscar para ver as receitas
         </p>
       </div>
@@ -109,7 +109,7 @@ export function ResultadosBusca() {
               }}
               onFocus={() => setMostrarSugestoes(true)}
               placeholder="Digite um ingrediente..."
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
             />
 
             {mostrarSugestoes && sugestoesFiltradas.length > 0 && (
@@ -119,7 +119,7 @@ export function ResultadosBusca() {
                     key={ing.id}
                     type="button"
                     onClick={() => adicionarIngrediente(ing.nome)}
-                    className="w-full px-4 py-2 text-left hover:bg-green-50 transition-colors text-sm"
+                    className="w-full px-4 py-2 text-left hover:bg-orange-50 transition-colors text-sm"
                   >
                     {ing.nome}
                   </button>
@@ -148,7 +148,7 @@ export function ResultadosBusca() {
           <button
             type="submit"
             disabled={ingredientesSelecionados.length === 0}
-            className="w-full mt-6 bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            className="w-full mt-6 bg-linear-to-r from-orange-500 to-orange-600 text-white py-3 rounded-lg font-medium hover:from-orange-600 hover:to-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all"
           >
             Buscar Receitas
           </button>

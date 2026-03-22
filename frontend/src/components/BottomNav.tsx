@@ -21,7 +21,7 @@ export function BottomNav() {
             key={rota}
             to={rota}
             className={`flex flex-col items-center gap-1 text-xs transition-colors ${
-              ativo ? "text-green-600" : "text-gray-400"
+              ativo ? "text-orange-600" : "text-gray-400"
             }`}
           >
             <Icone size={22} />

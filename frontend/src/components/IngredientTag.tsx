@@ -7,7 +7,7 @@ interface IngredientTagProps {
 
 export function IngredientTag({ nome, onRemover }: IngredientTagProps) {
   return (
-    <span className="flex items-center gap-1 bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
+    <span className="flex items-center gap-1 bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-sm font-medium">
       {nome}
       <button
         onClick={onRemover}

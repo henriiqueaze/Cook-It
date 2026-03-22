@@ -21,7 +21,7 @@ export function ReceitaCard({ receita }: ReceitaCardProps) {
         </div>
 
         <div className="p-3">
-          <span className="text-xs text-green-600 font-medium">
+          <span className="text-xs text-orange-600 font-medium">
             {receita.categoria}
           </span>
           <h3 className="font-semibold text-gray-800 mt-1 text-sm leading-tight">
