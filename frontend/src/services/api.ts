@@ -1,4 +1,18 @@
-const base_URL = import.meta.env.VITE_API_URL;
+﻿const base_URL = import.meta.env.VITE_API_URL;
+
+async function parseResposta<T>(resposta: Response): Promise<T> {
+  if (resposta.status === 204) {
+    return undefined as T;
+  }
+
+  const texto = await resposta.text();
+
+  if (!texto) {
+    return undefined as T;
+  }
+
+  return JSON.parse(texto) as T;
+}
 
 async function requisicao<T>(
   endpoint: string,
@@ -19,7 +33,7 @@ async function requisicao<T>(
     throw new Error(`Erro ${resposta.status}: ${resposta.statusText}`);
   }
 
-  return resposta.json();
+  return parseResposta<T>(resposta);
 }
 
 export const api = {

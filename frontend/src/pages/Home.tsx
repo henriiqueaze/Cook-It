@@ -1,5 +1,4 @@
 import { useNavigate } from "react-router-dom";
-import { ChefHat } from "lucide-react";
 import { receitasMock } from "../mocks";
 
 export function Home() {
@@ -10,7 +9,11 @@ export function Home() {
     <div className="min-h-screen bg-linear-to-b from-orange-50 via-amber-50/30 to-white pb-20">
       <div className="bg-linear-to-br from-orange-500 via-orange-600 to-red-600 text-white pt-12 pb-8 px-6 rounded-b-3xl shadow-lg">
         <div className="flex items-center gap-3 mb-2">
-          <ChefHat className="w-8 h-8" />
+          <img
+            src="/brand-cook-it.png"
+            alt="Cook-It"
+            className="w-8 h-8 object-contain"
+          />
           <h1 className="text-2xl font-bold">COOK-IT</h1>
         </div>
         <p className="text-orange-50 text-sm">

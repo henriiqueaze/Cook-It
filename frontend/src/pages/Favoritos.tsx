@@ -1,14 +1,15 @@
-import { useNavigate } from "react-router-dom";
+﻿import { useNavigate } from "react-router-dom";
 import { Heart } from "lucide-react";
 import { ReceitaCard } from "../components/ReceitaCard";
-import { receitasMock } from "../mocks";
 import { useAuth } from "../contexts/AuthContext";
+import { useFavorites } from "../contexts/FavoritesContext";
 
 export function Favoritos() {
   const navigate = useNavigate();
   const { estaAutenticado } = useAuth();
+  const { favoritos } = useFavorites();
 
-  const receitasFavoritas = receitasMock.filter((r) => r.favoritada);
+  const receitasFavoritas = favoritos;
 
   if (!estaAutenticado) {
     return (

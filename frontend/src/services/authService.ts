@@ -1,4 +1,4 @@
-import { api } from "./api";
+﻿import { api } from "./api";
 import type { RespostaAuth, Usuario } from "@/types";
 
 export const authService = {
@@ -8,6 +8,6 @@ export const authService = {
   cadastrar: (nome: string, email: string, senha: string) =>
     api.post<RespostaAuth>("/auth/cadastrar", { nome, email, senha }),
 
-  atualizarPerfil: (id: number, dados: Partial<Usuario>) =>
+  atualizarPerfil: (id: Usuario["id"], dados: Partial<Usuario>) =>
     api.put<Usuario>(`/users/${id}`, dados),
 };

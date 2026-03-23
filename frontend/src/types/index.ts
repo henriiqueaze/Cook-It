@@ -1,19 +1,21 @@
+﻿export type Id = number | string;
+
 export interface Usuario {
-  id: number;
+  id: Id;
   nome: string;
   email: string;
   avatarUrl?: string;
 }
 
 export interface Ingrediente {
-  id: number;
+  id: Id;
   nome: string;
   quantidade: string;
   unidade: string;
 }
 
 export interface Receita {
-  id: number;
+  id: Id;
   titulo: string;
   descricao: string;
   imagemUrl?: string;
@@ -30,7 +32,7 @@ export interface Receita {
 }
 
 export interface Comentario {
-  id: number;
+  id: Id;
   conteudo: string;
   avaliacao: number;
   autor: Usuario;

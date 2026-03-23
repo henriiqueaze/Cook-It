@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -11,19 +11,68 @@ import {
 } from "lucide-react";
 import { receitasMock } from "../mocks";
 import { useAuth } from "../contexts/AuthContext";
+import { useFavorites } from "../contexts/FavoritesContext";
 import { RatingStars } from "../components/AvaliacaoEstrelas";
+import { receitaService } from "../services/receitaService";
+import type { Receita } from "../types";
 import { toast } from "sonner";
+
+function buscarReceitaMock(id?: string) {
+  return receitasMock.find((receita) => String(receita.id) === String(id));
+}
 
 export function DetalheReceita() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { usuario, estaAutenticado } = useAuth();
+  const { toggleFavorite, isFavorite } = useFavorites();
 
-  const receita = receitasMock.find((r) => r.id === Number(id));
+  const receitaMock = buscarReceitaMock(id);
+  const [receita, setReceita] = useState<Receita | null>(receitaMock ?? null);
+  const [carregandoReceita, setCarregandoReceita] = useState(!receitaMock);
   const [multiplicador, setMultiplicador] = useState(1);
   const [novoComentario, setNovoComentario] = useState("");
   const [avaliacaoUsuario, setAvaliacaoUsuario] = useState(0);
-  const [favoritada, setFavoritada] = useState(receita?.favoritada ?? false);
+
+  useEffect(() => {
+    let ativo = true;
+
+    if (!id) {
+      setReceita(null);
+      setCarregandoReceita(false);
+      return;
+    }
+
+    receitaService
+      .getRecipeById(id)
+      .then((dados) => {
+        if (ativo) {
+          setReceita(dados);
+        }
+      })
+      .catch(() => {
+        if (ativo) {
+          setReceita(buscarReceitaMock(id) ?? null);
+        }
+      })
+      .finally(() => {
+        if (ativo) {
+          setCarregandoReceita(false);
+        }
+      });
+
+    return () => {
+      ativo = false;
+    };
+  }, [id]);
+
+  if (carregandoReceita && !receita) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <p className="text-gray-500">Carregando receita...</p>
+      </div>
+    );
+  }
 
   if (!receita) {
     return (
@@ -40,14 +89,20 @@ export function DetalheReceita() {
   }
 
   const ehMinhaReceita = usuario?.id === receita.autor.id;
+  const favoritada = isFavorite(receita.id);
 
   function handleFavoritar() {
+    if (!receita) {
+      return;
+    }
+
     if (!estaAutenticado) {
       toast.error("Faça login para favoritar receitas");
       navigate("/login");
       return;
     }
-    setFavoritada(!favoritada);
+
+    toggleFavorite(receita);
     toast.success(
       favoritada ? "Removido dos favoritos" : "Adicionado aos favoritos!",
     );

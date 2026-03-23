@@ -1,15 +1,17 @@
-import { useNavigate, Link } from "react-router-dom";
+﻿import { useNavigate, Link } from "react-router-dom";
 import { LogOut, User, BookOpen, Heart, Star, Edit } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import { useFavorites } from "../contexts/FavoritesContext";
 import { receitasMock } from "../mocks";
 import { toast } from "sonner";
 
 export function Perfil() {
   const navigate = useNavigate();
   const { usuario, estaAutenticado, sair } = useAuth();
+  const { favoritos } = useFavorites();
 
   const minhasReceitas = receitasMock.filter((r) => r.autor.id === usuario?.id);
-  const meusFavoritos = receitasMock.filter((r) => r.favoritada);
+  const meusFavoritos = favoritos;
   const totalAvaliacoes = 0; // lembrar sera alterado para vir do back
 
   function handleSair() {
