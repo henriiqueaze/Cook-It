@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ChefHat, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
-import { usuarioMock } from "../mocks";
+import { authService } from "@/services/authService";
 
 export function Cadastro() {
   const navigate = useNavigate();
@@ -29,7 +29,7 @@ export function Cadastro() {
     }
 
     if (senha !== confirmarSenha) {
-      setErro("As senhas não saõ iguais.");
+      setErro("As senhas não são iguais.");
       return;
     }
 
@@ -42,11 +42,11 @@ export function Cadastro() {
     setErro("");
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 800)); // msm lógica do login, qnd for utilizar da api do back ai usar o authService.cadastrar(nome, email, senha)
-      salvarAuth("token-mock-123", { ...usuarioMock, nome, email });
+      const resposta = await authService.cadastrar(nome, email, senha);
+      salvarAuth(resposta.token, resposta.usuario);
       navigate("/");
-    } catch {
-      setErro("Erro ao criar conta. Tente de novo.");
+    } catch (error) {
+      setErro(error instanceof Error ? error.message : "Erro ao criar conta. Tente de novo.");
     } finally {
       setCarregando(false);
     }
@@ -109,6 +109,7 @@ export function Cadastro() {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm pr-12"
               />
               <button
+                type="button"
                 onClick={() => setMostrarSenha(!mostrarSenha)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer"
               >

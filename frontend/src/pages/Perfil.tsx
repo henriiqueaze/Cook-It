@@ -1,18 +1,45 @@
-﻿import { useNavigate, Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { LogOut, User, BookOpen, Heart, Star, Edit } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useFavorites } from "../contexts/FavoritesContext";
-import { receitasMock } from "../mocks";
+import { receitaService } from "@/services/receitaService";
+import type { Receita } from "@/types";
 import { toast } from "sonner";
 
 export function Perfil() {
   const navigate = useNavigate();
   const { usuario, estaAutenticado, sair } = useAuth();
   const { favoritos } = useFavorites();
+  const [minhasReceitas, setMinhasReceitas] = useState<Receita[]>([]);
 
-  const minhasReceitas = receitasMock.filter((r) => r.autor.id === usuario?.id);
+  useEffect(() => {
+    let ativo = true;
+
+    if (!usuario?.id) {
+      setMinhasReceitas([]);
+      return;
+    }
+
+    receitaService
+      .minhasReceitas(usuario.id)
+      .then((lista) => {
+        if (ativo) setMinhasReceitas(lista);
+      })
+      .catch(() => {
+        if (ativo) setMinhasReceitas([]);
+      });
+
+    return () => {
+      ativo = false;
+    };
+  }, [usuario?.id]);
+
   const meusFavoritos = favoritos;
-  const totalAvaliacoes = 0; // lembrar sera alterado para vir do back
+  const totalAvaliacoes = minhasReceitas.reduce(
+    (soma, receita) => soma + (receita.totalAvaliacoes || 0),
+    0,
+  );
 
   function handleSair() {
     sair();

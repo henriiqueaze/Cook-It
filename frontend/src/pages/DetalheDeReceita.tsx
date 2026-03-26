@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -8,18 +8,15 @@ import {
   Minus,
   Plus,
   Trash2,
+  Send,
 } from "lucide-react";
-import { receitasMock } from "../mocks";
 import { useAuth } from "../contexts/AuthContext";
 import { useFavorites } from "../contexts/FavoritesContext";
 import { RatingStars } from "../components/AvaliacaoEstrelas";
 import { receitaService } from "../services/receitaService";
-import type { Receita } from "../types";
+import { comentarioService } from "@/services/comentarioService";
+import type { Comentario, Receita } from "../types";
 import { toast } from "sonner";
-
-function buscarReceitaMock(id?: string) {
-  return receitasMock.find((receita) => String(receita.id) === String(id));
-}
 
 export function DetalheReceita() {
   const { id } = useParams();
@@ -27,12 +24,13 @@ export function DetalheReceita() {
   const { usuario, estaAutenticado } = useAuth();
   const { toggleFavorite, isFavorite } = useFavorites();
 
-  const receitaMock = buscarReceitaMock(id);
-  const [receita, setReceita] = useState<Receita | null>(receitaMock ?? null);
-  const [carregandoReceita, setCarregandoReceita] = useState(!receitaMock);
+  const [receita, setReceita] = useState<Receita | null>(null);
+  const [carregandoReceita, setCarregandoReceita] = useState(true);
+  const [carregandoComentarios, setCarregandoComentarios] = useState(false);
   const [multiplicador, setMultiplicador] = useState(1);
   const [novoComentario, setNovoComentario] = useState("");
   const [avaliacaoUsuario, setAvaliacaoUsuario] = useState(0);
+  const [comentarios, setComentarios] = useState<Comentario[]>([]);
 
   useEffect(() => {
     let ativo = true;
@@ -43,28 +41,54 @@ export function DetalheReceita() {
       return;
     }
 
+    setCarregandoReceita(true);
     receitaService
-      .getRecipeById(id)
+      .buscarPorId(id)
       .then((dados) => {
-        if (ativo) {
-          setReceita(dados);
-        }
+        if (ativo) setReceita(dados);
       })
       .catch(() => {
-        if (ativo) {
-          setReceita(buscarReceitaMock(id) ?? null);
-        }
+        if (ativo) setReceita(null);
       })
       .finally(() => {
-        if (ativo) {
-          setCarregandoReceita(false);
-        }
+        if (ativo) setCarregandoReceita(false);
       });
 
     return () => {
       ativo = false;
     };
   }, [id]);
+
+  useEffect(() => {
+    let ativo = true;
+
+    if (!id) {
+      setComentarios([]);
+      return;
+    }
+
+    setCarregandoComentarios(true);
+    comentarioService
+      .listarPorReceita(id)
+      .then((lista) => {
+        if (ativo) setComentarios(Array.isArray(lista) ? lista : []);
+      })
+      .catch(() => {
+        if (ativo) setComentarios([]);
+      })
+      .finally(() => {
+        if (ativo) setCarregandoComentarios(false);
+      });
+
+    return () => {
+      ativo = false;
+    };
+  }, [id]);
+
+  const favoritada = useMemo(() => {
+    if (!receita) return false;
+    return isFavorite(receita.id);
+  }, [receita, isFavorite]);
 
   if (carregandoReceita && !receita) {
     return (
@@ -89,12 +113,9 @@ export function DetalheReceita() {
   }
 
   const ehMinhaReceita = usuario?.id === receita.autor.id;
-  const favoritada = isFavorite(receita.id);
 
-  function handleFavoritar() {
-    if (!receita) {
-      return;
-    }
+  async function handleFavoritar() {
+    if (!receita) return;
 
     if (!estaAutenticado) {
       toast.error("Faça login para favoritar receitas");
@@ -102,36 +123,64 @@ export function DetalheReceita() {
       return;
     }
 
-    toggleFavorite(receita);
-    toast.success(
-      favoritada ? "Removido dos favoritos" : "Adicionado aos favoritos!",
-    );
+    try {
+      const adicionou = await toggleFavorite(receita);
+      toast.success(
+        adicionou ? "Adicionado aos favoritos!" : "Removido dos favoritos",
+      );
+    } catch {
+      toast.error("Não foi possível atualizar os favoritos");
+    }
   }
 
-  function handleAvaliar(nota: number) {
+  async function handleAvaliar(nota: number) {
     if (!estaAutenticado) {
       toast.error("Faça login para avaliar receitas");
       navigate("/login");
       return;
     }
-    setAvaliacaoUsuario(nota);
-    toast.success("Avaliação enviada!");
+
+    try {
+      await receitaService.avaliar(receita.id, nota);
+      setAvaliacaoUsuario(nota);
+      toast.success("Avaliação enviada!");
+    } catch {
+      toast.error("Não foi possível enviar sua avaliação");
+    }
   }
 
-  function handleComentario() {
+  async function handleComentario() {
     if (!estaAutenticado) {
       toast.error("Faça login para comentar");
       navigate("/login");
       return;
     }
+
     if (!novoComentario.trim()) return;
-    toast.success("Comentário adicionado!");
-    setNovoComentario("");
+
+    try {
+      const comentario = await comentarioService.adicionar(
+        receita.id,
+        novoComentario.trim(),
+        avaliacaoUsuario,
+      );
+
+      setComentarios((atual) => [comentario, ...atual]);
+      toast.success("Comentário adicionado!");
+      setNovoComentario("");
+    } catch {
+      toast.error("Não foi possível adicionar o comentário");
+    }
   }
 
-  function handleDeletar() {
-    toast.success("Receita deletada!");
-    navigate("/minhas-receitas");
+  async function handleDeletar() {
+    try {
+      await receitaService.deletar(receita.id);
+      toast.success("Receita deletada!");
+      navigate("/minhas-receitas");
+    } catch {
+      toast.error("Não foi possível deletar a receita");
+    }
   }
 
   return (
@@ -177,7 +226,7 @@ export function DetalheReceita() {
           <p className="text-sm text-gray-500 mt-1">{receita.descricao}</p>
         </div>
 
-        <div className="flex gap-4">
+        <div className="flex gap-4 flex-wrap">
           <div className="flex items-center gap-1 text-sm text-gray-500">
             <Clock size={16} className="text-orange-600" />
             {receita.tempoPreparo} min
@@ -200,7 +249,7 @@ export function DetalheReceita() {
 
         <div className="bg-white rounded-2xl p-4 shadow-sm">
           <h2 className="font-semibold text-gray-800 mb-3">Ajustar Porções</h2>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-wrap">
             <button
               onClick={() => setMultiplicador(Math.max(1, multiplicador - 1))}
               className="w-8 h-8 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-orange-200 transition-colors"
@@ -286,12 +335,37 @@ export function DetalheReceita() {
               disabled={!novoComentario.trim()}
               className="bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
             >
-              Enviar
+              <Send size={16} />
             </button>
           </div>
 
-          <div className="mt-4 text-center py-8 text-gray-400 text-sm">
-            Nenhum comentário ainda. Seja o primeiro!
+          <div className="mt-4 space-y-3">
+            {carregandoComentarios ? (
+              <div className="text-sm text-gray-400 py-4 text-center">
+                Carregando comentários...
+              </div>
+            ) : comentarios.length === 0 ? (
+              <div className="text-center py-8 text-gray-400 text-sm">
+                Nenhum comentário ainda. Seja o primeiro!
+              </div>
+            ) : (
+              comentarios.map((comentario) => (
+                <div
+                  key={comentario.id}
+                  className="rounded-xl border border-gray-100 p-3"
+                >
+                  <div className="flex items-center justify-between gap-3 mb-1">
+                    <span className="font-medium text-sm text-gray-700">
+                      {comentario.autor.nome}
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      {comentario.avaliacao}★
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600">{comentario.conteudo}</p>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>

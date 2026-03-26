@@ -1,65 +1,71 @@
 package com.p5Project.cookIt.controllers;
 
 import com.p5Project.cookIt.controllers.docs.UserControllerDocs;
-import com.p5Project.cookIt.models.dtos.UserDTO;
+import com.p5Project.cookIt.dtos.CommentDTO;
+import com.p5Project.cookIt.dtos.RecipeDTO;
+import com.p5Project.cookIt.dtos.UserDTO;
+import com.p5Project.cookIt.dtos.requests.UpdateUserRequest;
+import com.p5Project.cookIt.security.UserPrincipal;
+import com.p5Project.cookIt.services.CommentService;
+import com.p5Project.cookIt.services.RecipeService;
 import com.p5Project.cookIt.services.UserService;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.hateoas.EntityModel;
-import org.springframework.hateoas.PagedModel;
-import org.springframework.http.MediaType;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.UUID;
+import java.util.List;
 
+@Tag(name = "Usuários", description = "Gerenciamento de usuários")
 @RestController
-@RequestMapping("/user")
-@Tag(name = "User", description = "Endpoints para gerenciamento de usuários")
+@RequestMapping("/api/users")
+@RequiredArgsConstructor
 public class UserController implements UserControllerDocs {
 
-    @Autowired
-    private UserService service;
+    private final UserService userService;
+    private final RecipeService recipeService;
+    private final CommentService commentService;
 
-    @GetMapping(value = "/{id}", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE})
+    @GetMapping("/favorites")
     @Override
-    public ResponseEntity<UserDTO> findUserById(@PathVariable UUID id) {
-        return ResponseEntity.ok(service.findUserById(id));
+    public List<String> getFavorites(@AuthenticationPrincipal UserPrincipal user) {
+        return userService.getFavorites(user.getId());
     }
 
-    @GetMapping(produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE})
+    @PostMapping("/favorites/{recipeId}")
     @Override
-    public ResponseEntity<PagedModel<EntityModel<UserDTO>>> findAllUsers(@RequestParam(value = "page", defaultValue = "0") Integer page, @RequestParam(value = "size", defaultValue = "12") Integer size, @RequestParam(value = "direction", defaultValue = "asc") String direction) {
-        var sortDirection = "desc".equalsIgnoreCase(direction) ? Sort.Direction.DESC : Sort.Direction.ASC;
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, "name"));
-        return ResponseEntity.ok(service.findAllUsers(pageable));
+    public ResponseEntity<Void> addFavorite(@AuthenticationPrincipal UserPrincipal user, @PathVariable String recipeId) {
+        userService.addFavorite(user.getId(), recipeId);
+        return ResponseEntity.ok().build();
     }
 
-    @PostMapping(produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE}, consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE})
+    @DeleteMapping("/favorites/{recipeId}")
     @Override
-    public ResponseEntity<UserDTO> createUser(@RequestBody UserDTO user) {
-        return ResponseEntity.ok(service.createUser(user));
-    }
-
-    @PutMapping(produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE}, consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE})
-    @Override
-    public ResponseEntity<UserDTO> updateUser(@RequestBody UserDTO user) {
-        return ResponseEntity.ok(service.updateUser(user));
-    }
-
-    @PatchMapping(value = "/{id}", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE}, consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE})
-    @Override
-    public ResponseEntity<UserDTO> updateUserField(@PathVariable UUID id, @RequestBody UserDTO tag) {
-        return ResponseEntity.ok(service.updateUserField(id, tag));
-    }
-
-    @DeleteMapping(value = "/{id}")
-    @Override
-    public ResponseEntity<?> deleteUser(@PathVariable UUID id) {
-        service.deleteUser(id);
+    public ResponseEntity<Void> removeFavorite(@AuthenticationPrincipal UserPrincipal user, @PathVariable String recipeId) {
+        userService.removeFavorite(user.getId(), recipeId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{userId}/recipes")
+    @Override
+    public List<RecipeDTO> getUserRecipes(@PathVariable String userId) {
+        return recipeService.getUserRecipes(userId);
+    }
+
+    @PutMapping("/{id}")
+    @Override
+    public UserDTO updateUser(@PathVariable String id, @AuthenticationPrincipal UserPrincipal user, @RequestBody UpdateUserRequest request) {
+        if (!user.getId().equals(id)) {
+            throw new RuntimeException("You cannot update another user");
+        }
+
+        return userService.updateUser(id, request);
+    }
+
+    @GetMapping("/{userId}/comments")
+    @Override
+    public List<CommentDTO> getUserComments(@PathVariable String userId) {
+        return commentService.getUserComments(userId);
     }
 }

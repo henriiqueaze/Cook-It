@@ -1,5 +1,4 @@
-﻿import { api } from "./api";
-import { receitasMock } from "@/mocks";
+import { api } from "./api";
 import type { Id, Receita } from "@/types";
 import {
   adaptBackendRecipeListToReceitas,
@@ -12,72 +11,107 @@ interface BackendRecipeListResponse {
   content?: BackendRecipeDTO[];
 }
 
-function buscarReceitaMockPorId(id: Id) {
-  return receitasMock.find((receita) => String(receita.id) === String(id));
+export interface NovaReceitaPayload {
+  titulo: string;
+  descricao: string;
+  imagemUrl?: string;
+  tempoPreparo: number;
+  porcoes: number;
+  ingredientes: Array<{
+    nome: string;
+    quantidade: string;
+    unidade: string;
+  }>;
+  instrucoes: string[];
+  categoria?: string;
 }
 
-function buscarReceitasMockPorIngredientes(ingredientes: string[]) {
-  if (ingredientes.length === 0) {
-    return receitasMock;
-  }
+function montarPayloadBackend(receita: NovaReceitaPayload) {
+  const payload = {
+    name: receita.titulo,
+    description: receita.descricao,
+    imageUrl: receita.imagemUrl || undefined,
+    prepTime: Number(receita.tempoPreparo),
+    servings: Number(receita.porcoes),
+    instructions: receita.instrucoes,
 
-  return receitasMock.filter((receita) =>
-    receita.ingredientes.some((ingrediente) =>
-      ingredientes.some((termo) =>
-        ingrediente.nome.toLowerCase().includes(termo.toLowerCase()),
-      ),
-    ),
-  );
+    category: receita.categoria,
+
+    ingredients: receita.ingredientes.map((ingrediente) => ({
+      ingredient: ingrediente.nome,
+      quantity: parseFloat(ingrediente.quantidade) || 0,
+      unit: ingrediente.unidade,
+    })),
+  };
+  return payload;
+}
+
+export function mapBackendToFrontend(receita: any) {
+  return {
+    id: receita.id,
+    titulo: receita.name,
+    descricao: "", 
+    imagemUrl: receita.image,
+    tempoPreparo: receita.prepTime,
+    porcoes: receita.servings ?? 0,
+    categoria: receita.category ?? "",
+
+    avaliacao: receita.rating ?? 0,
+    totalAvaliacoes: receita.ratingsCount ?? 0,
+
+    autor: {
+      id: receita.authorId,
+      nome: receita.authorName,
+      avatarUrl: receita.authorPhoto,
+      email: "", 
+    },
+
+    ingredientes:
+      receita.ingredients?.map((i: any) => ({
+        id: crypto.randomUUID(),
+        nome: i.ingredient,
+        quantidade: String(i.quantity),
+        unidade: i.unit,
+      })) ?? [],
+
+    instrucoes: receita.instructions ?? [],
+
+    criadoEm: receita.createdAt,
+  };
 }
 
 export const receitaService = {
-  getRecipes: async () => {
-    try {
-      const resposta = await api.get<BackendRecipeListResponse>("/recipe");
-      const receitas = adaptBackendRecipeListToReceitas(resposta);
-      return receitas.length > 0 ? receitas : receitasMock;
-    } catch {
-      return receitasMock;
-    }
+  listar: async () => {
+    const resposta = await api.get<BackendRecipeListResponse>("/recipes");
+    return adaptBackendRecipeListToReceitas(resposta);
   },
 
-  getRecipeById: async (id: Id) => {
-    try {
-      const resposta = await api.get<BackendRecipeDTO>(`/recipe/${id}`);
-      return adaptBackendRecipeToReceita(resposta);
-    } catch {
-      const receitaMock = buscarReceitaMockPorId(id);
-
-      if (!receitaMock) {
-        throw new Error("Receita não encontrada");
-      }
-
-      return receitaMock;
-    }
+  buscarPorId: async (id: Id) => {
+    const resposta = await api.get<any>(`/recipes/${id}`);
+    return mapBackendToFrontend(resposta);
   },
-
-  listar: () => receitaService.getRecipes(),
 
   buscarPorIngredientes: async (ingredientes: string[]) => {
-    try {
-      return await api.post<Receita[]>("/recipes/search", {
-        ingredients: ingredientes,
-        exactMatch: false,
-        sortBy: "compatibility",
-      });
-    } catch {
-      return buscarReceitasMockPorIngredientes(ingredientes);
-    }
+    return api.post<Receita[]>("/recipes/search", {
+      ingredients: ingredientes,
+      exactMatch: false,
+      sortBy: "compatibility",
+    });
   },
 
-  buscarPorId: (id: Id) => receitaService.getRecipeById(id),
+  criar: (receita: NovaReceitaPayload) =>
+    api.post<Receita>("/recipes", montarPayloadBackend(receita)),
 
-  criar: (receita: Partial<Receita>) => api.post<Receita>("/receitas", receita),
+  atualizar: (id: Id, receita: Partial<Receita>) =>
+    api.put<Receita>(`/recipes/${id}`, receita),
 
-  atualizer: (id: Id, receita: Partial<Receita>) =>
-    api.put<Receita>(`/receitas/${id}`, receita),
+  deletar: (id: Id) => api.delete<void>(`/recipes/${id}`),
 
-  deletar: (id: Id) => api.delete<void>(`/receitas/${id}`),
+  avaliar: (id: Id, nota: number) =>
+    api.post<void>(`/recipes/${id}/rate`, { rating: nota, nota }),
 
-  minhasReceitas: () => api.get<Receita[]>("/receitas/minhas"),
+  minhasReceitas: async (userId: Id) => {
+    const resposta = await api.get<any[]>(`/users/${userId}/recipes`);
+    return resposta.map(mapBackendToFrontend);
+  },
 };

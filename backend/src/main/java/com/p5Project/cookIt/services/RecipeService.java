@@ -1,98 +1,142 @@
 package com.p5Project.cookIt.services;
 
-import com.p5Project.cookIt.controllers.RecipeController;
-import com.p5Project.cookIt.controllers.RecipeIngredientController;
-import com.p5Project.cookIt.exceptions.IdNotFoundException;
-import com.p5Project.cookIt.mappers.Mapper;
-import com.p5Project.cookIt.models.dtos.RecipeDTO;
-import com.p5Project.cookIt.models.dtos.RecipeIngredientDTO;
-import com.p5Project.cookIt.models.entities.Recipe;
-import com.p5Project.cookIt.repositories.RecipeRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.p5Project.cookIt.dtos.RecipeDTO;
+import com.p5Project.cookIt.dtos.requests.CreateRecipeRequest;
+import com.p5Project.cookIt.dtos.requests.SearchRecipeRequest;
+import com.p5Project.cookIt.dtos.requests.UpdateRecipeRequest;
+import com.p5Project.cookIt.entities.Recipe;
+import com.p5Project.cookIt.entities.User;
+import com.p5Project.cookIt.exceptions.ResourceNotFoundException;
+import com.p5Project.cookIt.mappers.RecipeIngredientMapper;
+import com.p5Project.cookIt.mappers.RecipeMapper;
+import com.p5Project.cookIt.repository.RecipeRepository;
+import com.p5Project.cookIt.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PagedResourcesAssembler;
-import org.springframework.hateoas.EntityModel;
-import org.springframework.hateoas.Link;
-import org.springframework.hateoas.PagedModel;
-import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
-import java.util.UUID;
 
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
-
+@RequiredArgsConstructor
 @Service
 public class RecipeService {
 
-    @Autowired
-    private RecipeRepository repository;
+    private final RecipeRepository recipeRepository;
+    private final UserRepository userRepository;
+    private final RecipeMapper recipeMapper;
+    private final RecipeIngredientMapper recipeIngredientMapper;
 
-    @Autowired
-    private PagedResourcesAssembler<RecipeDTO> assembler;
+    public Page<RecipeDTO> getAllRecipes(Pageable pageable) {
+        Page<Recipe> page = recipeRepository.findAll(pageable);
 
-    public RecipeDTO findRecipeById(UUID id) {
-        var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
-        return Mapper.parseItem(entity, RecipeDTO.class);
+        return page.map(recipeMapper::toDTO);
     }
 
-    public PagedModel<EntityModel<RecipeDTO>> findAllRecipes(Pageable pageable) {
-        var entities = repository.findAll(pageable);
+    @Transactional
+    public RecipeDTO getRecipe(String id) {
+        Recipe recipe = recipeRepository.findByIdWithDetails(id).orElseThrow(() -> new ResourceNotFoundException("Recipe not found!"));
 
-        var commentsWithLinks = entities.map(recipe -> {
-            var dto = Mapper.parseItem(recipe, RecipeDTO.class);
-            addHATEOASLinks(dto);
-            return dto;
-        });
-
-        Link findAllLink = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(RecipeController.class).findAllRating(pageable.getPageNumber(), pageable.getPageSize(), String.valueOf(pageable.getSort()))).withSelfRel();
-        return assembler.toModel(commentsWithLinks, findAllLink);
+        recipe.getIngredients().size();
+        recipe.getInstructions().size();
+        return recipeMapper.toDTO(recipe);
     }
 
-    public RecipeDTO createRecipe(RecipeDTO recipe) {
-        var entity = Mapper.parseItem(recipe, Recipe.class);
-        repository.save(entity);
-        return Mapper.parseItem(entity, RecipeDTO.class);
+    public RecipeDTO createRecipe(CreateRecipeRequest request, String userId) {
+        User author = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("Recipe not found!"));
+
+        Recipe recipe = new Recipe();
+        recipe.setName(request.getName());
+        recipe.setPrepTime(request.getPrepTime());
+        recipe.setIngredients(request.getIngredients().stream().map(recipeIngredientMapper::toEntity).toList());
+
+        recipe.setInstructions(request.getInstructions());
+        recipe.setImage(request.getImage());
+        recipe.setAuthor(author);
+        recipe.setCreatedAt(LocalDateTime.now());
+        recipe.setRating(0.0);
+        recipe.setRatingsCount(0);
+
+        recipeRepository.save(recipe);
+
+        return recipeMapper.toDTO(recipe);
     }
 
-    public RecipeDTO updateRecipe(RecipeDTO recipe) {
-        var entity = repository.findById(recipe.getId()).orElseThrow(() -> new IdNotFoundException("Id not found!"));
+    public RecipeDTO updateRecipe(String id, UpdateRecipeRequest request) {
+        Recipe recipe = recipeRepository.findById(id).orElseThrow();
 
-        Mapper.mapNonNullFields(recipe, entity);
-        repository.save(entity);
+        recipeMapper.updateRecipeFromRequest(request, recipe);
+        recipeRepository.save(recipe);
 
-        var dto = Mapper.parseItem(entity, RecipeDTO.class);
-        addHATEOASLinks(dto);
-
-        return dto;
+        return recipeMapper.toDTO(recipe);
     }
 
-    public RecipeDTO updateRecipeField(UUID id, RecipeDTO recipe) {
-        var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
-
-        Mapper.mapNonNullFields(recipe, entity);
-        repository.save(entity);
-
-        var dto = Mapper.parseItem(entity, RecipeDTO.class);
-        addHATEOASLinks(dto);
-
-        return dto;
+    public void deleteRecipe(String id) {
+        recipeRepository.deleteById(id);
     }
 
-    public void deleteRecipe(UUID id) {
-        var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found"));
-        var dto = Mapper.parseItem(entity, RecipeDTO.class);
-        addHATEOASLinks(dto);
-        repository.delete(entity);
+    @Transactional
+    public void rateRecipe(String recipeId, String userId, int rating) {
+
+        Recipe recipe = recipeRepository.findById(recipeId).orElseThrow(() -> new ResourceNotFoundException("Recipe not found"));
+
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        Integer previousRating = user.getRatings().get(recipe);
+
+        double total = recipe.getRating() * recipe.getRatingsCount();
+
+        if (previousRating == null) {
+            recipe.setRatingsCount(recipe.getRatingsCount() + 1);
+        }
+
+        else {
+            total -= previousRating;
+        }
+
+        total += rating;
+        recipe.setRating(total / recipe.getRatingsCount());
+        user.getRatings().put(recipe, rating);
+
+        userRepository.save(user);
+        recipeRepository.save(recipe);
     }
 
-    private void addHATEOASLinks(RecipeDTO recipe) {
-        recipe.add(linkTo(methodOn(RecipeController.class).findRatingById(recipe.getId())).withSelfRel().withType("GET"));
-        //comment.add(linkTo(methodOn(CommentController.class).findAllComments(0, 12, "asc")).withRel("findAll").withType("GET"));
-        recipe.add(linkTo(methodOn(RecipeController.class).createRating(recipe)).withRel("create").withType("POST"));
-        recipe.add(linkTo(methodOn(RecipeController.class).updateRating(recipe)).withRel("update").withType("PUT"));
-        recipe.add(linkTo(methodOn(RecipeController.class).updateRatingField(recipe.getId(), recipe)).withRel("patch").withType("PATCH"));
-        recipe.add(linkTo(methodOn(RecipeController.class).deleteRating(recipe.getId())).withRel("delete").withType("DELETE"));
+    public List<RecipeDTO> searchRecipes(SearchRecipeRequest request) {
+
+        List<String> ingredients = request.getIngredients().stream().map(String::toLowerCase).toList();
+        List<Recipe> recipes = recipeRepository.findByIngredientNames(ingredients);
+
+        if (Boolean.TRUE.equals(request.getExactMatch())) {
+            recipes = recipes.stream().filter(r -> r.getIngredients().stream().allMatch(i -> ingredients.contains(i.getIngredient().toLowerCase()))).toList();
+        }
+
+        recipes = sortRecipes(recipes, request.getSortBy());
+
+        return recipes.stream().map(recipeMapper::toDTO).toList();
+    }
+
+    @Transactional
+    public List<RecipeDTO> getUserRecipes(String userId) {
+        return recipeMapper.toDTOList(recipeRepository.findByAuthor_Id(userId));
+    }
+
+    private List<Recipe> sortRecipes(List<Recipe> recipes, String sortBy) {
+
+        if (sortBy == null) return recipes;
+
+        return switch (sortBy) {
+
+            case "time" -> recipes.stream().sorted(Comparator.comparing(Recipe::getPrepTime)).toList();
+
+            case "rating" -> recipes.stream().sorted(Comparator.comparing(Recipe::getRating).reversed()).toList();
+
+            case "popular" -> recipes.stream().sorted(Comparator.comparing(Recipe::getRatingsCount).reversed()).toList();
+
+            default -> recipes;
+        };
     }
 }

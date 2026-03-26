@@ -1,9 +1,35 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { receitasMock } from "../mocks";
+import { receitaService } from "@/services/receitaService";
+import type { Receita } from "@/types";
 
 export function Home() {
   const navigate = useNavigate();
-  const totalReceitas = receitasMock.length;
+  const [receitas, setReceitas] = useState<Receita[]>([]);
+  const [carregando, setCarregando] = useState(true);
+
+  useEffect(() => {
+    let ativo = true;
+
+    receitaService
+      .listar()
+      .then((lista) => {
+        if (ativo) setReceitas(lista);
+      })
+      .catch(() => {
+        if (ativo) setReceitas([]);
+      })
+      .finally(() => {
+        if (ativo) setCarregando(false);
+      });
+
+    return () => {
+      ativo = false;
+    };
+  }, []);
+
+  const totalReceitas = receitas.length;
+  const destaques = receitas.slice(0, 4);
 
   return (
     <div className="min-h-screen bg-linear-to-b from-orange-50 via-amber-50/30 to-white pb-20">
@@ -43,60 +69,43 @@ export function Home() {
             <h2 className="font-semibold text-lg">Receitas em Destaque</h2>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            {[
-              {
-                titulo: "Massas",
-                tempo: "15 min",
-                cor: "bg-orange-500",
-                ingredientes: "farinha,macarrão",
-                img: "https://images.unsplash.com/photo-1711539137930-3fa2ae6cec60?w=400",
-              },
-              {
-                titulo: "Saladas",
-                tempo: "10 min",
-                cor: "bg-green-500",
-                ingredientes: "alface,tomate",
-                img: "https://images.unsplash.com/photo-1606757819934-d61a9f7279d5?w=400",
-              },
-              {
-                titulo: "Pizzas",
-                tempo: "30 min",
-                cor: "bg-red-500",
-                ingredientes: "farinha,queijo",
-                img: "https://images.unsplash.com/photo-1614442299071-3724ede4a446?w=400",
-              },
-              {
-                titulo: "Smoothies",
-                tempo: "5 min",
-                cor: "bg-purple-500",
-                ingredientes: "banana,aveia",
-                img: "https://images.unsplash.com/photo-1626380334631-14b534b0c1d8?w=400",
-              },
-            ].map(({ titulo, tempo, cor, ingredientes, img }) => (
-              <div
-                key={titulo}
-                onClick={() => navigate(`/busca?ingredientes=${ingredientes}`)}
-                className="bg-white rounded-xl overflow-hidden shadow-md cursor-pointer hover:shadow-lg transition-shadow"
-              >
-                <div className="relative h-32 overflow-hidden">
-                  <img
-                    src={img}
-                    alt={titulo}
-                    className="w-full h-full object-cover"
-                  />
+          {carregando ? (
+            <div className="text-sm text-gray-500">Carregando receitas...</div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4">
+              {destaques.length > 0 ? (
+                destaques.map((receita) => (
                   <div
-                    className={`absolute top-2 right-2 ${cor} text-white text-xs px-2 py-1 rounded-full font-medium`}
+                    key={receita.id}
+                    onClick={() => navigate(`/receita/${receita.id}`)}
+                    className="bg-white rounded-xl overflow-hidden shadow-md cursor-pointer hover:shadow-lg transition-shadow"
                   >
-                    {tempo}
+                    <div className="relative h-32 overflow-hidden bg-gray-100">
+                      {receita.imagemUrl ? (
+                        <img
+                          src={receita.imagemUrl}
+                          alt={receita.titulo}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : null}
+                      <div className="absolute top-2 right-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                        {receita.tempoPreparo} min
+                      </div>
+                    </div>
+                    <div className="p-3">
+                      <h3 className="font-medium text-sm line-clamp-2">
+                        {receita.titulo}
+                      </h3>
+                    </div>
                   </div>
+                ))
+              ) : (
+                <div className="col-span-2 text-sm text-gray-500">
+                  Nenhuma receita encontrada no momento.
                 </div>
-                <div className="p-3">
-                  <h3 className="font-medium text-sm">{titulo}</h3>
-                </div>
-              </div>
-            ))}
-          </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="mt-8 grid grid-cols-2 gap-4">

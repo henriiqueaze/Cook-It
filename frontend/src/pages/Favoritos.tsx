@@ -1,4 +1,4 @@
-﻿import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Heart } from "lucide-react";
 import { ReceitaCard } from "../components/ReceitaCard";
 import { useAuth } from "../contexts/AuthContext";
@@ -7,9 +7,7 @@ import { useFavorites } from "../contexts/FavoritesContext";
 export function Favoritos() {
   const navigate = useNavigate();
   const { estaAutenticado } = useAuth();
-  const { favoritos } = useFavorites();
-
-  const receitasFavoritas = favoritos;
+  const { favoritos, carregandoFavoritos } = useFavorites();
 
   if (!estaAutenticado) {
     return (
@@ -36,14 +34,16 @@ export function Favoritos() {
       <div className="bg-linear-to-br from-orange-500 via-orange-600 to-red-600 text-white pt-12 pb-6 px-6 rounded-b-3xl shadow-lg">
         <h1 className="text-xl font-bold">Favoritos</h1>
         <p className="text-orange-100 text-sm mt-1">
-          {receitasFavoritas.length} receita
-          {receitasFavoritas.length !== 1 ? "s" : ""} favorita
-          {receitasFavoritas.length !== 1 ? "s" : ""}
+          {favoritos.length} receita
+          {favoritos.length !== 1 ? "s" : ""} favorita
+          {favoritos.length !== 1 ? "s" : ""}
         </p>
       </div>
 
       <div className="px-6 mt-6">
-        {receitasFavoritas.length === 0 && (
+        {carregandoFavoritos ? (
+          <div className="text-sm text-gray-500">Carregando favoritos...</div>
+        ) : favoritos.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <Heart size={48} className="text-gray-300 mb-4" />
             <h2 className="text-lg font-semibold text-gray-500">
@@ -59,11 +59,9 @@ export function Favoritos() {
               Explorar receitas
             </button>
           </div>
-        )}
-
-        {receitasFavoritas.length > 0 && (
+        ) : (
           <div className="grid grid-cols-2 gap-3">
-            {receitasFavoritas.map((receita) => (
+            {favoritos.map((receita) => (
               <ReceitaCard key={receita.id} receita={receita} />
             ))}
           </div>

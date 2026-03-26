@@ -3,8 +3,9 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Search, ChefHat, SlidersHorizontal } from "lucide-react";
 import { ReceitaCard } from "@/components/ReceitaCard";
 import { IngredientTag } from "@/components/IngredientTag";
-import { ingredientesMock, receitasMock } from "@/mocks";
-import type { Receita } from "@/types";
+import { ingredienteService } from "@/services/ingredienteService";
+import { receitaService } from "@/services/receitaService";
+import type { Ingrediente, Receita } from "@/types";
 
 type OpcaoOrdenacao = "compatibilidade" | "tempo" | "avaliacao";
 
@@ -24,56 +25,92 @@ export function ResultadosBusca() {
   const [mostrarSugestoes, setMostrarSugestoes] = useState(false);
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [ordenacao, setOrdenacao] = useState<OpcaoOrdenacao>("compatibilidade");
+  const [ingredientesDisponiveis, setIngredientesDisponiveis] = useState<Ingrediente[]>([]);
+  const [resultados, setResultados] = useState<Receita[]>([]);
+  const [carregando, setCarregando] = useState(false);
+  const [erro, setErro] = useState("");
 
   useEffect(() => {
     setIngredientesSelecionados(ingredientesDaUrl);
     setIngredientesBuscados(ingredientesDaUrl);
   }, [ingredientesDaUrl]);
 
+  useEffect(() => {
+    let ativo = true;
+
+    ingredienteService
+      .listar()
+      .then((lista) => {
+        if (ativo) setIngredientesDisponiveis(lista);
+      })
+      .catch(() => {
+        if (ativo) setIngredientesDisponiveis([]);
+      });
+
+    return () => {
+      ativo = false;
+    };
+  }, []);
+
   const sugestoesFiltradas = useMemo(() => {
     if (!busca) return [];
-    return ingredientesMock
+    return ingredientesDisponiveis
       .filter(
         (ing) =>
           ing.nome.toLowerCase().includes(busca.toLowerCase()) &&
           !ingredientesSelecionados.includes(ing.nome),
       )
       .slice(0, 5);
-  }, [busca, ingredientesSelecionados]);
+  }, [busca, ingredientesSelecionados, ingredientesDisponiveis]);
 
-  const resultados = useMemo(() => {
-    if (ingredientesBuscados.length === 0) return [];
-
-    const comCompatibilidade = receitasMock
+  const resultadosOrdenados = useMemo(() => {
+    const comCompatibilidade = resultados
       .map((receita) => {
         const matches = receita.ingredientes.filter((i) =>
           ingredientesBuscados.some((ingred) =>
             i.nome.toLowerCase().includes(ingred.toLowerCase()),
           ),
         ).length;
-        const compatibilidade = Math.round(
-          (matches / receita.ingredientes.length) * 100,
-        );
+
+        const compatibilidade = receita.ingredientes.length
+          ? Math.round((matches / receita.ingredientes.length) * 100)
+          : 0;
+
         return { ...receita, compatibilidade };
       })
       .filter((r) => r.compatibilidade > 0);
 
     switch (ordenacao) {
       case "tempo":
-        return [...comCompatibilidade].sort(
-          (a, b) => a.tempoPreparo - b.tempoPreparo,
-        );
+        return [...comCompatibilidade].sort((a, b) => a.tempoPreparo - b.tempoPreparo);
       case "avaliacao":
-        return [...comCompatibilidade].sort(
-          (a, b) => b.avaliacao - a.avaliacao,
-        );
+        return [...comCompatibilidade].sort((a, b) => b.avaliacao - a.avaliacao);
       case "compatibilidade":
       default:
-        return [...comCompatibilidade].sort(
-          (a, b) => b.compatibilidade - a.compatibilidade,
-        );
+        return [...comCompatibilidade].sort((a, b) => b.compatibilidade - a.compatibilidade);
     }
-  }, [ingredientesBuscados, ordenacao]);
+  }, [resultados, ordenacao, ingredientesBuscados]);
+
+  async function buscarReceitas(ingredientes: string[]) {
+    setCarregando(true);
+    setErro("");
+
+    try {
+      const retorno = await receitaService.buscarPorIngredientes(ingredientes);
+      setResultados(Array.isArray(retorno) ? retorno : []);
+    } catch {
+      setResultados([]);
+      setErro("Não foi possível buscar as receitas agora.");
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  useEffect(() => {
+    if (ingredientesDaUrl.length > 0) {
+      void buscarReceitas(ingredientesDaUrl);
+    }
+  }, [ingredientesDaUrl]);
 
   function adicionarIngrediente(nome: string) {
     if (!ingredientesSelecionados.includes(nome)) {
@@ -96,6 +133,7 @@ export function ResultadosBusca() {
     }
     setIngredientesBuscados(ingredientesSelecionados);
     navigate(`/busca${params.toString() ? `?${params.toString()}` : ""}`);
+    void buscarReceitas(ingredientesSelecionados);
   }
 
   return (
@@ -204,14 +242,20 @@ export function ResultadosBusca() {
 
           <button
             type="submit"
-            disabled={ingredientesSelecionados.length === 0}
+            disabled={ingredientesSelecionados.length === 0 || carregando}
             className="w-full mt-6 bg-linear-to-r from-orange-500 to-orange-600 text-white py-3 rounded-lg font-medium hover:from-orange-600 hover:to-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all"
           >
-            Buscar Receitas
+            {carregando ? "Buscando..." : "Buscar Receitas"}
           </button>
         </form>
 
         <div className="mt-6">
+          {erro && (
+            <div className="mb-4 bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg">
+              {erro}
+            </div>
+          )}
+
           {ingredientesBuscados.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <ChefHat size={48} className="text-gray-300 mb-4" />
@@ -222,7 +266,7 @@ export function ResultadosBusca() {
                 As receitas vão aparecer somente após a busca.
               </p>
             </div>
-          ) : resultados.length === 0 ? (
+          ) : resultadosOrdenados.length === 0 && !carregando ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <ChefHat size={48} className="text-gray-300 mb-4" />
               <h2 className="text-lg font-semibold text-gray-500">
@@ -235,7 +279,7 @@ export function ResultadosBusca() {
           ) : (
             <>
               <p className="text-sm text-gray-500 mb-4">
-                {resultados.length} receita(s) encontrada(s) — ordenado por{" "}
+                {resultadosOrdenados.length} receita(s) encontrada(s) — ordenado por{" "}
                 <span className="text-orange-600 font-medium">
                   {ordenacao === "compatibilidade"
                     ? "compatibilidade"
@@ -245,11 +289,11 @@ export function ResultadosBusca() {
                 </span>
               </p>
               <div className="grid grid-cols-2 gap-3">
-                {resultados.map((receita) => (
+                {resultadosOrdenados.map((receita) => (
                   <ReceitaCard
                     key={receita.id}
                     receita={receita as Receita}
-                    compatibilidade={receita.compatibilidade}
+                    compatibilidade={(receita as Receita & { compatibilidade?: number }).compatibilidade}
                   />
                 ))}
               </div>

@@ -1,70 +1,81 @@
 package com.p5Project.cookIt.controllers;
 
 import com.p5Project.cookIt.controllers.docs.RecipeControllerDocs;
-import com.p5Project.cookIt.models.dtos.RecipeDTO;
+import com.p5Project.cookIt.dtos.CommentDTO;
+import com.p5Project.cookIt.dtos.RecipeDTO;
+import com.p5Project.cookIt.dtos.requests.CreateRecipeRequest;
+import com.p5Project.cookIt.dtos.requests.RateRecipeRequest;
+import com.p5Project.cookIt.dtos.requests.SearchRecipeRequest;
+import com.p5Project.cookIt.dtos.requests.UpdateRecipeRequest;
+import com.p5Project.cookIt.security.UserPrincipal;
+import com.p5Project.cookIt.services.CommentService;
 import com.p5Project.cookIt.services.RecipeService;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.hateoas.EntityModel;
-import org.springframework.hateoas.PagedModel;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.UUID;
+import java.util.List;
 
+@Tag(name = "Receitas", description = "Gerenciamento de receitas")
+@RequiredArgsConstructor
 @RestController
-@RequestMapping("/recipe")
-@Tag(name = "Recipe", description = "Endpoints para gerenciamento de receitas")
+@RequestMapping("/api/recipes")
 public class RecipeController implements RecipeControllerDocs {
 
-    @Autowired
-    private RecipeService service;
+    private final RecipeService recipeService;
+    private final CommentService commentService;
 
-    @GetMapping(value = "/{id}", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE})
+    @GetMapping
     @Override
-    public RecipeDTO findRatingById(@Parameter(description = "ID da receita", required = true) @PathVariable UUID id) {
-        return service.findRecipeById(id);
+    public Page<RecipeDTO> getAll(Pageable pageable) {
+        return recipeService.getAllRecipes(pageable);
     }
 
-    @GetMapping(produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE})
+    @GetMapping("/{id}")
     @Override
-    public ResponseEntity<PagedModel<EntityModel<RecipeDTO>>> findAllRating(@RequestParam(value = "page", defaultValue = "0") Integer page, @RequestParam(value = "size", defaultValue = "12") Integer size, @RequestParam(value = "direction", defaultValue = "asc") String direction) {
-        var sortDirection = "desc".equalsIgnoreCase(direction) ? Sort.Direction.DESC : Sort.Direction.ASC;
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, "name"));
-        return ResponseEntity.ok(service.findAllRecipes(pageable));
+    public RecipeDTO getRecipe(@PathVariable String id) {
+        return recipeService.getRecipe(id);
     }
 
-    @PostMapping(produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE}, consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE})
+    @PostMapping
     @Override
-    public RecipeDTO createRating(@RequestBody(description = "Objeto contendo os dados da receita", required = true, content = @Content(schema = @Schema(implementation = RecipeDTO.class))) @org.springframework.web.bind.annotation.RequestBody RecipeDTO recipe) {
-        return service.createRecipe(recipe);
+    public RecipeDTO create(@Valid @RequestBody CreateRecipeRequest request, @AuthenticationPrincipal UserPrincipal user) {
+        return recipeService.createRecipe(request, user.getId());
     }
 
-    @PutMapping(produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE}, consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE})
+    @PutMapping("/{id}")
     @Override
-    public RecipeDTO updateRating(@RequestBody(description = "Objeto contendo os dados atualizados da receita", required = true, content = @Content(schema = @Schema(implementation = RecipeDTO.class))) @org.springframework.web.bind.annotation.RequestBody RecipeDTO recipe) {
-        return service.updateRecipe(recipe);
+    public RecipeDTO update(@PathVariable String id, @RequestBody UpdateRecipeRequest request) {
+        return recipeService.updateRecipe(id, request);
     }
 
-    @PatchMapping(value = "/{id}", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE}, consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE})
+    @DeleteMapping("/{id}")
     @Override
-    public RecipeDTO updateRatingField(@Parameter(description = "ID da receita", required = true) @PathVariable UUID id,
-                                       @RequestBody(description = "Objeto contendo apenas os campos que serão atualizados", required = true, content = @Content(schema = @Schema(implementation = RecipeDTO.class))) @org.springframework.web.bind.annotation.RequestBody RecipeDTO recipe) {
-        return service.updateRecipeField(id, recipe);
+    public void delete(@PathVariable String id) {
+        recipeService.deleteRecipe(id);
     }
 
-    @DeleteMapping(value = "/{id}")
+    @PostMapping("/search")
     @Override
-    public ResponseEntity<?> deleteRating(@Parameter(description = "ID da receita", required = true) @PathVariable UUID id) {
-        service.deleteRecipe(id);
-        return ResponseEntity.noContent().build();
+    public List<RecipeDTO> search(@RequestBody SearchRecipeRequest request) {
+        return recipeService.searchRecipes(request);
+    }
+
+    @PostMapping("/{id}/rate")
+    @Override
+    public void rateRecipe(@PathVariable String id,
+                           @Valid @RequestBody RateRecipeRequest request,
+                           @AuthenticationPrincipal UserPrincipal user) {
+        recipeService.rateRecipe(id, user.getId(), request.getRating());
+    }
+
+    @GetMapping("/{recipeId}/comments")
+    @Override
+    public List<CommentDTO> getRecipeComments(@PathVariable String recipeId) {
+        return commentService.getRecipeComments(recipeId);
     }
 }

@@ -16,7 +16,14 @@ const AuthContext = createContext<AuthContextData>({} as AuthContextData);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [usuario, setUsuario] = useState<Usuario | null>(() => {
     const salvo = localStorage.getItem("usuario");
-    return salvo ? JSON.parse(salvo) : null;
+
+    if (!salvo || salvo === "undefined") return null;
+
+    try {
+      return JSON.parse(salvo);
+    } catch {
+      return null;
+    }
   });
 
   const [token, setToken] = useState<string | null>(() => {

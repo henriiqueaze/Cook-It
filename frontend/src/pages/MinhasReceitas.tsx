@@ -1,14 +1,44 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, ChefHat } from "lucide-react";
 import { ReceitaCard } from "../components/ReceitaCard";
-import { receitasMock } from "../mocks";
 import { useAuth } from "../contexts/AuthContext";
+import { receitaService } from "@/services/receitaService";
+import type { Receita } from "@/types";
 
 export function MinhasReceitas() {
+  
   const navigate = useNavigate();
   const { usuario, estaAutenticado } = useAuth();
+  const [minhasReceitas, setMinhasReceitas] = useState<Receita[]>([]);
+  const [carregando, setCarregando] = useState(true);
+  
+  useEffect(() => {
+    let ativo = true;
 
-  const minhasReceitas = receitasMock.filter((r) => r.autor.id === usuario?.id);
+    if (!usuario?.id) {
+      setMinhasReceitas([]);
+      setCarregando(false);
+      return;
+    }
+
+    setCarregando(true);
+    receitaService
+      .minhasReceitas(usuario.id)
+      .then((lista) => {
+        if (ativo) setMinhasReceitas(lista);
+      })
+      .catch(() => {
+        if (ativo) setMinhasReceitas([]);
+      })
+      .finally(() => {
+        if (ativo) setCarregando(false);
+      });
+
+    return () => {
+      ativo = false;
+    };
+  }, [usuario?.id]);
 
   if (!estaAutenticado) {
     return (
@@ -42,7 +72,9 @@ export function MinhasReceitas() {
       </div>
 
       <div className="px-6 mt-6">
-        {minhasReceitas.length === 0 && (
+        {carregando ? (
+          <div className="text-sm text-gray-500">Carregando receitas...</div>
+        ) : minhasReceitas.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <ChefHat size={48} className="text-gray-300 mb-4" />
             <h2 className="text-lg font-semibold text-gray-500">
@@ -58,9 +90,7 @@ export function MinhasReceitas() {
               Criar receita
             </button>
           </div>
-        )}
-
-        {minhasReceitas.length > 0 && (
+        ) : (
           <div className="grid grid-cols-2 gap-3">
             {minhasReceitas.map((receita) => (
               <ReceitaCard key={receita.id} receita={receita} />

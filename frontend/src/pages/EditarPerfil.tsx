@@ -1,20 +1,18 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Camera, User, Mail, Lock, Save } from "lucide-react";
+import { ArrowLeft, Camera, User, Mail, Save } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../contexts/AuthContext";
+import { authService } from "@/services/authService";
 
 export function EditarPerfil() {
   const navigate = useNavigate();
-  const { usuario, atualizarUsuario, sair } = useAuth();
+  const { usuario, atualizarUsuario } = useAuth();
   const [carregando, setCarregando] = useState(false);
 
   const [formData, setFormData] = useState({
     nome: usuario?.nome || "",
     email: usuario?.email || "",
-    senhaAtual: "",
-    novaSenha: "",
-    confirmarSenha: "",
   });
 
   const [fotoPreview, setFotoPreview] = useState(usuario?.avatarUrl || "");
@@ -23,9 +21,7 @@ export function EditarPerfil() {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setFotoPreview(reader.result as string);
-      };
+      reader.onloadend = () => setFotoPreview(reader.result as string);
       reader.readAsDataURL(file);
     }
   }
@@ -39,47 +35,26 @@ export function EditarPerfil() {
     setCarregando(true);
 
     try {
-      if (formData.novaSenha) {
-        if (formData.novaSenha.length < 6) {
-          toast.error("A nova senha deve ter pelo menos 6 caracteres");
-          return;
-        }
-        if (formData.novaSenha !== formData.confirmarSenha) {
-          toast.error("As senhas não são iguais.");
-          return;
-        }
-        if (!formData.senhaAtual) {
-          toast.error("Digite sua senha atual para alterar a senha.");
-          return;
-        }
-      }
-
       const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
       if (!emailValido) {
         toast.error("Digite um e-mail válido");
         return;
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 800)); //lembrar de substituir para authService.autilizarPerfil() qnd for integrar no back
+      if (!usuario?.id) {
+        toast.error("Usuário não encontrado");
+        return;
+      }
 
-      atualizarUsuario({
-        ...usuario!,
+      const atualizado = await authService.atualizarPerfil(usuario.id, {
         nome: formData.nome,
         email: formData.email,
         avatarUrl: fotoPreview,
       });
 
+      atualizarUsuario(atualizado);
       toast.success("Perfil atualizado com sucesso!");
-
-      if (formData.novaSenha) {
-        toast.success("Senha alterada! Faça login novamente.");
-        setTimeout(() => {
-          sair();
-          navigate("/login");
-        }, 1500);
-      } else {
-        navigate("/perfil");
-      }
+      navigate("/perfil");
     } catch {
       toast.error("Erro ao atualizar perfil. Tente novamente.");
     } finally {
@@ -162,59 +137,10 @@ export function EditarPerfil() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm p-4 space-y-3">
-          <h2 className="font-semibold text-gray-800">Alterar Senha</h2>
-          <p className="text-sm text-gray-400">
-            Deixe em branco se não deseja alterar
-          </p>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              <Lock size={14} className="inline mr-1" /> Senha Atual
-            </label>
-            <input
-              type="password"
-              name="senhaAtual"
-              value={formData.senhaAtual}
-              onChange={handleInputChange}
-              placeholder="••••••••"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              <Lock size={14} className="inline mr-1" /> Nova Senha
-            </label>
-            <input
-              type="password"
-              name="novaSenha"
-              value={formData.novaSenha}
-              onChange={handleInputChange}
-              placeholder="Mínimo 6 caracteres"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              <Lock size={14} className="inline mr-1" /> Confirmar Nova Senha
-            </label>
-            <input
-              type="password"
-              name="confirmarSenha"
-              value={formData.confirmarSenha}
-              onChange={handleInputChange}
-              placeholder="••••••••"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm"
-            />
-          </div>
-        </div>
-
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
           <p className="text-sm text-blue-800">
-            <strong>Atenção:</strong> Se você alterar sua senha, será necessário
-            fazer login novamente.
+            <strong>Atenção:</strong> a troca de senha ainda não foi exposta no
+            backend atual.
           </p>
         </div>
 

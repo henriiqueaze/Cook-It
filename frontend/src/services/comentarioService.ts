@@ -1,20 +1,27 @@
-﻿import { api } from "./api";
+import { api } from "./api";
 import type { Comentario, Receita } from "@/types";
 
 export const comentarioService = {
   listarPorReceita: (receitaId: Receita["id"]) =>
-    api.get<Comentario[]>(`/receitas/${receitaId}/comentarios`),
+    api.get<Comentario[]>(`/recipes/${receitaId}/comments`),
 
   adicionar: (
     receitaId: Receita["id"],
     conteudo: string,
     avaliacao: number,
   ) =>
-    api.post<Comentario>(`/receitas/${receitaId}/comentarios`, {
+    api.post<Comentario>("/comments", {
+      recipeId: receitaId,
+      receitaId,
+      content: conteudo,
       conteudo,
+      rating: avaliacao,
       avaliacao,
     }),
 
-  deleter: (receitaId: Receita["id"], comentarioId: Comentario["id"]) =>
-    api.delete<void>(`/receitas/${receitaId}/comentarios/${comentarioId}`),
+  atualizar: (comentarioId: Comentario["id"], dados: Partial<Comentario>) =>
+    api.put<Comentario>(`/comments/${comentarioId}`, dados),
+
+  deletar: (comentarioId: Comentario["id"]) =>
+    api.delete<void>(`/comments/${comentarioId}`),
 };

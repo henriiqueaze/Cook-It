@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ChefHat, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
-import { usuarioMock } from "../mocks";
+import { authService } from "@/services/authService";
 
 export function Login() {
   const navigate = useNavigate();
@@ -30,11 +30,15 @@ export function Login() {
     setErro("");
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 800)); // lembrar que isso é o mock e qnd for a rota msm colocar authService.login(email, senha)
-      salvarAuth("token-mock-123", usuarioMock);
-      navigate("/");
-    } catch {
-      setErro("E-mail ou senha incorretos.");
+      const resposta = await authService.login(email, senha);
+      salvarAuth(resposta.token, resposta.user);
+      navigate("/"); 
+    } catch (error: any) {
+      if (error.message === "Invalid credentials") {
+        setErro("Email ou senha inválidos");
+      } else {
+        setErro("Erro ao fazer login. Tente novamente.");
+      }
     } finally {
       setCarregando(false);
     }
@@ -84,6 +88,7 @@ export function Login() {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm pr-12"
               />
               <button
+                type="button"
                 onClick={() => setMostrarSenha(!mostrarSenha)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer"
               >

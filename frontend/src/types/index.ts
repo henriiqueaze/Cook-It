@@ -41,5 +41,5 @@ export interface Comentario {
 
 export interface RespostaAuth {
   token: string;
-  usuario: Usuario;
+  user: Usuario;
 }

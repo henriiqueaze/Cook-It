@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Plus, X } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import { receitaService } from "@/services/receitaService";
 
 export function CriarReceita() {
   const navigate = useNavigate();
@@ -61,7 +62,7 @@ export function CriarReceita() {
       return;
     }
 
-    if (instrucoes.some((i) => !i)) {
+    if (instrucoes.some((i) => !i.trim())) {
       setErro("Preencha todas as instruções.");
       return;
     }
@@ -70,9 +71,18 @@ export function CriarReceita() {
     setErro("");
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 800)); // lembrar de substituir qnd for tirar do mock receitaService.criar
+      await receitaService.criar({
+        titulo,
+        descricao,
+        imagemUrl,
+        tempoPreparo: Number(tempoPreparo),
+        porcoes: Number(porcoes),
+        ingredientes,
+        instrucoes,
+      });
       navigate("/minhas-receitas");
-    } catch {
+    } catch (error: any){
+      console.error("ERRO COMPLETO:", error);
       setErro("Erro ao salvar receita. Tente novamente.");
     } finally {
       setCarregando(false);
@@ -143,7 +153,6 @@ export function CriarReceita() {
             />
           </div>
 
-          {/* lembrar de colocar upload futuramente quando for integrar com o back */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               URL da Imagem
