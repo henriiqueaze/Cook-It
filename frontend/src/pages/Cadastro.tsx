@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ChefHat, Eye, EyeOff } from "lucide-react";
+import { toast } from "sonner";
 import { useAuth } from "../contexts/AuthContext";
 import { authService } from "@/services/authService";
 
@@ -44,6 +45,7 @@ export function Cadastro() {
     try {
       const resposta = await authService.cadastrar(nome, email, senha);
       salvarAuth(resposta.token, resposta.user);
+      toast.success("Conta criada com sucesso!");
       navigate("/");
     } catch (error) {
       setErro(
