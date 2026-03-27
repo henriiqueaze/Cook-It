@@ -2,7 +2,6 @@ import { api } from "./api";
 import type { Id, Receita } from "@/types";
 import {
   adaptBackendRecipeListToReceitas,
-  adaptBackendRecipeToReceita,
   type BackendRecipeDTO,
 } from "./receitaAdapter";
 
@@ -46,11 +45,11 @@ function montarPayloadBackend(receita: NovaReceitaPayload) {
   return payload;
 }
 
-export function mapBackendToFrontend(receita: any) {
+export function mapBackendToFrontend(receita: any): Receita {
   return {
     id: receita.id,
     titulo: receita.name,
-    descricao: "", 
+    descricao: "",
     imagemUrl: receita.image,
     tempoPreparo: receita.prepTime,
     porcoes: receita.servings ?? 0,
@@ -63,7 +62,7 @@ export function mapBackendToFrontend(receita: any) {
       id: receita.authorId,
       nome: receita.authorName,
       avatarUrl: receita.authorPhoto,
-      email: "", 
+      email: "",
     },
 
     ingredientes:
@@ -86,7 +85,7 @@ export const receitaService = {
     return adaptBackendRecipeListToReceitas(resposta);
   },
 
-  buscarPorId: async (id: Id) => {
+  buscarPorId: async (id: Id): Promise<Receita> => {
     const resposta = await api.get<any>(`/recipes/${id}`);
     return mapBackendToFrontend(resposta);
   },

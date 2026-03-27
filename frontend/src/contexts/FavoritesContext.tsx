@@ -1,8 +1,16 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import type { ReactNode } from "react";
 import type { Receita } from "@/types";
 import { useAuth } from "./AuthContext";
 import { favoritoService } from "@/services/favoritoService";
+import { receitaService } from "@/services/receitaService";
 
 interface FavoritesContextData {
   favoritos: Receita[];
@@ -21,52 +29,71 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
   const [favoritos, setFavoritos] = useState<Receita[]>([]);
   const [carregandoFavoritos, setCarregandoFavoritos] = useState(false);
 
-  async function recarregarFavoritos() {
+  const recarregarFavoritos = useCallback(async () => {
     if (!estaAutenticado) {
       setFavoritos([]);
+      setCarregandoFavoritos(false);
       return;
     }
 
     setCarregandoFavoritos(true);
+
     try {
-      const lista = await favoritoService.listar();
-      setFavoritos(Array.isArray(lista) ? lista : []);
+      const idsFavoritos = await favoritoService.listar();
+
+      const receitasPossiveis = await Promise.all(
+        idsFavoritos.map(async (id) => {
+          try {
+            return await receitaService.buscarPorId(id);
+          } catch {
+            return null;
+          }
+        }),
+      );
+
+      const receitasValidas = receitasPossiveis.filter(
+        (receita): receita is Receita => receita !== null,
+      );
+
+      setFavoritos(receitasValidas);
     } catch {
       setFavoritos([]);
     } finally {
       setCarregandoFavoritos(false);
     }
-  }
+  }, [estaAutenticado]);
 
   useEffect(() => {
     void recarregarFavoritos();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [estaAutenticado]);
+  }, [recarregarFavoritos]);
 
-  function isFavorite(id: Receita["id"]) {
-    return favoritos.some((receita) => String(receita.id) === String(id));
-  }
+  const isFavorite = useCallback(
+    (id: Receita["id"]) => {
+      return favoritos.some((receita) => String(receita.id) === String(id));
+    },
+    [favoritos],
+  );
 
-  async function toggleFavorite(receita: Receita) {
-    const jaFavorita = isFavorite(receita.id);
+  const toggleFavorite = useCallback(
+    async (receita: Receita) => {
+      const jaFavorita = isFavorite(receita.id);
 
-    if (jaFavorita) {
-      await favoritoService.remover(receita.id);
-      setFavoritos((favoritosAtuais) =>
-        favoritosAtuais.filter(
-          (favorita) => String(favorita.id) !== String(receita.id),
-        ),
-      );
-      return false;
-    }
+      if (jaFavorita) {
+        await favoritoService.remover(receita.id);
+        setFavoritos((favoritosAtuais) =>
+          favoritosAtuais.filter(
+            (favorita) => String(favorita.id) !== String(receita.id),
+          ),
+        );
+        return false;
+      }
 
-    await favoritoService.adicionar(receita.id);
-    setFavoritos((favoritosAtuais) => [
-      ...favoritosAtuais,
-      { ...receita, favoritada: true },
-    ]);
-    return true;
-  }
+      await favoritoService.adicionar(receita.id);
+      setFavoritos((favoritosAtuais) => [...favoritosAtuais, receita]);
+      return true;
+    },
+    [isFavorite],
+  );
 
   const valor = useMemo(
     () => ({
@@ -76,7 +103,13 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
       isFavorite,
       recarregarFavoritos,
     }),
-    [favoritos, carregandoFavoritos],
+    [
+      favoritos,
+      carregandoFavoritos,
+      toggleFavorite,
+      isFavorite,
+      recarregarFavoritos,
+    ],
   );
 
   return (
