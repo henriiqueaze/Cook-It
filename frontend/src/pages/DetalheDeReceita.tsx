@@ -134,6 +134,8 @@ export function DetalheReceita() {
   }
 
   async function handleAvaliar(nota: number) {
+    if (!receita) return;
+
     if (!estaAutenticado) {
       toast.error("Faça login para avaliar receitas");
       navigate("/login");
@@ -150,6 +152,8 @@ export function DetalheReceita() {
   }
 
   async function handleComentario() {
+    if (!receita) return;
+
     if (!estaAutenticado) {
       toast.error("Faça login para comentar");
       navigate("/login");
@@ -174,6 +178,8 @@ export function DetalheReceita() {
   }
 
   async function handleDeletar() {
+    if (!receita) return;
+
     try {
       await receitaService.deletar(receita.id);
       toast.success("Receita deletada!");
@@ -356,7 +362,7 @@ export function DetalheReceita() {
                 >
                   <div className="flex items-center justify-between gap-3 mb-1">
                     <span className="font-medium text-sm text-gray-700">
-                      {comentario.autor.nome}
+                      {comentario.autor.name}
                     </span>
                     <span className="text-xs text-gray-400">
                       {comentario.avaliacao}★

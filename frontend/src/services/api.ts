@@ -5,8 +5,6 @@ type QueryValue = string | number | boolean | null | undefined;
 function montarUrl(endpoint: string, params?: Record<string, QueryValue>) {
   const urlBase = `${base_URL}${endpoint}`;
 
-  const token = localStorage.getItem("token");
-  
   if (!params) return urlBase;
 
   const searchParams = new URLSearchParams();

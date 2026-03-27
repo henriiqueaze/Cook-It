@@ -11,11 +11,11 @@ export function EditarPerfil() {
   const [carregando, setCarregando] = useState(false);
 
   const [formData, setFormData] = useState({
-    nome: usuario?.nome || "",
+    nome: usuario?.name || "",
     email: usuario?.email || "",
   });
 
-  const [fotoPreview, setFotoPreview] = useState(usuario?.avatarUrl || "");
+  const [fotoPreview, setFotoPreview] = useState(usuario?.photo || "");
 
   function handleFotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -47,9 +47,9 @@ export function EditarPerfil() {
       }
 
       const atualizado = await authService.atualizarPerfil(usuario.id, {
-        nome: formData.nome,
+        name: formData.nome,
         email: formData.email,
-        avatarUrl: fotoPreview,
+        photo: fotoPreview,
       });
 
       atualizarUsuario(atualizado);

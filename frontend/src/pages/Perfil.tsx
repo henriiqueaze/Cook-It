@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { LogOut, User, BookOpen, Heart, Star, Edit } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useFavorites } from "../contexts/FavoritesContext";
+import { ReceitaCard } from "../components/ReceitaCard";
 import { receitaService } from "@/services/receitaService";
 import type { Receita } from "@/types";
 import { toast } from "sonner";
@@ -13,6 +14,7 @@ export function Perfil() {
   const { favoritos } = useFavorites();
   const [minhasReceitas, setMinhasReceitas] = useState<Receita[]>([]);
 
+  console.log(usuario);
   useEffect(() => {
     let ativo = true;
 
@@ -76,10 +78,10 @@ export function Perfil() {
 
         <div className="flex items-center gap-4">
           <div className="w-20 h-20 rounded-full bg-white overflow-hidden border-4 border-white shadow-lg">
-            {usuario?.avatarUrl ? (
+            {usuario?.photo ? (
               <img
-                src={usuario.avatarUrl}
-                alt={usuario.nome}
+                src={usuario.photo}
+                alt={usuario.name}
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -89,7 +91,7 @@ export function Perfil() {
             )}
           </div>
           <div className="flex-1">
-            <h2 className="text-xl font-bold">{usuario?.nome}</h2>
+            <h2 className="text-xl font-bold">{usuario?.name}</h2>
             <p className="text-orange-100 text-sm">{usuario?.email}</p>
           </div>
         </div>
@@ -179,18 +181,7 @@ export function Perfil() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               {minhasReceitas.slice(0, 2).map((receita) => (
-                <Link key={receita.id} to={`/receita/${receita.id}`}>
-                  {receita.imagemUrl && (
-                    <img
-                      src={receita.imagemUrl}
-                      alt={receita.titulo}
-                      className="w-full aspect-square object-cover rounded-xl"
-                    />
-                  )}
-                  <h3 className="mt-2 text-sm font-medium line-clamp-1">
-                    {receita.titulo}
-                  </h3>
-                </Link>
+                <ReceitaCard key={receita.id} receita={receita} />
               ))}
             </div>
           </div>

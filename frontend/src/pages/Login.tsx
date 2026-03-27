@@ -50,7 +50,7 @@ export function Login() {
         <div className="flex justify-center mb-3">
           <ChefHat size={48} />
         </div>
-        <h1 className="text-3xl font-bold">Receitas Inteligentes</h1>
+        <h1 className="text-3xl font-bold">Cook-It</h1>
         <p className="text-orange-100 text-2xl mt-2">Entre na sua conta</p>
       </div>
 

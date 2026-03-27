@@ -42,7 +42,7 @@ export function Home() {
           />
           <h1 className="text-2xl font-bold">COOK-IT</h1>
         </div>
-        <p className="text-orange-50 text-sm">
+        <p className="text-orange-50 text-sm text-center">
           Encontre receitas com os ingredientes que você tem
         </p>
       </div>

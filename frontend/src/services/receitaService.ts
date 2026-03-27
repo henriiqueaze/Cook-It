@@ -60,8 +60,8 @@ export function mapBackendToFrontend(receita: any): Receita {
 
     autor: {
       id: receita.authorId,
-      nome: receita.authorName,
-      avatarUrl: receita.authorPhoto,
+      name: receita.authorName,
+      photo: receita.authorPhoto,
       email: "",
     },
 

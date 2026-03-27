@@ -2,9 +2,12 @@
 
 export interface Usuario {
   id: Id;
-  nome: string;
+  name: string;
   email: string;
-  avatarUrl?: string;
+  photo?: string | null;
+  createdRecipes?: Id[];
+  favoriteRecipes?: Id[];
+  ratings?: any;
 }
 
 export interface Ingrediente {

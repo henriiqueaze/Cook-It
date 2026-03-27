@@ -11,10 +11,10 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       manifest: {
-        name: "Receitas Inteligentes",
+        name: "Cook-It",
         short_name: "Receitas",
         description: "Encontre receitas com os ingredientes que você tem",
-        theme_color: "#16a34a",
+        theme_color: "#F34100",
         background_color: "#ffffff",
         display: "standalone",
         orientation: "portrait",

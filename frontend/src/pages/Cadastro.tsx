@@ -43,10 +43,14 @@ export function Cadastro() {
 
     try {
       const resposta = await authService.cadastrar(nome, email, senha);
-      salvarAuth(resposta.token, resposta.usuario);
+      salvarAuth(resposta.token, resposta.user);
       navigate("/");
     } catch (error) {
-      setErro(error instanceof Error ? error.message : "Erro ao criar conta. Tente de novo.");
+      setErro(
+        error instanceof Error
+          ? error.message
+          : "Erro ao criar conta. Tente de novo.",
+      );
     } finally {
       setCarregando(false);
     }
@@ -58,7 +62,7 @@ export function Cadastro() {
         <div className="flex justify-center mb-3">
           <ChefHat size={48} />
         </div>
-        <h1 className="text-3xl font-bold">Receitas Inteligentes</h1>
+        <h1 className="text-3xl font-bold">Cook-It</h1>
         <p className="text-orange-100 text-2xl mt-2">Crie sua conta</p>
       </div>
 

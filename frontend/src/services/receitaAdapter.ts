@@ -60,9 +60,9 @@ interface BackendRecipeListResponse {
 function adaptarAutor(author?: BackendUserDTO): Usuario {
   return {
     id: author?.id ?? "sem-autor",
-    nome: author?.displayName ?? "Usuário",
+    name: author?.displayName ?? "Usuário",
     email: author?.email ?? "",
-    avatarUrl: author?.avatarUrl,
+    photo: author?.avatarUrl,
   };
 }
 
@@ -102,9 +102,7 @@ function calcularMediaAvaliacoes(ratings?: BackendRatingDTO[]) {
   return Number((total / ratings.length).toFixed(1));
 }
 
-export function adaptBackendRecipeToReceita(
-  recipe: BackendRecipeDTO,
-): Receita {
+export function adaptBackendRecipeToReceita(recipe: BackendRecipeDTO): Receita {
   const fallbackId = recipe.title ?? "receita-sem-id";
 
   return {
