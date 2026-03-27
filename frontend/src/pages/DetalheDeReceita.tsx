@@ -32,6 +32,44 @@ export function DetalheReceita() {
   const [avaliacaoUsuario, setAvaliacaoUsuario] = useState(0);
   const [comentarios, setComentarios] = useState<Comentario[]>([]);
 
+  const chaveAvaliacao = useMemo(() => {
+    if (!id || !usuario?.id) return null;
+    return `rating-recipe-${id}-user-${usuario.id}`;
+  }, [id, usuario?.id]);
+
+  function handleVoltar() {
+    const historico = window.history.state as { idx?: number } | null;
+
+    if (typeof historico?.idx === "number" && historico.idx > 0) {
+      navigate(-1);
+      return;
+    }
+
+    navigate("/");
+  }
+
+  useEffect(() => {
+    if (!chaveAvaliacao) {
+      setAvaliacaoUsuario(0);
+      return;
+    }
+
+    const salvo = localStorage.getItem(chaveAvaliacao);
+    if (!salvo) {
+      setAvaliacaoUsuario(0);
+      return;
+    }
+
+    const nota = Number(salvo);
+    if (Number.isNaN(nota) || nota < 1 || nota > 5) {
+      localStorage.removeItem(chaveAvaliacao);
+      setAvaliacaoUsuario(0);
+      return;
+    }
+
+    setAvaliacaoUsuario(nota);
+  }, [chaveAvaliacao]);
+
   useEffect(() => {
     let ativo = true;
 
@@ -103,7 +141,7 @@ export function DetalheReceita() {
       <div className="flex flex-col items-center justify-center min-h-screen">
         <p className="text-gray-500">Receita não encontrada.</p>
         <button
-          onClick={() => navigate(-1)}
+          onClick={handleVoltar}
           className="mt-4 text-orange-600 font-medium"
         >
           Voltar
@@ -145,8 +183,17 @@ export function DetalheReceita() {
     try {
       await receitaService.avaliar(receita.id, nota);
       setAvaliacaoUsuario(nota);
+
+      if (chaveAvaliacao) {
+        localStorage.setItem(chaveAvaliacao, String(nota));
+      }
+
+      const atualizada = await receitaService.buscarPorId(receita.id);
+      setReceita(atualizada);
+
       toast.success("Avaliação enviada!");
-    } catch {
+    } catch (error) {
+      console.error(error);
       toast.error("Não foi possível enviar sua avaliação");
     }
   }
@@ -200,7 +247,7 @@ export function DetalheReceita() {
           />
         )}
         <button
-          onClick={() => navigate(-1)}
+          onClick={handleVoltar}
           className="absolute top-4 left-4 bg-white/90 rounded-full p-2 shadow-md cursor-pointer"
         >
           <ArrowLeft size={20} className="text-gray-700" />

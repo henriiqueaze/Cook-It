@@ -36,13 +36,30 @@ public class RecipeService {
         return page.map(recipeMapper::toDTO);
     }
 
-    @Transactional
-    public RecipeDTO getRecipe(String id) {
-        Recipe recipe = recipeRepository.findByIdWithDetails(id).orElseThrow(() -> new ResourceNotFoundException("Recipe not found!"));
+    @Transactional(readOnly = true)
+    public RecipeDTO getRecipe(String id, String userId) {
+        Recipe recipe = recipeRepository.findByIdWithDetails(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Recipe not found!"));
 
         recipe.getIngredients().size();
         recipe.getInstructions().size();
-        return recipeMapper.toDTO(recipe);
+
+        RecipeDTO dto = recipeMapper.toDTO(recipe);
+
+        if (userId != null) {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found!"));
+
+            Integer avaliacaoUsuario = user.getRatings().entrySet().stream()
+                    .filter(entry -> entry.getKey().getId().equals(recipe.getId()))
+                    .map(java.util.Map.Entry::getValue)
+                    .findFirst()
+                    .orElse(0);
+
+            dto.setAvaliacaoUsuario(avaliacaoUsuario);
+        }
+
+        return dto;
     }
 
     public RecipeDTO createRecipe(CreateRecipeRequest request, String userId) {
@@ -80,25 +97,30 @@ public class RecipeService {
 
     @Transactional
     public void rateRecipe(String recipeId, String userId, int rating) {
+        Recipe recipe = recipeRepository.findById(recipeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Recipe not found"));
 
-        Recipe recipe = recipeRepository.findById(recipeId).orElseThrow(() -> new ResourceNotFoundException("Recipe not found"));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-        Integer previousRating = user.getRatings().get(recipe);
+        Integer previousRating = user.getRatings().entrySet().stream()
+                .filter(entry -> entry.getKey().getId().equals(recipeId))
+                .map(java.util.Map.Entry::getValue)
+                .findFirst()
+                .orElse(null);
 
         double total = recipe.getRating() * recipe.getRatingsCount();
 
         if (previousRating == null) {
             recipe.setRatingsCount(recipe.getRatingsCount() + 1);
-        }
-
-        else {
+        } else {
             total -= previousRating;
         }
 
         total += rating;
         recipe.setRating(total / recipe.getRatingsCount());
+
+        user.getRatings().entrySet().removeIf(entry -> entry.getKey().getId().equals(recipeId));
         user.getRatings().put(recipe, rating);
 
         userRepository.save(user);

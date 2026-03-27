@@ -37,8 +37,8 @@ public class RecipeController implements RecipeControllerDocs {
 
     @GetMapping("/{id}")
     @Override
-    public RecipeDTO getRecipe(@PathVariable String id) {
-        return recipeService.getRecipe(id);
+    public RecipeDTO getRecipe(@PathVariable String id, @AuthenticationPrincipal UserPrincipal user) {
+        return recipeService.getRecipe(id, user != null ? user.getId() : null);
     }
 
     @PostMapping

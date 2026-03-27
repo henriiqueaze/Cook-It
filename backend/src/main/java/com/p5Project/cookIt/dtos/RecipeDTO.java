@@ -23,8 +23,12 @@ public class RecipeDTO {
     private List<String> instructions;
 
     private String authorId;
+
     private String authorName;
+
     private String authorPhoto;
+
+    private Integer avaliacaoUsuario;
 
     private String createdAt;
 }

@@ -34,7 +34,7 @@ public interface RecipeControllerDocs {
                     content = @Content(schema = @Schema(implementation = RecipeDTO.class))),
             @ApiResponse(responseCode = "404", description = "Receita não encontrada")
     })
-    RecipeDTO getRecipe(@PathVariable String id);
+    RecipeDTO getRecipe(@PathVariable String id, @AuthenticationPrincipal UserPrincipal user);
 
     @Operation(summary = "Criar receita", description = "Cria uma nova receita")
     @ApiResponses({
