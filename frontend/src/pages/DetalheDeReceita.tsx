@@ -307,22 +307,27 @@ export function DetalheReceita() {
             ))}
           </ol>
         </div>
+        <div className="flex justify-center">
+          <div className="bg-white rounded-2xl p-4 shadow-sm text-center max-w-md w-full">
+            <h2 className="font-semibold text-gray-800 mb-3">
+              Avalie esta receita
+            </h2>
 
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <h2 className="font-semibold text-gray-800 mb-3">
-            Avalie esta receita
-          </h2>
-          <RatingStars
-            avaliacao={avaliacaoUsuario}
-            onChange={handleAvaliar}
-            tamanho="lg"
-          />
-          {avaliacaoUsuario > 0 && (
-            <p className="text-sm text-gray-500 mt-2">
-              Você avaliou com {avaliacaoUsuario} estrela
-              {avaliacaoUsuario > 1 ? "s" : ""}
-            </p>
-          )}
+            <div className="flex justify-center">
+              <RatingStars
+                avaliacao={avaliacaoUsuario}
+                onChange={handleAvaliar}
+                tamanho="lg"
+              />
+            </div>
+
+            {avaliacaoUsuario > 0 && (
+              <p className="text-sm text-gray-500 mt-2">
+                Você avaliou com {avaliacaoUsuario} estrela
+                {avaliacaoUsuario > 1 ? "s" : ""}
+              </p>
+            )}
+          </div>
         </div>
 
         <div className="bg-white rounded-2xl p-4 shadow-sm">

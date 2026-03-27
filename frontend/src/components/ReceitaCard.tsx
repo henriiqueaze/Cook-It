@@ -19,6 +19,7 @@ export function ReceitaCard({ receita, compatibilidade }: ReceitaCardProps) {
               className="w-full h-full object-cover"
             />
           )}
+
           {compatibilidade !== undefined && (
             <div className="absolute top-2 right-2 bg-green-600 text-white text-xs px-2 py-1 rounded-full font-medium">
               {compatibilidade}% compatível
@@ -26,27 +27,24 @@ export function ReceitaCard({ receita, compatibilidade }: ReceitaCardProps) {
           )}
         </div>
 
-        <div className="p-3">
-          <span className="text-xs text-orange-600 font-medium">
-            {receita.categoria}
-          </span>
-          <h3 className="font-semibold text-gray-800 mt-1 text-sm leading-tight">
+        <div className="p-3 relative h-20">
+          <h3 className="absolute top-3 left-3 font-semibold text-gray-800 text-sm max-w-[70%] leading-tight">
             {receita.titulo}
           </h3>
 
-          <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
-            <span className="flex items-center gap-1">
-              <Clock size={12} />
-              {receita.tempoPreparo} min
-            </span>
-            <span className="flex items-center gap-1">
-              <Users size={12} />
-              {receita.porcoes} porç.
-            </span>
-            <span className="flex items-center gap-1">
-              <Star size={12} className="text-yellow-400 fill-yellow-400" />
-              {receita.avaliacao}
-            </span>
+          <div className="absolute top-3 right-3 flex items-center gap-1 text-xs">
+            <Star size={14} className="text-yellow-400 fill-yellow-400" />
+            <span className="text-gray-600">{receita.avaliacao}</span>
+          </div>
+
+          <div className="absolute bottom-3 left-3 flex items-center gap-1 text-xs text-gray-500">
+            <Users size={12} />
+            {receita.porcoes} porç.
+          </div>
+
+          <div className="absolute bottom-3 right-3 flex items-center gap-1 text-xs text-gray-500">
+            <Clock size={12} />
+            {receita.tempoPreparo} min
           </div>
         </div>
       </div>
