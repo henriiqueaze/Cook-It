@@ -13,6 +13,7 @@ import {
 import { useAuth } from "../contexts/AuthContext";
 import { useFavorites } from "../contexts/FavoritesContext";
 import { RatingStars } from "../components/AvaliacaoEstrelas";
+import { UnidadeMedidaLabel } from "../enums/UnidadeMedida";
 import { receitaService } from "../services/receitaService";
 import { comentarioService } from "@/services/comentarioService";
 import type { Comentario, Receita } from "../types";
@@ -128,6 +129,10 @@ export function DetalheReceita() {
     return isFavorite(receita.id);
   }, [receita, isFavorite]);
 
+  function obterLabelUnidade(unidade: string) {
+    return (UnidadeMedidaLabel as Record<string, string>)[unidade] ?? unidade;
+  }
+
   if (carregandoReceita && !receita) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
@@ -231,8 +236,37 @@ export function DetalheReceita() {
       await receitaService.deletar(receita.id);
       toast.success("Receita deletada!");
       navigate("/minhas-receitas");
-    } catch {
-      toast.error("Não foi possível deletar a receita");
+    } catch (erroInicial) {
+      const mensagemInicial =
+        erroInicial instanceof Error ? erroInicial.message : "";
+
+      const erroServidor = mensagemInicial.includes("500");
+      if (!erroServidor) {
+        toast.error("Não foi possível deletar a receita");
+        return;
+      }
+
+      try {
+        const listaComentarios = await comentarioService.listarPorReceita(
+          receita.id,
+        );
+
+        if (Array.isArray(listaComentarios) && listaComentarios.length > 0) {
+          await Promise.allSettled(
+            listaComentarios.map((comentario) =>
+              comentarioService.deletar(comentario.id),
+            ),
+          );
+        }
+
+        await receitaService.deletar(receita.id);
+        toast.success("Receita deletada!");
+        navigate("/minhas-receitas");
+      } catch {
+        toast.error(
+          "Não foi possível deletar a receita. Remova avaliações/comentários e tente novamente.",
+        );
+      }
     }
   }
 
@@ -334,7 +368,7 @@ export function DetalheReceita() {
                   {(Number(ing.quantidade) * multiplicador).toFixed(
                     Number(ing.quantidade) % 1 === 0 ? 0 : 1,
                   )}{" "}
-                  {ing.unidade}
+                  {obterLabelUnidade(ing.unidade)}
                 </span>
               </li>
             ))}

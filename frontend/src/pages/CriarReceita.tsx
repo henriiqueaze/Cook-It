@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, X } from "lucide-react";
+import { ArrowLeft, ChevronDown, Plus, X } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { receitaService } from "@/services/receitaService";
+import { UnidadeMedida, UnidadeMedidaLabel } from "../enums/UnidadeMedida";
 
 export function CriarReceita() {
   const navigate = useNavigate();
@@ -15,7 +16,7 @@ export function CriarReceita() {
   const [porcoes, setPorcoes] = useState("");
   const [instrucoes, setInstrucoes] = useState<string[]>([""]);
   const [ingredientes, setIngredientes] = useState<
-    { nome: string; quantidade: string; unidade: string }[]
+    { nome: string; quantidade: string; unidade: UnidadeMedida | "" }[]
   >([{ nome: "", quantidade: "", unidade: "" }]);
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
@@ -81,7 +82,7 @@ export function CriarReceita() {
         instrucoes,
       });
       navigate("/minhas-receitas");
-    } catch (error: any){
+    } catch (error: any) {
       console.error("ERRO COMPLETO:", error);
       setErro("Erro ao salvar receita. Tente novamente.");
     } finally {
@@ -217,7 +218,7 @@ export function CriarReceita() {
                   className="col-span-1 px-3 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm"
                 />
                 <input
-                  type="text"
+                  type="number"
                   value={ing.quantidade}
                   onChange={(e) =>
                     atualizarIngrediente(index, "quantidade", e.target.value)
@@ -225,15 +226,36 @@ export function CriarReceita() {
                   placeholder="Quantidade (ex: 1, 2, 500, etc)"
                   className="px-3 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm"
                 />
-                <input
-                  type="text"
-                  value={ing.unidade}
-                  onChange={(e) =>
-                    atualizarIngrediente(index, "unidade", e.target.value)
-                  }
-                  placeholder="Unidade (g, kg, litros, colher, pitada, etc)"
-                  className="px-3 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm"
-                />
+                <div className="relative">
+                  <select
+                    value={ing.unidade}
+                    onChange={(e) =>
+                      atualizarIngrediente(index, "unidade", e.target.value)
+                    }
+                    className={`w-full appearance-none px-3 py-2 pr-9 border rounded-lg outline-none text-sm transition-all bg-white hover:border-orange-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-400 ${
+                      ing.unidade
+                        ? "text-gray-800 border-gray-300"
+                        : "text-gray-400 border-gray-200"
+                    }`}
+                  >
+                    <option value="" disabled>
+                      Unidade
+                    </option>
+                    {Object.values(UnidadeMedida).map((unidade) => (
+                      <option
+                        key={unidade}
+                        value={unidade}
+                        className="text-gray-800"
+                      >
+                        {UnidadeMedidaLabel[unidade]}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={16}
+                    className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  />
+                </div>
               </div>
               {ingredientes.length > 1 && (
                 <button

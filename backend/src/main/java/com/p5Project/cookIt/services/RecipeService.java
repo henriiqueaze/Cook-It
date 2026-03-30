@@ -92,16 +92,16 @@ public class RecipeService {
     }
 
     public void deleteRecipe(String id) {
+        recipeRepository.deleteFromFavoritesByRecipeId(id);
+        recipeRepository.deleteFromUserRatingsByRecipeId(id);
         recipeRepository.deleteById(id);
     }
 
     @Transactional
     public void rateRecipe(String recipeId, String userId, int rating) {
-        Recipe recipe = recipeRepository.findById(recipeId)
-                .orElseThrow(() -> new ResourceNotFoundException("Recipe not found"));
+        Recipe recipe = recipeRepository.findById(recipeId).orElseThrow(() -> new ResourceNotFoundException("Recipe not found"));
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Integer previousRating = user.getRatings().entrySet().stream()
                 .filter(entry -> entry.getKey().getId().equals(recipeId))
@@ -143,7 +143,7 @@ public class RecipeService {
 
     @Transactional
     public List<RecipeDTO> getUserRecipes(String userId) {
-        return recipeMapper.toDTOList(recipeRepository.findByAuthor_Id(userId));
+        return recipeMapper.toDTOList(recipeRepository.findByAuthorId(userId));
     }
 
     private List<Recipe> sortRecipes(List<Recipe> recipes, String sortBy) {
