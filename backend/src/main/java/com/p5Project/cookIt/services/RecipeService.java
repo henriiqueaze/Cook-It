@@ -146,6 +146,14 @@ public class RecipeService {
         return recipeMapper.toDTOList(recipeRepository.findByAuthorId(userId));
     }
 
+    @Transactional(readOnly = true)
+    public List<RecipeDTO> getTopRatedRecipes() {
+        return recipeRepository.findTop5ByOrderByRatingDescRatingsCountDesc()
+                .stream()
+                .map(recipeMapper::toDTO)
+                .toList();
+    }
+
     private List<Recipe> sortRecipes(List<Recipe> recipes, String sortBy) {
 
         if (sortBy == null) return recipes;

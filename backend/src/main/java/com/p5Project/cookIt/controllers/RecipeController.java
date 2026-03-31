@@ -76,4 +76,10 @@ public class RecipeController implements RecipeControllerDocs {
     public List<CommentDTO> getRecipeComments(@PathVariable String recipeId) {
         return commentService.getRecipeComments(recipeId);
     }
+
+    @GetMapping("/top-rated")
+    @Override
+    public List<RecipeDTO> getTopRatedRecipes() {
+        return recipeService.getTopRatedRecipes();
+    }
 }

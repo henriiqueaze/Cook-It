@@ -60,6 +60,6 @@ public class CommentService {
     }
 
     public List<CommentDTO> getUserComments(String userId) {
-        return commentMapper.toDTOList(commentRepository.findByUser_Id(userId));
+        return commentMapper.toDTOList(commentRepository.findByUserId(userId));
     }
 }

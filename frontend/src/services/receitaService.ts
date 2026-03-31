@@ -33,15 +33,14 @@ function montarPayloadBackend(receita: NovaReceitaPayload) {
     prepTime: Number(receita.tempoPreparo),
     servings: Number(receita.porcoes),
     instructions: receita.instrucoes,
-
     category: receita.categoria,
-
     ingredients: receita.ingredientes.map((ingrediente) => ({
       ingredient: ingrediente.nome,
       quantity: parseFloat(ingrediente.quantidade) || 0,
       unit: ingrediente.unidade,
     })),
   };
+
   return payload;
 }
 
@@ -54,17 +53,14 @@ export function mapBackendToFrontend(receita: any): Receita {
     tempoPreparo: receita.prepTime,
     porcoes: receita.servings ?? 0,
     categoria: receita.category ?? "",
-
     avaliacao: receita.rating ?? 0,
     totalAvaliacoes: receita.ratingsCount ?? 0,
-
     autor: {
       id: receita.authorId,
       name: receita.authorName,
       photo: receita.authorPhoto,
       email: "",
     },
-
     ingredientes:
       receita.ingredients?.map((i: any) => ({
         id: crypto.randomUUID(),
@@ -72,9 +68,7 @@ export function mapBackendToFrontend(receita: any): Receita {
         quantidade: String(i.quantity),
         unidade: i.unit,
       })) ?? [],
-
     instrucoes: receita.instructions ?? [],
-
     criadoEm: receita.createdAt,
   };
 }
@@ -83,6 +77,11 @@ export const receitaService = {
   listar: async () => {
     const resposta = await api.get<BackendRecipeListResponse>("/recipes");
     return adaptBackendRecipeListToReceitas(resposta);
+  },
+
+  destaques: async () => {
+    const resposta = await api.get<any[]>("/recipes/top-rated");
+    return resposta.map(mapBackendToFrontend);
   },
 
   buscarPorId: async (id: Id): Promise<Receita> => {

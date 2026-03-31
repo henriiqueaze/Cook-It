@@ -28,4 +28,7 @@ public interface RecipeRepository extends JpaRepository<Recipe, String> {
     @Query(value = "DELETE FROM user_ratings WHERE recipe_id = :recipeId", nativeQuery = true)
     void deleteFromUserRatingsByRecipeId(@Param("recipeId") String recipeId);
 
-    List<Recipe> findByAuthorId(String userId);}
+    List<Recipe> findByAuthorId(String userId);
+
+    List<Recipe> findTop5ByOrderByRatingDescRatingsCountDesc();
+}

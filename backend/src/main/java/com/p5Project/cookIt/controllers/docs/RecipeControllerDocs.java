@@ -82,4 +82,7 @@ public interface RecipeControllerDocs {
     })
     @GetMapping("/{recipeId}/comments")
     List<CommentDTO> getRecipeComments(@PathVariable String recipeId);
+
+    @GetMapping("/top-rated")
+    public List<RecipeDTO> getTopRatedRecipes();
 }

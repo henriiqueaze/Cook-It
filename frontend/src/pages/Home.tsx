@@ -1,12 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { receitaService } from "@/services/receitaService";
 import type { Receita } from "@/types";
+import { ReceitaCard } from "@/components/ReceitaCard";
 
 export function Home() {
   const navigate = useNavigate();
+  const carrosselRef = useRef<HTMLDivElement>(null);
+
   const [receitas, setReceitas] = useState<Receita[]>([]);
-  const [carregando, setCarregando] = useState(true);
+  const [destaques, setDestaques] = useState<Receita[]>([]);
+  const [carregandoDestaques, setCarregandoDestaques] = useState(true);
 
   useEffect(() => {
     let ativo = true;
@@ -16,11 +21,22 @@ export function Home() {
       .then((lista) => {
         if (ativo) setReceitas(lista);
       })
-      .catch(() => {
+      .catch((erro) => {
+        console.error("Erro ao carregar receitas:", erro);
         if (ativo) setReceitas([]);
+      });
+
+    receitaService
+      .destaques()
+      .then((lista) => {
+        if (ativo) setDestaques(lista);
+      })
+      .catch((erro) => {
+        console.error("Erro ao carregar destaques:", erro);
+        if (ativo) setDestaques([]);
       })
       .finally(() => {
-        if (ativo) setCarregando(false);
+        if (ativo) setCarregandoDestaques(false);
       });
 
     return () => {
@@ -29,7 +45,17 @@ export function Home() {
   }, []);
 
   const totalReceitas = receitas.length;
-  const destaques = receitas.slice(0, 4);
+
+  const scrollCarrossel = (direcao: "left" | "right") => {
+    const container = carrosselRef.current;
+    if (!container) return;
+
+    const larguraCard = container.clientWidth * 0.8;
+    container.scrollBy({
+      left: direcao === "right" ? larguraCard : -larguraCard,
+      behavior: "smooth",
+    });
+  };
 
   return (
     <div className="min-h-screen bg-linear-to-b from-orange-50 via-amber-50/30 to-white pb-20">
@@ -65,45 +91,51 @@ export function Home() {
         </div>
 
         <div className="mt-8">
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center justify-between gap-2 mb-4">
             <h2 className="font-semibold text-lg">Receitas em Destaque</h2>
+
+            {destaques.length > 0 && (
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => scrollCarrossel("left")}
+                  className="w-9 h-9 rounded-full bg-white shadow-md flex items-center justify-center text-gray-700 hover:bg-gray-50 active:scale-95 transition"
+                  aria-label="Voltar destaque"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => scrollCarrossel("right")}
+                  className="w-9 h-9 rounded-full bg-white shadow-md flex items-center justify-center text-gray-700 hover:bg-gray-50 active:scale-95 transition"
+                  aria-label="Avançar destaque"
+                >
+                  <ChevronRight size={20} />
+                </button>
+              </div>
+            )}
           </div>
 
-          {carregando ? (
-            <div className="text-sm text-gray-500">Carregando receitas...</div>
-          ) : (
-            <div className="grid grid-cols-2 gap-4">
-              {destaques.length > 0 ? (
-                destaques.map((receita) => (
-                  <div
-                    key={receita.id}
-                    onClick={() => navigate(`/receita/${receita.id}`)}
-                    className="bg-white rounded-xl overflow-hidden shadow-md cursor-pointer hover:shadow-lg transition-shadow"
-                  >
-                    <div className="relative h-32 overflow-hidden bg-gray-100">
-                      {receita.imagemUrl ? (
-                        <img
-                          src={receita.imagemUrl}
-                          alt={receita.titulo}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : null}
-                      <div className="absolute top-2 right-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full font-medium">
-                        {receita.tempoPreparo} min
-                      </div>
-                    </div>
-                    <div className="p-3">
-                      <h3 className="font-medium text-sm line-clamp-2">
-                        {receita.titulo}
-                      </h3>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="col-span-2 text-sm text-gray-500">
-                  Nenhuma receita encontrada no momento.
+          {carregandoDestaques ? (
+            <div className="text-sm text-gray-500">Carregando destaques...</div>
+          ) : destaques.length > 0 ? (
+            <div
+              ref={carrosselRef}
+              className="flex gap-4 overflow-x-auto scroll-smooth pb-2 snap-x snap-mandatory scrollbar-hide"
+            >
+              {destaques.map((receita) => (
+                <div
+                  key={receita.id}
+                  className="min-w-[82%] sm:min-w-[60%] md:min-w-[42%] lg:min-w-[30%] snap-start"
+                >
+                  <ReceitaCard receita={receita} />
                 </div>
-              )}
+              ))}
+            </div>
+          ) : (
+            <div className="text-sm text-gray-500">
+              Nenhuma receita encontrada no momento.
             </div>
           )}
         </div>

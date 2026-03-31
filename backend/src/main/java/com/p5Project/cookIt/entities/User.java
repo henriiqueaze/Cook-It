@@ -20,7 +20,6 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
-
     private String name;
     private String email;
     private String photo;
@@ -32,11 +31,7 @@ public class User {
     private List<Recipe> createdRecipes;
 
     @ManyToMany
-    @JoinTable(
-            name = "favorite_recipes",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "recipe_id")
-    )
+    @JoinTable(name = "favorite_recipes", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "recipe_id"))
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     private List<Recipe> favoriteRecipes = new ArrayList<>();

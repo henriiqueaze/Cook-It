@@ -10,4 +10,4 @@ public interface CommentRepository extends JpaRepository<Comment, String> {
 
     List<Comment> findByRecipe(Recipe recipe);
 
-    List<Comment> findByUser_Id(String userId);}
+    List<Comment> findByUserId(String userId);}
