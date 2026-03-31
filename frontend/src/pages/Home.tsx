@@ -1,17 +1,23 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { receitaService } from "@/services/receitaService";
 import type { Receita } from "@/types";
 import { ReceitaCard } from "@/components/ReceitaCard";
 
+const AUTO_ADVANCE_MS = 5000;
+
 export function Home() {
   const navigate = useNavigate();
   const carrosselRef = useRef<HTMLDivElement>(null);
+  const autoTimerRef = useRef<number | null>(null);
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const [receitas, setReceitas] = useState<Receita[]>([]);
   const [destaques, setDestaques] = useState<Receita[]>([]);
   const [carregandoDestaques, setCarregandoDestaques] = useState(true);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [direction, setDirection] = useState<"left" | "right">("right");
 
   useEffect(() => {
     let ativo = true;
@@ -44,18 +50,101 @@ export function Home() {
     };
   }, []);
 
-  const totalReceitas = receitas.length;
+  const scrollToIndex = useCallback((index: number, smooth = true) => {
+    const elemento = itemRefs.current[index];
+    if (!elemento) return;
 
-  const scrollCarrossel = (direcao: "left" | "right") => {
-    const container = carrosselRef.current;
-    if (!container) return;
-
-    const larguraCard = container.clientWidth * 0.8;
-    container.scrollBy({
-      left: direcao === "right" ? larguraCard : -larguraCard,
-      behavior: "smooth",
+    elemento.scrollIntoView({
+      behavior: smooth ? "smooth" : "auto",
+      inline: "center",
+      block: "nearest",
     });
-  };
+  }, []);
+
+  useEffect(() => {
+    if (destaques.length === 0) return;
+
+    itemRefs.current = itemRefs.current.slice(0, destaques.length);
+
+    const initialIndex = 0;
+    setActiveIndex(initialIndex);
+    setDirection("right");
+
+    const id = window.requestAnimationFrame(() => {
+      scrollToIndex(initialIndex, false);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(id);
+    };
+  }, [destaques.length, scrollToIndex]);
+
+  const goNext = useCallback(
+    (smooth = true) => {
+      if (destaques.length <= 1) return;
+
+      setDirection("right");
+      setActiveIndex((current) => {
+        const next = Math.min(current + 1, destaques.length - 1);
+        scrollToIndex(next, smooth);
+        return next;
+      });
+    },
+    [destaques.length, scrollToIndex],
+  );
+
+  const goPrev = useCallback(
+    (smooth = true) => {
+      if (destaques.length <= 1) return;
+
+      setDirection("left");
+      setActiveIndex((current) => {
+        const prev = Math.max(current - 1, 0);
+        scrollToIndex(prev, smooth);
+        return prev;
+      });
+    },
+    [destaques.length, scrollToIndex],
+  );
+
+  useEffect(() => {
+    if (destaques.length <= 1) return;
+
+    if (autoTimerRef.current) {
+      window.clearTimeout(autoTimerRef.current);
+    }
+
+    autoTimerRef.current = window.setTimeout(() => {
+      setActiveIndex((current) => {
+        let next = current;
+        let nextDirection = direction;
+
+        if (current >= destaques.length - 1) {
+          nextDirection = "left";
+          next = Math.max(current - 1, 0);
+        } else if (current <= 0) {
+          nextDirection = "right";
+          next = Math.min(current + 1, destaques.length - 1);
+        } else if (direction === "right") {
+          next = current + 1;
+        } else {
+          next = current - 1;
+        }
+
+        setDirection(nextDirection);
+        scrollToIndex(next, true);
+        return next;
+      });
+    }, AUTO_ADVANCE_MS);
+
+    return () => {
+      if (autoTimerRef.current) {
+        window.clearTimeout(autoTimerRef.current);
+      }
+    };
+  }, [activeIndex, direction, destaques.length, scrollToIndex]);
+
+  const totalReceitas = receitas.length;
 
   return (
     <div className="min-h-screen bg-linear-to-b from-orange-50 via-amber-50/30 to-white pb-20">
@@ -98,7 +187,7 @@ export function Home() {
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => scrollCarrossel("left")}
+                  onClick={() => goPrev(true)}
                   className="w-9 h-9 rounded-full bg-white shadow-md flex items-center justify-center text-gray-700 hover:bg-gray-50 active:scale-95 transition"
                   aria-label="Voltar destaque"
                 >
@@ -107,7 +196,7 @@ export function Home() {
 
                 <button
                   type="button"
-                  onClick={() => scrollCarrossel("right")}
+                  onClick={() => goNext(true)}
                   className="w-9 h-9 rounded-full bg-white shadow-md flex items-center justify-center text-gray-700 hover:bg-gray-50 active:scale-95 transition"
                   aria-label="Avançar destaque"
                 >
@@ -120,18 +209,23 @@ export function Home() {
           {carregandoDestaques ? (
             <div className="text-sm text-gray-500">Carregando destaques...</div>
           ) : destaques.length > 0 ? (
-            <div
-              ref={carrosselRef}
-              className="flex gap-4 overflow-x-auto scroll-smooth pb-2 snap-x snap-mandatory scrollbar-hide"
-            >
-              {destaques.map((receita) => (
-                <div
-                  key={receita.id}
-                  className="min-w-[82%] sm:min-w-[60%] md:min-w-[42%] lg:min-w-[30%] snap-start"
-                >
-                  <ReceitaCard receita={receita} />
-                </div>
-              ))}
+            <div className="overflow-hidden">
+              <div
+                ref={carrosselRef}
+                className="flex items-center gap-4 overflow-x-auto scroll-smooth pb-3 px-[8%] snap-x snap-mandatory scrollbar-hide"
+              >
+                {destaques.map((receita, index) => (
+                  <div
+                    key={receita.id}
+                    ref={(el) => {
+                      itemRefs.current[index] = el;
+                    }}
+                    className="shrink-0 w-[82%] sm:w-[62%] md:w-[44%] lg:w-[32%] snap-center"
+                  >
+                    <ReceitaCard receita={receita} />
+                  </div>
+                ))}
+              </div>
             </div>
           ) : (
             <div className="text-sm text-gray-500">
