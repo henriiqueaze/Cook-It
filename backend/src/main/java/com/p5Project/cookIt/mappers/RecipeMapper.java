@@ -14,9 +14,7 @@ public interface RecipeMapper {
             @Mapping(source = "author.id", target = "authorId"),
             @Mapping(source = "author.name", target = "authorName"),
             @Mapping(source = "author.photo", target = "authorPhoto"),
-
             @Mapping(source = "createdAt", target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss"),
-
             @Mapping(source = "ingredients", target = "ingredients"),
             @Mapping(source = "instructions", target = "instructions")
     })

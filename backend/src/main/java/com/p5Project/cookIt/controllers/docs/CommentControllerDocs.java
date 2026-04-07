@@ -1,6 +1,7 @@
 package com.p5Project.cookIt.controllers.docs;
 
 import com.p5Project.cookIt.dtos.CommentDTO;
+import com.p5Project.cookIt.dtos.IngredientDTO;
 import com.p5Project.cookIt.dtos.requests.CreateCommentRequest;
 import com.p5Project.cookIt.dtos.requests.UpdateCommentRequest;
 import com.p5Project.cookIt.security.UserPrincipal;
@@ -13,14 +14,23 @@ import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 public interface CommentControllerDocs {
+
+    @Operation(summary = "Listar comentários da receita", description = "Retorna todos os comentários da receita")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Comentários retornados",
+                    content = @Content(schema = @Schema(implementation = IngredientDTO.class)))
+    })
+    List<CommentDTO> getRecipeComments(@PathVariable String recipeId);
+
     @Operation(summary = "Criar comentário", description = "Adiciona um comentário em uma receita")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Comentário criado",
                     content = @Content(schema = @Schema(implementation = CommentDTO.class)))
     })
-    CommentDTO createComment(@Valid @RequestBody CreateCommentRequest request,
-                             @AuthenticationPrincipal UserPrincipal user);
+    CommentDTO createComment(@RequestBody CreateCommentRequest request, @AuthenticationPrincipal UserPrincipal user);
 
     @Operation(summary = "Atualizar comentário", description = "Atualiza um comentário existente")
     @ApiResponses({
@@ -28,12 +38,12 @@ public interface CommentControllerDocs {
                     content = @Content(schema = @Schema(implementation = CommentDTO.class))),
             @ApiResponse(responseCode = "404", description = "Comentário não encontrado")
     })
-    CommentDTO update(@PathVariable String id, @RequestBody UpdateCommentRequest request);
+    CommentDTO update(@PathVariable String id, @RequestBody UpdateCommentRequest request, @AuthenticationPrincipal UserPrincipal user);
 
     @Operation(summary = "Excluir comentário", description = "Remove um comentário")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Comentário removido"),
             @ApiResponse(responseCode = "404", description = "Comentário não encontrado")
     })
-    void delete(@PathVariable String id);
+    void delete(@PathVariable String id, @AuthenticationPrincipal UserPrincipal user);
 }

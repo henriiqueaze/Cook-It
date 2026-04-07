@@ -14,15 +14,24 @@ public class Comment {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    @ManyToOne
-    @JoinColumn(name = "recipe_id")
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "recipe_id", nullable = false)
     private Recipe recipe;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String text;
 
+    @Column(nullable = false)
     private LocalDateTime createdAt;
+
+    @PrePersist //executa isso antes de salvar
+    public void prePersist() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+    }
 }

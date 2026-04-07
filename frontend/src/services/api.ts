@@ -27,20 +27,29 @@ async function parseResposta<T>(resposta: Response): Promise<T> {
   return JSON.parse(texto) as T;
 }
 
+function montarHeaders(opcoes?: RequestInit) {
+  const token = localStorage.getItem("token");
+  const headers = new Headers(opcoes?.headers);
+
+  if (!headers.has("Content-Type") && !(opcoes?.body instanceof FormData)) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  return headers;
+}
+
 async function requisicao<T>(
   endpoint: string,
   opcoes?: RequestInit,
   params?: Record<string, QueryValue>,
 ): Promise<T> {
-  const token = localStorage.getItem("token");
-
   const resposta = await fetch(montarUrl(endpoint, params), {
     ...opcoes,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...opcoes?.headers,
-    },
+    headers: montarHeaders(opcoes),
   });
 
   if (!resposta.ok) {
@@ -49,8 +58,7 @@ async function requisicao<T>(
     try {
       const erro = await resposta.json();
       mensagem = erro.error || erro.message || mensagem;
-    } catch {
-    }
+    } catch {}
 
     throw new Error(mensagem);
   }
@@ -62,16 +70,24 @@ export const api = {
   get: <T>(endpoint: string, params?: Record<string, QueryValue>) =>
     requisicao<T>(endpoint, undefined, params),
 
-  post: <T>(endpoint: string, corpo: unknown) =>
+  post: <T>(endpoint: string, corpo: unknown, opcoes?: RequestInit) =>
     requisicao<T>(endpoint, {
       method: "POST",
-      body: JSON.stringify(corpo),
+      body:
+        corpo instanceof FormData || corpo instanceof Blob
+          ? corpo
+          : JSON.stringify(corpo),
+      ...opcoes,
     }),
 
-  put: <T>(endpoint: string, corpo: unknown) =>
+  put: <T>(endpoint: string, corpo: unknown, opcoes?: RequestInit) =>
     requisicao<T>(endpoint, {
       method: "PUT",
-      body: JSON.stringify(corpo),
+      body:
+        corpo instanceof FormData || corpo instanceof Blob
+          ? corpo
+          : JSON.stringify(corpo),
+      ...opcoes,
     }),
 
   delete: <T>(endpoint: string) =>

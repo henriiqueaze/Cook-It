@@ -13,7 +13,7 @@ interface BackendRecipeListResponse {
 export interface NovaReceitaPayload {
   titulo: string;
   descricao: string;
-  imagemUrl?: string;
+  imagemArquivo?: File | null;
   tempoPreparo: number;
   porcoes: number;
   ingredientes: Array<{
@@ -26,50 +26,70 @@ export interface NovaReceitaPayload {
 }
 
 function montarPayloadBackend(receita: NovaReceitaPayload) {
-  const payload = {
+  const formData = new FormData();
+
+  const data = {
     name: receita.titulo,
     description: receita.descricao,
-    imageUrl: receita.imagemUrl || undefined,
-    prepTime: Number(receita.tempoPreparo),
-    servings: Number(receita.porcoes),
-    instructions: receita.instrucoes,
-    category: receita.categoria,
+    prepTime: receita.tempoPreparo,
+    portions: receita.porcoes,
     ingredients: receita.ingredientes.map((ingrediente) => ({
       ingredient: ingrediente.nome,
       quantity: parseFloat(ingrediente.quantidade) || 0,
       unit: ingrediente.unidade,
     })),
+    instructions: receita.instrucoes,
+    ...(receita.categoria ? { category: receita.categoria } : {}),
   };
 
-  return payload;
+  formData.append(
+    "data",
+    new Blob([JSON.stringify(data)], { type: "application/json" }),
+  );
+
+  if (receita.imagemArquivo) {
+    formData.append("image", receita.imagemArquivo);
+  }
+
+  return formData;
 }
 
 export function mapBackendToFrontend(receita: any): Receita {
   return {
     id: receita.id,
-    titulo: receita.name,
-    descricao: "",
-    imagemUrl: receita.image,
-    tempoPreparo: receita.prepTime,
-    porcoes: receita.servings ?? 0,
-    categoria: receita.category ?? "",
+    titulo: receita.name ?? receita.title ?? "Receita sem título",
+    descricao: receita.description ?? "",
+    imagemUrl: receita.imageUrl ?? receita.image ?? "",
+    tempoPreparo: receita.prepTime ?? receita.prepTimeMinutes ?? 0,
+    porcoes: receita.portions ?? receita.servings ?? 1,
+    categoria: receita.category ?? receita.recipeTags?.[0]?.tag?.name ?? "",
     avaliacao: receita.rating ?? 0,
-    totalAvaliacoes: receita.ratingsCount ?? 0,
+    totalAvaliacoes: receita.ratingsCount ?? receita.ratings?.length ?? 0,
     autor: {
-      id: receita.authorId,
-      name: receita.authorName,
-      photo: receita.authorPhoto,
-      email: "",
+      id: receita.authorId ?? receita.author?.id ?? "sem-autor",
+      name: receita.authorName ?? receita.author?.displayName ?? "Usuário",
+      photo: receita.authorPhoto ?? receita.author?.avatarUrl ?? null,
+      email: receita.author?.email ?? "",
     },
     ingredientes:
       receita.ingredients?.map((i: any) => ({
-        id: crypto.randomUUID(),
-        nome: i.ingredient,
-        quantidade: String(i.quantity),
-        unidade: i.unit,
-      })) ?? [],
-    instrucoes: receita.instructions ?? [],
-    criadoEm: receita.createdAt,
+        id: i.id ?? i.ingredient?.id ?? crypto.randomUUID(),
+        nome: i.ingredient ?? i.name ?? i.ingredient?.name ?? "Ingrediente",
+        quantidade: String(i.quantity ?? ""),
+        unidade: i.unit ?? i.ingredient?.unitDefault ?? "",
+      })) ??
+      receita.recipeIngredients?.map((i: any) => ({
+        id: i.id ?? i.ingredient?.id ?? crypto.randomUUID(),
+        nome: i.ingredient?.name ?? "Ingrediente",
+        quantidade: String(i.quantity ?? ""),
+        unidade: i.unit ?? i.ingredient?.unitDefault ?? "",
+      })) ??
+      [],
+    instrucoes:
+      receita.instructions ??
+      receita.steps?.split(/\r?\n/).map((step: string) => step.trim()).filter(Boolean) ??
+      [],
+    criadoEm: receita.createdAt ?? receita.updatedAt ?? new Date().toISOString(),
   };
 }
 
@@ -90,11 +110,15 @@ export const receitaService = {
   },
 
   buscarPorIngredientes: async (ingredientes: string[]) => {
-    return api.post<Receita[]>("/recipes/search", {
+    const resposta = await api.post<any[]>("/recipes/search", {
       ingredients: ingredientes,
       exactMatch: false,
       sortBy: "compatibility",
     });
+
+    return Array.isArray(resposta)
+      ? resposta.map(mapBackendToFrontend)
+      : [];
   },
 
   criar: (receita: NovaReceitaPayload) =>

@@ -17,8 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@RequiredArgsConstructor
 @Service
+@RequiredArgsConstructor
 public class AuthService {
 
     private final UserRepository userRepository;
@@ -29,66 +29,74 @@ public class AuthService {
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-
-        User user = new User();
-
-        user.setName(request.getName());
-        user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-
+        User user = createUser(request.getName(), request.getEmail(), request.getPassword());
         userRepository.save(user);
+        return buildAuthResponse(user);
+    }
 
-        String token = jwtService.generateToken(user.getId());
-
-        AuthResponse response = new AuthResponse();
-        response.setUser(userMapper.toDTO(user));
-        response.setToken(token);
-
-        return response;
+    @Transactional(readOnly = true)
+    public AuthResponse login(LoginRequest request) {
+        User user = userRepository.findByEmail(request.getEmail()).orElseThrow(() -> new RuntimeException("User not found"));
+        validatePassword(request.getPassword(), user.getPassword());
+        return buildAuthResponse(user);
     }
 
     @Transactional
-    public AuthResponse login(LoginRequest request) {
-
-        User user = userRepository.findByEmail(request.getEmail()).orElseThrow(() -> new RuntimeException("Invalid credentials"));
-
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Invalid credentials");
-        }
-
-        String token = jwtService.generateToken(user.getId());
-
-        AuthResponse response = new AuthResponse();
-        response.setUser(userMapper.toDTO(user));
-        response.setToken(token);
-
-        return response;
-    }
-
     public void forgotPassword(String email) {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
-
         String token = UUID.randomUUID().toString();
-        PasswordResetToken resetToken = PasswordResetToken.builder().token(token).user(user).expiresAt(LocalDateTime.now().plusHours(1)).build();
-
-        passwordResetTokenRepository.save(resetToken);
+        passwordResetTokenRepository.save(buildResetToken(user, token));
 
         // fazer a logica de enviar por email :)
         System.out.println("Reset token: " + token);
     }
 
+    @Transactional
     public void resetPassword(String token, String newPassword) {
         PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token).orElseThrow(() -> new RuntimeException("Invalid token"));
 
+        validateTokenExpiration(resetToken);
+        updateUserPassword(resetToken.getUser(), newPassword);
+        passwordResetTokenRepository.delete(resetToken);
+    }
+
+    private User createUser(String name, String email, String rawPassword) {
+        User user = new User();
+        user.setName(name);
+        user.setEmail(email);
+        user.setPassword(passwordEncoder.encode(rawPassword));
+        return user;
+    }
+
+    private void validatePassword(String rawPassword, String encodedPassword) {
+        if (!passwordEncoder.matches(rawPassword, encodedPassword)) {
+            throw new RuntimeException("Invalid credentials");
+        }
+    }
+
+    private AuthResponse buildAuthResponse(User user) {
+        AuthResponse response = new AuthResponse();
+        response.setUser(userMapper.toDTO(user));
+        response.setToken(jwtService.generateToken(user.getId()));
+        return response;
+    }
+
+    private PasswordResetToken buildResetToken(User user, String token) {
+        return PasswordResetToken.builder()
+                .token(token)
+                .user(user)
+                .expiresAt(LocalDateTime.now().plusHours(1))
+                .build();
+    }
+
+    private void validateTokenExpiration(PasswordResetToken resetToken) {
         if (resetToken.getExpiresAt().isBefore(LocalDateTime.now())) {
             throw new RuntimeException("Token expired");
         }
+    }
 
-        User user = resetToken.getUser();
-
+    private void updateUserPassword(User user, String newPassword) {
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
-
-        passwordResetTokenRepository.delete(resetToken);
     }
 }

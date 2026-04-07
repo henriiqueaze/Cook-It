@@ -11,9 +11,11 @@ import com.p5Project.cookIt.services.RecipeService;
 import com.p5Project.cookIt.services.UserService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -53,14 +55,14 @@ public class UserController implements UserControllerDocs {
         return recipeService.getUserRecipes(userId);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Override
-    public UserDTO updateUser(@PathVariable String id, @AuthenticationPrincipal UserPrincipal user, @RequestBody UpdateUserRequest request) {
+    public UserDTO updateUser(@PathVariable String id, @AuthenticationPrincipal UserPrincipal user, @RequestPart("data") UpdateUserRequest request, @RequestPart(value = "photo", required = false) MultipartFile photo) {
         if (!user.getId().equals(id)) {
             throw new RuntimeException("You cannot update another user");
         }
 
-        return userService.updateUser(id, request);
+        return userService.updateUser(id, request, photo);
     }
 
     @GetMapping("/{userId}/comments")

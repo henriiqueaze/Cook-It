@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Tag(name = "Comentários", description = "Gerenciamento de comentários")
 @RequiredArgsConstructor
 @RestController
@@ -19,6 +21,12 @@ import org.springframework.web.bind.annotation.*;
 public class CommentController implements CommentControllerDocs {
 
     private final CommentService commentService;
+
+    @GetMapping("/recipe/{recipeId}")
+    @Override
+    public List<CommentDTO> getRecipeComments(@PathVariable String recipeId) {
+        return commentService.getRecipeComments(recipeId);
+    }
 
     @PostMapping
     @Override
@@ -28,13 +36,13 @@ public class CommentController implements CommentControllerDocs {
 
     @PutMapping("/{id}")
     @Override
-    public CommentDTO update(@PathVariable String id, @RequestBody UpdateCommentRequest request) {
-        return commentService.updateComment(id, request);
+    public CommentDTO update(@PathVariable String id, @Valid @RequestBody UpdateCommentRequest request, @AuthenticationPrincipal UserPrincipal user) {
+        return commentService.updateComment(id, request, user.getId());
     }
 
     @DeleteMapping("/{id}")
     @Override
-    public void delete(@PathVariable String id) {
-        commentService.deleteComment(id);
+    public void delete(@PathVariable String id, @AuthenticationPrincipal UserPrincipal user) {
+        commentService.deleteComment(id, user.getId());
     }
 }

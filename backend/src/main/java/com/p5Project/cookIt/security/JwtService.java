@@ -2,6 +2,7 @@ package com.p5Project.cookIt.security;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
@@ -10,14 +11,14 @@ import java.util.Date;
 @Service
 public class JwtService {
 
-    private final String SECRET = "my-super-secret-key-my-super-secret-key"; //lembrar de colocar essa key no application.yaml
+    @Value("${jwt.secret}")
+    private String secret;
 
     private Key getKey() {
-        return Keys.hmacShaKeyFor(SECRET.getBytes());
+        return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
     public String generateToken(String userId) {
-
         return Jwts.builder().setSubject(userId).setIssuedAt(new Date()).setExpiration(new Date(System.currentTimeMillis() + 86400000)).signWith(getKey(), SignatureAlgorithm.HS256).compact();
     }
 

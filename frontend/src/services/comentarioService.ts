@@ -3,23 +3,15 @@ import type { Comentario, Receita } from "@/types";
 
 export const comentarioService = {
   listarPorReceita: (receitaId: Receita["id"]) =>
-    api.get<Comentario[]>(`/recipes/${receitaId}/comments`),
+    api.get<Comentario[]>(`/comments/recipe/${receitaId}`),
 
-  adicionar: (
-    receitaId: Receita["id"],
-    conteudo: string,
-    avaliacao: number,
-  ) =>
+  adicionar: (receitaId: Receita["id"], conteudo: string) =>
     api.post<Comentario>("/comments", {
       recipeId: receitaId,
-      receitaId,
-      content: conteudo,
-      conteudo,
-      rating: avaliacao,
-      avaliacao,
+      text: conteudo,
     }),
 
-  atualizar: (comentarioId: Comentario["id"], dados: Partial<Comentario>) =>
+  atualizar: (comentarioId: Comentario["id"], dados: { text: string }) =>
     api.put<Comentario>(`/comments/${comentarioId}`, dados),
 
   deletar: (comentarioId: Comentario["id"]) =>

@@ -24,8 +24,11 @@ export function ResultadosBusca() {
   const [busca, setBusca] = useState("");
   const [mostrarSugestoes, setMostrarSugestoes] = useState(false);
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
-  const [ordenacao, setOrdenacao] = useState<OpcaoOrdenacao>("compatibilidade");
-  const [ingredientesDisponiveis, setIngredientesDisponiveis] = useState<Ingrediente[]>([]);
+  const [ordenacao, setOrdenacao] =
+    useState<OpcaoOrdenacao>("compatibilidade");
+  const [ingredientesDisponiveis, setIngredientesDisponiveis] = useState<
+    Ingrediente[]
+  >([]);
   const [resultados, setResultados] = useState<Receita[]>([]);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState("");
@@ -36,24 +39,30 @@ export function ResultadosBusca() {
   }, [ingredientesDaUrl]);
 
   useEffect(() => {
-    let ativo = true;
+    const termo = busca.trim();
 
-    ingredienteService
-      .listar()
-      .then((lista) => {
-        if (ativo) setIngredientesDisponiveis(lista);
-      })
-      .catch(() => {
-        if (ativo) setIngredientesDisponiveis([]);
-      });
+    if (!termo) {
+      setIngredientesDisponiveis([]);
+      return;
+    }
 
-    return () => {
-      ativo = false;
-    };
-  }, []);
+    const timer = setTimeout(() => {
+      ingredienteService
+        .buscar(termo)
+        .then((lista) => {
+          setIngredientesDisponiveis(lista);
+        })
+        .catch(() => {
+          setIngredientesDisponiveis([]);
+        });
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [busca]);
 
   const sugestoesFiltradas = useMemo(() => {
-    if (!busca) return [];
+    if (!busca.trim()) return [];
+
     return ingredientesDisponiveis
       .filter(
         (ing) =>
@@ -66,15 +75,17 @@ export function ResultadosBusca() {
   const resultadosOrdenados = useMemo(() => {
     const comCompatibilidade = resultados
       .map((receita) => {
-        const matches = receita.ingredientes.filter((i) =>
-          ingredientesBuscados.some((ingred) =>
-            i.nome.toLowerCase().includes(ingred.toLowerCase()),
-          ),
-        ).length;
+const ingredientesDaReceita = receita.ingredientes ?? [];
 
-        const compatibilidade = receita.ingredientes.length
-          ? Math.round((matches / receita.ingredientes.length) * 100)
-          : 0;
+  const matches = ingredientesDaReceita.filter((i) =>
+    ingredientesBuscados.some((ingred) =>
+      i.nome.toLowerCase().includes(ingred.toLowerCase()),
+    ),
+  ).length;
+
+  const compatibilidade = ingredientesDaReceita.length
+    ? Math.round((matches / ingredientesDaReceita.length) * 100)
+    : 0;
 
         return { ...receita, compatibilidade };
       })
@@ -82,12 +93,16 @@ export function ResultadosBusca() {
 
     switch (ordenacao) {
       case "tempo":
-        return [...comCompatibilidade].sort((a, b) => a.tempoPreparo - b.tempoPreparo);
+        return [...comCompatibilidade].sort(
+          (a, b) => a.tempoPreparo - b.tempoPreparo,
+        );
       case "avaliacao":
         return [...comCompatibilidade].sort((a, b) => b.avaliacao - a.avaliacao);
       case "compatibilidade":
       default:
-        return [...comCompatibilidade].sort((a, b) => b.compatibilidade - a.compatibilidade);
+        return [...comCompatibilidade].sort(
+          (a, b) => b.compatibilidade - a.compatibilidade,
+        );
     }
   }, [resultados, ordenacao, ingredientesBuscados]);
 
@@ -128,9 +143,11 @@ export function ResultadosBusca() {
 
   function handleBuscar() {
     const params = new URLSearchParams();
+
     if (ingredientesSelecionados.length > 0) {
       params.set("ingredientes", ingredientesSelecionados.join(","));
     }
+
     setIngredientesBuscados(ingredientesSelecionados);
     navigate(`/busca${params.toString() ? `?${params.toString()}` : ""}`);
     void buscarReceitas(ingredientesSelecionados);
@@ -203,6 +220,9 @@ export function ResultadosBusca() {
                 setMostrarSugestoes(true);
               }}
               onFocus={() => setMostrarSugestoes(true)}
+              onBlur={() => {
+                setTimeout(() => setMostrarSugestoes(false), 150);
+              }}
               placeholder="Digite um ingrediente..."
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
             />
@@ -213,6 +233,7 @@ export function ResultadosBusca() {
                   <button
                     key={ing.id}
                     type="button"
+                    onMouseDown={(e) => e.preventDefault()}
                     onClick={() => adicionarIngrediente(ing.nome)}
                     className="w-full px-4 py-2 text-left hover:bg-orange-50 transition-colors text-sm"
                   >
@@ -279,7 +300,8 @@ export function ResultadosBusca() {
           ) : (
             <>
               <p className="text-sm text-gray-500 mb-4">
-                {resultadosOrdenados.length} receita(s) encontrada(s) — ordenado por{" "}
+                {resultadosOrdenados.length} receita(s) encontrada(s) — ordenado
+                por{" "}
                 <span className="text-orange-600 font-medium">
                   {ordenacao === "compatibilidade"
                     ? "compatibilidade"
@@ -288,12 +310,16 @@ export function ResultadosBusca() {
                       : "avaliação"}
                 </span>
               </p>
+
               <div className="grid grid-cols-2 gap-3">
                 {resultadosOrdenados.map((receita) => (
                   <ReceitaCard
                     key={receita.id}
                     receita={receita as Receita}
-                    compatibilidade={(receita as Receita & { compatibilidade?: number }).compatibilidade}
+                    compatibilidade={
+                      (receita as Receita & { compatibilidade?: number })
+                        .compatibilidade
+                    }
                   />
                 ))}
               </div>

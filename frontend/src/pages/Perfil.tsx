@@ -14,7 +14,6 @@ export function Perfil() {
   const { favoritos } = useFavorites();
   const [minhasReceitas, setMinhasReceitas] = useState<Receita[]>([]);
 
-  console.log(usuario);
   useEffect(() => {
     let ativo = true;
 

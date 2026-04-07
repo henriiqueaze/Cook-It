@@ -19,6 +19,7 @@ public class Recipe {
     private String name;
     private String image;
     private Integer prepTime;
+    private Integer portions;
     private Double rating;
     private Integer ratingsCount;
 

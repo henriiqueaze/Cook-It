@@ -18,11 +18,13 @@ public class CreateRecipeRequest {
     @Positive(message = "Preparation time must be positive")
     private Integer prepTime;
 
+    @NotNull(message = "Portions are required")
+    @Positive(message = "Portions must be positive")
+    private Integer portions;
+
     @NotNull(message = "Ingredients are required")
     private List<RecipeIngredientDTO> ingredients;
 
     @NotNull(message = "Instructions are required")
     private List<String> instructions;
-
-    private String image;
 }

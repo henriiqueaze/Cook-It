@@ -14,6 +14,8 @@ public class RecipeDTO {
 
     private Integer prepTime;
 
+    private Integer portions;
+
     private Double rating;
 
     private Integer ratingsCount;
@@ -28,7 +30,7 @@ public class RecipeDTO {
 
     private String authorPhoto;
 
-    private Integer avaliacaoUsuario;
+    private Integer userRating;
 
     private String createdAt;
 }

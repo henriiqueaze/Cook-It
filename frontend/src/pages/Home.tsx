@@ -147,7 +147,7 @@ export function Home() {
   const totalReceitas = receitas.length;
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-orange-50 via-amber-50/30 to-white pb-20">
+    <div className="min-h-screen bg-linear-to-b from-orange-50 via-amber-50/30 to-white pb-5">
       <div className="bg-linear-to-br from-orange-500 via-orange-600 to-red-600 text-white pt-12 pb-8 px-6 rounded-b-3xl shadow-lg">
         <div className="flex items-center gap-3 mb-2">
           <img

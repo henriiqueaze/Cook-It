@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -50,9 +51,11 @@ public interface UserControllerDocs {
                     content = @Content(schema = @Schema(implementation = UserDTO.class))),
             @ApiResponse(responseCode = "403", description = "Sem permissão")
     })
-    UserDTO updateUser(@PathVariable String id,
-                       @AuthenticationPrincipal UserPrincipal user,
-                       @RequestBody UpdateUserRequest request);
+    UserDTO updateUser(
+            @PathVariable String id,
+            @AuthenticationPrincipal UserPrincipal user,
+            @RequestPart("data") UpdateUserRequest request,
+            @RequestPart(value = "photo", required = false) MultipartFile photo);
 
     @Operation(summary = "Comentários do usuário", description = "Lista comentários feitos pelo usuário")
     @ApiResponses({

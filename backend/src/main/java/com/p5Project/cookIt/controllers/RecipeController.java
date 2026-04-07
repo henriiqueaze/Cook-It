@@ -15,8 +15,10 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -41,16 +43,16 @@ public class RecipeController implements RecipeControllerDocs {
         return recipeService.getRecipe(id, user != null ? user.getId() : null);
     }
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Override
-    public RecipeDTO create(@Valid @RequestBody CreateRecipeRequest request, @AuthenticationPrincipal UserPrincipal user) {
-        return recipeService.createRecipe(request, user.getId());
+    public RecipeDTO create(@Valid @RequestPart("data") CreateRecipeRequest request, @RequestPart(value = "image", required = false) MultipartFile image, @AuthenticationPrincipal UserPrincipal user) {
+        return recipeService.createRecipe(request, user.getId(), image);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Override
-    public RecipeDTO update(@PathVariable String id, @RequestBody UpdateRecipeRequest request) {
-        return recipeService.updateRecipe(id, request);
+    public RecipeDTO update(@PathVariable String id, @RequestPart("data") UpdateRecipeRequest request, @RequestPart(value = "image", required = false) MultipartFile image) {
+        return recipeService.updateRecipe(id, request, image);
     }
 
     @DeleteMapping("/{id}")

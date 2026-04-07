@@ -16,10 +16,13 @@ export function EditarPerfil() {
   });
 
   const [fotoPreview, setFotoPreview] = useState(usuario?.photo || "");
+  const [fotoArquivo, setFotoArquivo] = useState<File | null>(null);
 
   function handleFotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) {
+      setFotoArquivo(file);
+
       const reader = new FileReader();
       reader.onloadend = () => setFotoPreview(reader.result as string);
       reader.readAsDataURL(file);
@@ -49,13 +52,14 @@ export function EditarPerfil() {
       const atualizado = await authService.atualizarPerfil(usuario.id, {
         name: formData.nome,
         email: formData.email,
-        photo: fotoPreview,
+        photoFile: fotoArquivo,
       });
 
       atualizarUsuario(atualizado);
       toast.success("Perfil atualizado com sucesso!");
       navigate("/perfil");
-    } catch {
+    } catch (error) {
+      console.error(error);
       toast.error("Erro ao atualizar perfil. Tente novamente.");
     } finally {
       setCarregando(false);

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ChevronDown, Plus, X } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
@@ -10,16 +10,29 @@ export function CriarReceita() {
   const { estaAutenticado } = useAuth();
 
   const [titulo, setTitulo] = useState("");
-  const [imagemUrl, setImagemUrl] = useState("");
+  const [imagemArquivo, setImagemArquivo] = useState<File | null>(null);
+  const [previewImagem, setPreviewImagem] = useState("");
   const [descricao, setDescricao] = useState("");
   const [tempoPreparo, setTempoPreparo] = useState("");
-  const [porcoes, setPorcoes] = useState("");
+  const [porcoes, setPorcoes] = useState("1");
   const [instrucoes, setInstrucoes] = useState<string[]>([""]);
   const [ingredientes, setIngredientes] = useState<
     { nome: string; quantidade: string; unidade: UnidadeMedida | "" }[]
   >([{ nome: "", quantidade: "", unidade: "" }]);
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
+
+  useEffect(() => {
+    if (!imagemArquivo) {
+      setPreviewImagem("");
+      return;
+    }
+
+    const url = URL.createObjectURL(imagemArquivo);
+    setPreviewImagem(url);
+
+    return () => URL.revokeObjectURL(url);
+  }, [imagemArquivo]);
 
   function adicionarIngrediente() {
     setIngredientes([
@@ -52,6 +65,20 @@ export function CriarReceita() {
     setInstrucoes(novas);
   }
 
+  function handleImagemChange(event: ChangeEvent<HTMLInputElement>) {
+    const arquivo = event.target.files?.[0] ?? null;
+
+    if (arquivo && !arquivo.type.startsWith("image/")) {
+      setErro("Envie apenas arquivos de imagem.");
+      event.target.value = "";
+      setImagemArquivo(null);
+      return;
+    }
+
+    setErro("");
+    setImagemArquivo(arquivo);
+  }
+
   async function handleSalvar() {
     if (!titulo || !descricao || !tempoPreparo || !porcoes) {
       setErro("Preencha todos os campos, não deixe faltar.");
@@ -75,12 +102,13 @@ export function CriarReceita() {
       await receitaService.criar({
         titulo,
         descricao,
-        imagemUrl,
+        imagemArquivo,
         tempoPreparo: Number(tempoPreparo),
         porcoes: Number(porcoes),
         ingredientes,
         instrucoes,
       });
+
       navigate("/minhas-receitas");
     } catch (error: any) {
       console.error("ERRO COMPLETO:", error);
@@ -156,18 +184,46 @@ export function CriarReceita() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              URL da Imagem
+              Imagem da receita
             </label>
-            <input
-              type="text"
-              value={imagemUrl}
-              onChange={(e) => setImagemUrl(e.target.value)}
-              placeholder="https://exemplo.com/imagem.jpg"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm"
-            />
-            {imagemUrl && (
+
+            <label className="flex items-center justify-center w-full px-4 py-3 border border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-orange-400 hover:bg-orange-50 transition-colors">
+              <span className="text-sm text-gray-600">
+                {imagemArquivo ? "Trocar imagem" : "Selecionar imagem"}
+              </span>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImagemChange}
+                className="hidden"
+              />
+            </label>
+
+            {imagemArquivo && (
+              <div className="mt-2 flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-700 truncate">
+                    {imagemArquivo.name}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {(imagemArquivo.size / 1024 / 1024).toFixed(2)} MB
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setImagemArquivo(null)}
+                  className="text-red-500 cursor-pointer"
+                  aria-label="Remover imagem"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            )}
+
+            {previewImagem && (
               <img
-                src={imagemUrl}
+                src={previewImagem}
                 alt="Preview"
                 className="mt-2 w-full h-40 object-cover rounded-lg"
               />
@@ -181,6 +237,7 @@ export function CriarReceita() {
               </label>
               <input
                 type="number"
+                min={1}
                 value={tempoPreparo}
                 onChange={(e) => setTempoPreparo(e.target.value)}
                 placeholder="Ex: 30"
@@ -193,6 +250,7 @@ export function CriarReceita() {
               </label>
               <input
                 type="number"
+                min={1}
                 value={porcoes}
                 onChange={(e) => setPorcoes(e.target.value)}
                 placeholder="Ex: 4"
@@ -257,6 +315,7 @@ export function CriarReceita() {
                   />
                 </div>
               </div>
+
               {ingredientes.length > 1 && (
                 <button
                   onClick={() => removerIngrediente(index)}

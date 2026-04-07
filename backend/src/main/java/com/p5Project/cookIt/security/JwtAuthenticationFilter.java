@@ -32,11 +32,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 UserPrincipal principal = new UserPrincipal(user.getId(), user.getEmail(), user.getPassword());
 
-                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(principal,null, principal.getAuthorities());
+                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
 
                 SecurityContextHolder.getContext().setAuthentication(auth);
             }
         }
+
         filterChain.doFilter(request, response);
     }
 }

@@ -9,6 +9,9 @@ import {
   Plus,
   Trash2,
   Send,
+  PencilLine,
+  X,
+  Check,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useFavorites } from "../contexts/FavoritesContext";
@@ -32,6 +35,10 @@ export function DetalheReceita() {
   const [novoComentario, setNovoComentario] = useState("");
   const [avaliacaoUsuario, setAvaliacaoUsuario] = useState(0);
   const [comentarios, setComentarios] = useState<Comentario[]>([]);
+  const [comentarioEditandoId, setComentarioEditandoId] = useState<
+    Comentario["id"] | null
+  >(null);
+  const [textoEdicaoComentario, setTextoEdicaoComentario] = useState("");
 
   const chaveAvaliacao = useMemo(() => {
     if (!id || !usuario?.id) return null;
@@ -47,6 +54,14 @@ export function DetalheReceita() {
     }
 
     navigate("/");
+  }
+
+  function formatarData(data?: string) {
+    if (!data) return "";
+    return new Intl.DateTimeFormat("pt-BR", {
+      dateStyle: "short",
+      timeStyle: "short",
+    }).format(new Date(data));
   }
 
   useEffect(() => {
@@ -129,7 +144,8 @@ export function DetalheReceita() {
     return isFavorite(receita.id);
   }, [receita, isFavorite]);
 
-  function obterLabelUnidade(unidade: string) {
+  function obterLabelUnidade(unidade?: string) {
+    if (!unidade) return "";
     return (UnidadeMedidaLabel as Record<string, string>)[unidade] ?? unidade;
   }
 
@@ -156,6 +172,7 @@ export function DetalheReceita() {
   }
 
   const ehMinhaReceita = usuario?.id === receita.autor.id;
+  const porcoesBase = receita.porcoes ?? 1;
 
   async function handleFavoritar() {
     if (!receita) return;
@@ -218,7 +235,6 @@ export function DetalheReceita() {
       const comentario = await comentarioService.adicionar(
         receita.id,
         novoComentario.trim(),
-        avaliacaoUsuario,
       );
 
       setComentarios((atual) => [comentario, ...atual]);
@@ -226,6 +242,52 @@ export function DetalheReceita() {
       setNovoComentario("");
     } catch {
       toast.error("Não foi possível adicionar o comentário");
+    }
+  }
+
+  function iniciarEdicao(comentario: Comentario) {
+    setComentarioEditandoId(comentario.id);
+    setTextoEdicaoComentario(comentario.text);
+  }
+
+  function cancelarEdicao() {
+    setComentarioEditandoId(null);
+    setTextoEdicaoComentario("");
+  }
+
+  async function salvarEdicaoComentario(comentarioId: Comentario["id"]) {
+    if (!textoEdicaoComentario.trim()) return;
+
+    try {
+      const atualizado = await comentarioService.atualizar(comentarioId, {
+        text: textoEdicaoComentario.trim(),
+      });
+
+      setComentarios((atual) =>
+        atual.map((comentario) =>
+          comentario.id === comentarioId ? atualizado : comentario,
+        ),
+      );
+
+      toast.success("Comentário atualizado!");
+      cancelarEdicao();
+    } catch {
+      toast.error("Não foi possível atualizar o comentário");
+    }
+  }
+
+  async function excluirComentario(comentarioId: Comentario["id"]) {
+    try {
+      await comentarioService.deletar(comentarioId);
+      setComentarios((atual) =>
+        atual.filter((comentario) => comentario.id !== comentarioId),
+      );
+      toast.success("Comentário excluído!");
+      if (comentarioEditandoId === comentarioId) {
+        cancelarEdicao();
+      }
+    } catch {
+      toast.error("Não foi possível excluir o comentário");
     }
   }
 
@@ -320,7 +382,7 @@ export function DetalheReceita() {
           </div>
           <div className="flex items-center gap-1 text-sm text-gray-500">
             <Users size={16} className="text-orange-600" />
-            {receita.porcoes * multiplicador} porções
+            {porcoesBase * multiplicador} porções
           </div>
           <div className="flex items-center gap-1 text-sm text-gray-500">
             <RatingStars
@@ -353,7 +415,7 @@ export function DetalheReceita() {
               <Plus size={16} />
             </button>
             <span className="text-sm text-gray-500">
-              {receita.porcoes * multiplicador} porções no total
+              {porcoesBase * multiplicador} porções no total
             </span>
           </div>
         </div>
@@ -388,6 +450,7 @@ export function DetalheReceita() {
             ))}
           </ol>
         </div>
+
         <div className="flex justify-center">
           <div className="bg-white rounded-2xl p-4 shadow-sm text-center max-w-md w-full">
             <h2 className="font-semibold text-gray-800 mb-3">
@@ -441,22 +504,93 @@ export function DetalheReceita() {
                 Nenhum comentário ainda. Seja o primeiro!
               </div>
             ) : (
-              comentarios.map((comentario) => (
-                <div
-                  key={comentario.id}
-                  className="rounded-xl border border-gray-100 p-3"
-                >
-                  <div className="flex items-center justify-between gap-3 mb-1">
-                    <span className="font-medium text-sm text-gray-700">
-                      {comentario.autor.name}
-                    </span>
-                    <span className="text-xs text-gray-400">
-                      {comentario.avaliacao}★
-                    </span>
+              comentarios.map((comentario) => {
+                const podeGerenciar = usuario?.id === comentario.userId;
+                const estaEditando = comentarioEditandoId === comentario.id;
+
+                return (
+                  <div
+                    key={comentario.id}
+                    className="rounded-xl border border-gray-100 p-3"
+                  >
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <div className="flex items-center gap-2">
+                        {comentario.userPhoto ? (
+                          <img
+                            src={comentario.userPhoto}
+                            alt={comentario.userName}
+                            className="w-8 h-8 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-xs font-semibold">
+                            {comentario.userName?.charAt(0)?.toUpperCase() || "U"}
+                          </div>
+                        )}
+
+                        <div>
+                          <span className="font-medium text-sm text-gray-700 block">
+                            {comentario.userName}
+                          </span>
+                          <span className="text-xs text-gray-400">
+                            {formatarData(comentario.createdAt)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {podeGerenciar && !estaEditando && (
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => iniciarEdicao(comentario)}
+                            className="text-gray-400 hover:text-orange-600 transition-colors"
+                            title="Editar comentário"
+                          >
+                            <PencilLine size={16} />
+                          </button>
+                          <button
+                            onClick={() => excluirComentario(comentario.id)}
+                            className="text-gray-400 hover:text-red-600 transition-colors"
+                            title="Excluir comentário"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {estaEditando ? (
+                      <div className="space-y-2">
+                        <textarea
+                          value={textoEdicaoComentario}
+                          onChange={(e) => setTextoEdicaoComentario(e.target.value)}
+                          className="w-full min-h-[90px] px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm resize-none"
+                        />
+
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={cancelarEdicao}
+                            className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                          >
+                            <X size={16} />
+                            Cancelar
+                          </button>
+                          <button
+                            onClick={() => salvarEdicaoComentario(comentario.id)}
+                            disabled={!textoEdicaoComentario.trim()}
+                            className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium bg-orange-600 text-white hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                          >
+                            <Check size={16} />
+                            Salvar
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-600 whitespace-pre-wrap">
+                        {comentario.text}
+                      </p>
+                    )}
                   </div>
-                  <p className="text-sm text-gray-600">{comentario.conteudo}</p>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>

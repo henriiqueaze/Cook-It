@@ -17,6 +17,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -41,7 +42,8 @@ public interface RecipeControllerDocs {
             @ApiResponse(responseCode = "200", description = "Receita criada",
                     content = @Content(schema = @Schema(implementation = RecipeDTO.class)))
     })
-    RecipeDTO create(@Valid @RequestBody CreateRecipeRequest request,
+    RecipeDTO create(@Valid @RequestPart("data") CreateRecipeRequest request,
+                     @RequestPart(value = "image", required = false) MultipartFile image,
                      @AuthenticationPrincipal UserPrincipal user);
 
     @Operation(summary = "Atualizar receita", description = "Atualiza uma receita existente")
@@ -50,7 +52,9 @@ public interface RecipeControllerDocs {
                     content = @Content(schema = @Schema(implementation = RecipeDTO.class))),
             @ApiResponse(responseCode = "404", description = "Receita não encontrada")
     })
-    RecipeDTO update(@PathVariable String id, @RequestBody UpdateRecipeRequest request);
+    RecipeDTO update(@PathVariable String id,
+                     @RequestPart("data") UpdateRecipeRequest request,
+                     @RequestPart(value = "image", required = false) MultipartFile image);
 
     @Operation(summary = "Excluir receita", description = "Remove uma receita")
     @ApiResponses({

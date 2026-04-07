@@ -43,6 +43,7 @@ export interface BackendRecipeDTO {
   description?: string;
   steps?: string;
   servings?: number;
+  portions?: number;
   prepTimeMinutes?: number;
   createdAt?: string;
   updatedAt?: string;
@@ -111,7 +112,7 @@ export function adaptBackendRecipeToReceita(recipe: BackendRecipeDTO): Receita {
     descricao: recipe.description ?? "",
     imagemUrl: recipe.images?.[0]?.url,
     tempoPreparo: recipe.prepTimeMinutes ?? 0,
-    porcoes: recipe.servings ?? 1,
+    porcoes: recipe.portions ?? recipe.servings ?? 1,
     categoria: recipe.recipeTags?.[0]?.tag?.name ?? "Sem categoria",
     avaliacao: calcularMediaAvaliacoes(recipe.ratings),
     totalAvaliacoes: recipe.ratings?.length ?? 0,

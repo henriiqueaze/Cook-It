@@ -32,6 +32,29 @@ export const authService = {
       password: senha,
     }),
 
-  atualizarPerfil: (id: Usuario["id"], dados: Partial<Usuario>) =>
-    api.put<Usuario>(`/users/${id}`, dados),
+  atualizarPerfil: async (
+    id: Usuario["id"],
+    dados: { name: string; email: string; photoFile?: File | null },
+  ) => {
+    const formData = new FormData();
+
+    formData.append(
+      "data",
+      new Blob(
+        [
+          JSON.stringify({
+            name: dados.name,
+            email: dados.email,
+          }),
+        ],
+        { type: "application/json" },
+      ),
+    );
+
+    if (dados.photoFile) {
+      formData.append("photo", dados.photoFile);
+    }
+
+    return api.put<Usuario>(`/users/${id}`, formData);
+  },
 };

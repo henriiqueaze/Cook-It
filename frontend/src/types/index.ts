@@ -13,8 +13,8 @@ export interface Usuario {
 export interface Ingrediente {
   id: Id;
   nome: string;
-  quantidade: string;
-  unidade: string;
+  quantidade?: string;
+  unidade?: string;
 }
 
 export interface Receita {
@@ -36,10 +36,12 @@ export interface Receita {
 
 export interface Comentario {
   id: Id;
-  conteudo: string;
-  avaliacao: number;
-  autor: Usuario;
-  criadoEm: string;
+  recipeId: Id;
+  userId: Id;
+  userName: string;
+  userPhoto?: string | null;
+  text: string;
+  createdAt: string;
 }
 
 export interface RespostaAuth {

@@ -12,10 +12,9 @@ public class UpdateRecipeRequest {
 
     private Integer prepTime;
 
+    private Integer portions;
+
     private List<RecipeIngredientDTO> ingredients;
 
     private List<String> instructions;
-
-    private String image;
-
 }
