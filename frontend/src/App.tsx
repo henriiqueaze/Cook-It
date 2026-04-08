@@ -1,7 +1,7 @@
-﻿import { AppRoutes } from "./routes";
+import { Toaster } from "sonner";
 import { AuthProvider } from "./contexts/AuthContext";
 import { FavoritesProvider } from "./contexts/FavoritesContext";
-import { Toaster } from "sonner";
+import { AppRoutes } from "./routes";
 
 function App() {
   return (

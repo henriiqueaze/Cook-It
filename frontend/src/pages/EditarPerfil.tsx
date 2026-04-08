@@ -1,65 +1,74 @@
-import { useState } from "react";
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { Camera, ArrowLeft, Mail, Save, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Camera, User, Mail, Save } from "lucide-react";
 import { toast } from "sonner";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { authService } from "@/services/authService";
+
+function validarEmail(email: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
 
 export function EditarPerfil() {
   const navigate = useNavigate();
   const { usuario, atualizarUsuario } = useAuth();
   const [carregando, setCarregando] = useState(false);
-
+  const [fotoArquivo, setFotoArquivo] = useState<File | null>(null);
   const [formData, setFormData] = useState({
-    nome: usuario?.name || "",
-    email: usuario?.email || "",
+    nome: usuario?.name ?? "",
+    email: usuario?.email ?? "",
   });
 
-  const [fotoPreview, setFotoPreview] = useState(usuario?.photo || "");
-  const [fotoArquivo, setFotoArquivo] = useState<File | null>(null);
+  const [fotoPreview, setFotoPreview] = useState(usuario?.photo ?? "");
 
-  function handleFotoChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file) {
-      setFotoArquivo(file);
-
-      const reader = new FileReader();
-      reader.onloadend = () => setFotoPreview(reader.result as string);
-      reader.readAsDataURL(file);
+  useEffect(() => {
+    if (!fotoArquivo) {
+      setFotoPreview(usuario?.photo ?? "");
+      return;
     }
+
+    const url = URL.createObjectURL(fotoArquivo);
+    setFotoPreview(url);
+
+    return () => URL.revokeObjectURL(url);
+  }, [fotoArquivo, usuario?.photo]);
+
+  function handleFotoChange(event: ChangeEvent<HTMLInputElement>) {
+    const arquivo = event.target.files?.[0] ?? null;
+    setFotoArquivo(arquivo);
   }
 
-  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  function handleInputChange(event: ChangeEvent<HTMLInputElement>) {
+    const { name, value } = event.target;
+    setFormData((current) => ({ ...current, [name]: value }));
   }
 
-  async function handleSalvar(e: React.SyntheticEvent) {
-    e.preventDefault();
+  async function handleSalvar(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!usuario?.id) {
+      toast.error("Usuário não encontrado");
+      return;
+    }
+
+    if (!validarEmail(formData.email)) {
+      toast.error("Digite um e-mail válido");
+      return;
+    }
+
     setCarregando(true);
 
     try {
-      const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
-      if (!emailValido) {
-        toast.error("Digite um e-mail válido");
-        return;
-      }
-
-      if (!usuario?.id) {
-        toast.error("Usuário não encontrado");
-        return;
-      }
-
       const atualizado = await authService.atualizarPerfil(usuario.id, {
-        name: formData.nome,
-        email: formData.email,
+        name: formData.nome.trim(),
+        email: formData.email.trim(),
         photoFile: fotoArquivo,
       });
 
       atualizarUsuario(atualizado);
       toast.success("Perfil atualizado com sucesso!");
       navigate("/perfil");
-    } catch (error) {
-      console.error(error);
+    } catch {
       toast.error("Erro ao atualizar perfil. Tente novamente.");
     } finally {
       setCarregando(false);
@@ -68,34 +77,36 @@ export function EditarPerfil() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <div className="bg-white border-b sticky top-0 z-10">
-        <div className="px-4 py-4 flex items-center gap-3">
+      <div className="sticky top-0 z-10 border-b bg-white">
+        <div className="flex items-center gap-3 px-4 py-4">
           <button
+            type="button"
             onClick={() => navigate(-1)}
-            className="p-2 hover:bg-gray-100 rounded-full cursor-pointer"
+            className="rounded-full p-2 transition-colors hover:bg-gray-100"
+            aria-label="Voltar"
           >
             <ArrowLeft size={20} />
           </button>
-          <h1 className="text-xl font-semibold">Editar Perfil</h1>
+          <h1 className="text-xl font-semibold">Editar perfil</h1>
         </div>
       </div>
 
-      <div className="px-6 py-6 space-y-4">
-        <div className="bg-white rounded-2xl p-6 shadow-sm text-center">
+      <form onSubmit={handleSalvar} className="space-y-4 px-6 py-6">
+        <div className="rounded-2xl bg-white p-6 text-center shadow-sm">
           <label className="cursor-pointer">
-            <div className="relative w-32 h-32 mx-auto mb-3">
+            <div className="relative mx-auto mb-3 h-32 w-32">
               {fotoPreview ? (
                 <img
                   src={fotoPreview}
-                  alt="Foto"
-                  className="w-32 h-32 rounded-full object-cover border-4 border-gray-100"
+                  alt="Foto do perfil"
+                  className="h-32 w-32 rounded-full border-4 border-gray-100 object-cover"
                 />
               ) : (
-                <div className="w-32 h-32 rounded-full bg-gray-100 flex items-center justify-center border-4 border-gray-100">
+                <div className="flex h-32 w-32 items-center justify-center rounded-full border-4 border-gray-100 bg-gray-100">
                   <User size={40} className="text-gray-400" />
                 </div>
               )}
-              <div className="absolute bottom-0 right-0 p-2 bg-orange-600 rounded-full shadow-lg">
+              <div className="absolute bottom-0 right-0 rounded-full bg-orange-600 p-2 shadow-lg">
                 <Camera size={18} className="text-white" />
               </div>
             </div>
@@ -105,58 +116,51 @@ export function EditarPerfil() {
               onChange={handleFotoChange}
               className="hidden"
             />
-            <span className="text-sm text-orange-600 font-medium">
-              Alterar Foto
+            <span className="text-sm font-medium text-orange-600">
+              Alterar foto
             </span>
           </label>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm p-4 space-y-3">
-          <h2 className="font-semibold text-gray-800">Informações Pessoais</h2>
+        <div className="space-y-3 rounded-2xl bg-white p-4 shadow-sm">
+          <h2 className="font-semibold text-gray-800">Informações pessoais</h2>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              <User size={14} className="inline mr-1" /> Nome
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              <User size={14} className="mr-1 inline" /> Nome
             </label>
             <input
               type="text"
               name="nome"
               value={formData.nome}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm"
+              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-orange-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              <Mail size={14} className="inline mr-1" /> E-mail
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              <Mail size={14} className="mr-1 inline" /> E-mail
             </label>
             <input
               type="email"
               name="email"
               value={formData.email}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm"
+              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-orange-500"
             />
           </div>
         </div>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-          <p className="text-sm text-blue-800">
-            <strong>Atenção:</strong> a troca de senha ainda não foi exposta no
-            backend atual.
-          </p>
-        </div>
-
         <button
-          onClick={handleSalvar}
+          type="submit"
           disabled={carregando}
-          className="w-full flex items-center justify-center gap-2 bg-linear-to-r from-orange-500 to-orange-600 text-white py-3 rounded-lg font-medium hover:from-orange-600 hover:to-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all cursor-pointer"
+          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-linear-to-r from-orange-500 to-orange-600 py-3 font-medium text-white transition-all hover:from-orange-600 hover:to-orange-700 disabled:cursor-not-allowed disabled:bg-gray-300"
         >
           <Save size={18} />
-          {carregando ? "Salvando..." : "Salvar Alterações"}
+          {carregando ? "Salvando..." : "Salvar alterações"}
         </button>
-      </div>
+      </form>
     </div>
   );
 }

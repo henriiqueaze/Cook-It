@@ -1,22 +1,23 @@
-import { useNavigate } from "react-router-dom";
 import { ChefHat } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export function NaoEncontrado() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-6 text-center">
-      <ChefHat size={64} className="text-gray-300 mb-4" />
-      <h1 className="text-6xl font-bold text-orange-600 mb-2">404</h1>
-      <h2 className="text-xl font-semibold text-gray-700 mb-2">
+    <div className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
+      <ChefHat size={64} className="mb-4 text-gray-300" />
+      <h1 className="mb-2 text-6xl font-bold text-orange-600">404</h1>
+      <h2 className="mb-2 text-xl font-semibold text-gray-700">
         Página não encontrada
       </h2>
-      <p className="text-gray-400 text-sm mb-8">
+      <p className="mb-8 text-sm text-gray-400">
         A página que você está procurando não existe ou foi removida.
       </p>
       <button
+        type="button"
         onClick={() => navigate("/")}
-        className="bg-orange-600 text-white px-6 py-3 rounded-lg font-medium cursor-pointer hover:bg-orange-700 transition-colors"
+        className="rounded-lg bg-orange-600 px-6 py-3 font-medium text-white transition-colors hover:bg-orange-700"
       >
         Voltar para o início
       </button>

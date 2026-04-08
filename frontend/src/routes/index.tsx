@@ -1,17 +1,17 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Layout } from "@/components/Layout";
-import { Home } from "@/pages/Home";
-import { ResultadosBusca } from "@/pages/ResultadosBusca";
-import { DetalheReceita } from "@/pages/DetalheDeReceita";
-import { Login } from "@/pages/Login";
-import { Cadastro } from "@/pages/Cadastro";
-import { MinhasReceitas } from "@/pages/MinhasReceitas";
-import { Favoritos } from "@/pages/Favoritos";
-import { CriarReceita } from "@/pages/CriarReceita";
-import { Perfil } from "@/pages/Perfil";
-import { EditarPerfil } from "@/pages/EditarPerfil";
 import { RotaProtegida } from "@/components/RotaProtegida";
+import { Cadastro } from "@/pages/Cadastro";
+import { CriarReceita } from "@/pages/CriarReceita";
+import { DetalheReceita } from "@/pages/DetalheDeReceita";
+import { EditarPerfil } from "@/pages/EditarPerfil";
+import { Favoritos } from "@/pages/Favoritos";
+import { Home } from "@/pages/Home";
+import { Login } from "@/pages/Login";
+import { MinhasReceitas } from "@/pages/MinhasReceitas";
 import { NaoEncontrado } from "@/pages/NaoEncontrado";
+import { Perfil } from "@/pages/Perfil";
+import { ResultadosBusca } from "@/pages/ResultadosBusca";
 
 export function AppRoutes() {
   return (

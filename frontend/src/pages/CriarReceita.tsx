@@ -1,9 +1,20 @@
-import { useEffect, useState, type ChangeEvent } from "react";
+import { useEffect, useState } from "react";
+import type { ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ChevronDown, Plus, X } from "lucide-react";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { UnidadeMedida, UnidadeMedidaLabel, type UnidadeMedida as UnidadeMedidaType } from "@/enums/UnidadeMedida";
 import { receitaService } from "@/services/receitaService";
-import { UnidadeMedida, UnidadeMedidaLabel } from "../enums/UnidadeMedida";
+
+interface IngredienteForm {
+  nome: string;
+  quantidade: string;
+  unidade: UnidadeMedidaType | "";
+}
+
+function criarIngredienteVazio(): IngredienteForm {
+  return { nome: "", quantidade: "", unidade: "" };
+}
 
 export function CriarReceita() {
   const navigate = useNavigate();
@@ -11,16 +22,15 @@ export function CriarReceita() {
 
   const [titulo, setTitulo] = useState("");
   const [imagemArquivo, setImagemArquivo] = useState<File | null>(null);
-  const [previewImagem, setPreviewImagem] = useState("");
   const [descricao, setDescricao] = useState("");
   const [tempoPreparo, setTempoPreparo] = useState("");
   const [porcoes, setPorcoes] = useState("1");
   const [instrucoes, setInstrucoes] = useState<string[]>([""]);
-  const [ingredientes, setIngredientes] = useState<
-    { nome: string; quantidade: string; unidade: UnidadeMedida | "" }[]
-  >([{ nome: "", quantidade: "", unidade: "" }]);
+  const [ingredientes, setIngredientes] = useState<IngredienteForm[]>([criarIngredienteVazio()]);
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
+
+  const [previewImagem, setPreviewImagem] = useState("");
 
   useEffect(() => {
     if (!imagemArquivo) {
@@ -35,34 +45,33 @@ export function CriarReceita() {
   }, [imagemArquivo]);
 
   function adicionarIngrediente() {
-    setIngredientes([
-      ...ingredientes,
-      { nome: "", quantidade: "", unidade: "" },
-    ]);
+    setIngredientes((current) => [...current, criarIngredienteVazio()]);
   }
 
   function removerIngrediente(index: number) {
-    setIngredientes(ingredientes.filter((_, i) => i !== index));
+    setIngredientes((current) => current.filter((_, itemIndex) => itemIndex !== index));
   }
 
-  function atualizarIngrediente(index: number, campo: string, valor: string) {
-    const novos = [...ingredientes];
-    novos[index] = { ...novos[index], [campo]: valor };
-    setIngredientes(novos);
+  function atualizarIngrediente(index: number, campo: keyof IngredienteForm, valor: string) {
+    setIngredientes((current) =>
+      current.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, [campo]: valor } : item,
+      ),
+    );
   }
 
   function adicionarInstrucao() {
-    setInstrucoes([...instrucoes, ""]);
+    setInstrucoes((current) => [...current, ""]);
   }
 
   function removerInstrucao(index: number) {
-    setInstrucoes(instrucoes.filter((_, i) => i !== index));
+    setInstrucoes((current) => current.filter((_, itemIndex) => itemIndex !== index));
   }
 
   function atualizarInstrucao(index: number, valor: string) {
-    const novas = [...instrucoes];
-    novas[index] = valor;
-    setInstrucoes(novas);
+    setInstrucoes((current) =>
+      current.map((item, itemIndex) => (itemIndex === index ? valor : item)),
+    );
   }
 
   function handleImagemChange(event: ChangeEvent<HTMLInputElement>) {
@@ -80,17 +89,22 @@ export function CriarReceita() {
   }
 
   async function handleSalvar() {
-    if (!titulo || !descricao || !tempoPreparo || !porcoes) {
-      setErro("Preencha todos os campos, não deixe faltar.");
+    const tituloLimpo = titulo.trim();
+    const descricaoLimpa = descricao.trim();
+    const tempo = Number(tempoPreparo);
+    const totalPorcoes = Number(porcoes);
+
+    if (!tituloLimpo || !descricaoLimpa || !tempo || !totalPorcoes) {
+      setErro("Preencha todos os campos.");
       return;
     }
 
-    if (ingredientes.some((i) => !i.nome || !i.quantidade || !i.unidade)) {
+    if (ingredientes.some((item) => !item.nome.trim() || !item.quantidade.trim() || !item.unidade)) {
       setErro("Preencha todos os campos dos ingredientes.");
       return;
     }
 
-    if (instrucoes.some((i) => !i.trim())) {
+    if (instrucoes.some((item) => !item.trim())) {
       setErro("Preencha todas as instruções.");
       return;
     }
@@ -100,18 +114,17 @@ export function CriarReceita() {
 
     try {
       await receitaService.criar({
-        titulo,
-        descricao,
+        titulo: tituloLimpo,
+        descricao: descricaoLimpa,
         imagemArquivo,
-        tempoPreparo: Number(tempoPreparo),
-        porcoes: Number(porcoes),
+        tempoPreparo: tempo,
+        porcoes: totalPorcoes,
         ingredientes,
-        instrucoes,
+        instrucoes: instrucoes.map((item) => item.trim()),
       });
 
       navigate("/minhas-receitas");
-    } catch (error: any) {
-      console.error("ERRO COMPLETO:", error);
+    } catch {
       setErro("Erro ao salvar receita. Tente novamente.");
     } finally {
       setCarregando(false);
@@ -120,16 +133,17 @@ export function CriarReceita() {
 
   if (!estaAutenticado) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-6 text-center">
+      <div className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
         <h2 className="text-lg font-semibold text-gray-500">
-          Você precisa estar logado!
+          Você precisa estar logado
         </h2>
-        <p className="text-sm text-gray-400 mt-1 mb-6">
-          Entre na sua conta para criar receitas!
+        <p className="mt-1 mb-6 text-sm text-gray-400">
+          Entre na sua conta para criar receitas
         </p>
         <button
+          type="button"
           onClick={() => navigate("/login")}
-          className="bg-orange-600 text-white px-6 py-3 rounded-lg font-medium cursor-pointer"
+          className="rounded-lg bg-orange-600 px-6 py-3 font-medium text-white transition-colors hover:bg-orange-700"
         >
           Fazer login
         </button>
@@ -139,55 +153,55 @@ export function CriarReceita() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <div className="bg-linear-to-br from-orange-500 via-orange-600 to-red-600 text-white pt-12 pb-6 px-6 rounded-b-3xl flex items-center gap-3 shadow-lg">
-        <button onClick={() => navigate(-1)} className="cursor-pointer">
+      <div className="flex items-center gap-3 rounded-b-3xl bg-linear-to-br from-orange-500 via-orange-600 to-red-600 px-6 pb-6 pt-12 text-white shadow-lg">
+        <button type="button" onClick={() => navigate(-1)} aria-label="Voltar">
           <ArrowLeft size={22} />
         </button>
-        <h1 className="text-xl font-bold">Criar Receita</h1>
+        <h1 className="text-xl font-bold">Criar receita</h1>
       </div>
 
-      <div className="px-6 mt-6 space-y-4">
+      <div className="mt-6 space-y-4 px-6">
         {erro && (
-          <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg">
+          <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
             {erro}
           </div>
         )}
 
-        <div className="bg-white rounded-2xl shadow-sm p-4 space-y-3">
+        <section className="space-y-3 rounded-2xl bg-white p-4 shadow-sm">
           <h2 className="font-semibold text-gray-800">Informações básicas</h2>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="mb-1 block text-sm font-medium text-gray-700">
               Título *
             </label>
             <input
               type="text"
               value={titulo}
-              onChange={(e) => setTitulo(e.target.value)}
+              onChange={(event) => setTitulo(event.target.value)}
               placeholder="Ex: Frango grelhado com legumes"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm"
+              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-orange-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="mb-1 block text-sm font-medium text-gray-700">
               Descrição *
             </label>
             <textarea
               value={descricao}
-              onChange={(e) => setDescricao(e.target.value)}
+              onChange={(event) => setDescricao(event.target.value)}
               placeholder="Descreva brevemente sua receita..."
               rows={3}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm resize-none"
+              className="w-full resize-none rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-orange-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="mb-1 block text-sm font-medium text-gray-700">
               Imagem da receita
             </label>
 
-            <label className="flex items-center justify-center w-full px-4 py-3 border border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-orange-400 hover:bg-orange-50 transition-colors">
+            <label className="flex w-full cursor-pointer items-center justify-center rounded-lg border border-dashed border-gray-300 px-4 py-3 transition-colors hover:border-orange-400 hover:bg-orange-50">
               <span className="text-sm text-gray-600">
                 {imagemArquivo ? "Trocar imagem" : "Selecionar imagem"}
               </span>
@@ -202,7 +216,7 @@ export function CriarReceita() {
             {imagemArquivo && (
               <div className="mt-2 flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-gray-700 truncate">
+                  <p className="truncate text-sm font-medium text-gray-700">
                     {imagemArquivo.name}
                   </p>
                   <p className="text-xs text-gray-500">
@@ -213,7 +227,7 @@ export function CriarReceita() {
                 <button
                   type="button"
                   onClick={() => setImagemArquivo(null)}
-                  className="text-red-500 cursor-pointer"
+                  className="text-red-500"
                   aria-label="Remover imagem"
                 >
                   <X size={18} />
@@ -225,86 +239,85 @@ export function CriarReceita() {
               <img
                 src={previewImagem}
                 alt="Preview"
-                className="mt-2 w-full h-40 object-cover rounded-lg"
+                className="mt-2 h-40 w-full rounded-lg object-cover"
               />
             )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="mb-1 block text-sm font-medium text-gray-700">
                 Tempo (min) *
               </label>
               <input
                 type="number"
                 min={1}
                 value={tempoPreparo}
-                onChange={(e) => setTempoPreparo(e.target.value)}
+                onChange={(event) => setTempoPreparo(event.target.value)}
                 placeholder="Ex: 30"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm"
+                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-orange-500"
               />
             </div>
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="mb-1 block text-sm font-medium text-gray-700">
                 Porções *
               </label>
               <input
                 type="number"
                 min={1}
                 value={porcoes}
-                onChange={(e) => setPorcoes(e.target.value)}
+                onChange={(event) => setPorcoes(event.target.value)}
                 placeholder="Ex: 4"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm"
+                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-orange-500"
               />
             </div>
           </div>
-        </div>
+        </section>
 
-        <div className="bg-white rounded-2xl shadow-sm p-4 space-y-3">
+        <section className="space-y-3 rounded-2xl bg-white p-4 shadow-sm">
           <h2 className="font-semibold text-gray-800">Ingredientes</h2>
 
-          {ingredientes.map((ing, index) => (
-            <div key={index} className="flex gap-2 items-start">
-              <div className="flex-1 grid grid-cols-3 gap-2">
+          {ingredientes.map((ingrediente, index) => (
+            <div key={index} className="flex items-start gap-2">
+              <div className="grid flex-1 grid-cols-3 gap-2">
                 <input
                   type="text"
-                  value={ing.nome}
-                  onChange={(e) =>
-                    atualizarIngrediente(index, "nome", e.target.value)
+                  value={ingrediente.nome}
+                  onChange={(event) =>
+                    atualizarIngrediente(index, "nome", event.target.value)
                   }
                   placeholder="Nome"
-                  className="col-span-1 px-3 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm"
+                  className="col-span-1 rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition focus:ring-2 focus:ring-orange-500"
                 />
+
                 <input
                   type="number"
-                  value={ing.quantidade}
-                  onChange={(e) =>
-                    atualizarIngrediente(index, "quantidade", e.target.value)
+                  value={ingrediente.quantidade}
+                  onChange={(event) =>
+                    atualizarIngrediente(index, "quantidade", event.target.value)
                   }
-                  placeholder="Quantidade (ex: 1, 2, 500, etc)"
-                  className="px-3 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm"
+                  placeholder="Quantidade"
+                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition focus:ring-2 focus:ring-orange-500"
                 />
+
                 <div className="relative">
                   <select
-                    value={ing.unidade}
-                    onChange={(e) =>
-                      atualizarIngrediente(index, "unidade", e.target.value)
+                    value={ingrediente.unidade}
+                    onChange={(event) =>
+                      atualizarIngrediente(index, "unidade", event.target.value)
                     }
-                    className={`w-full appearance-none px-3 py-2 pr-9 border rounded-lg outline-none text-sm transition-all bg-white hover:border-orange-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-400 ${
-                      ing.unidade
-                        ? "text-gray-800 border-gray-300"
-                        : "text-gray-400 border-gray-200"
-                    }`}
+                    className={`w-full appearance-none rounded-lg border px-3 py-2 pr-9 text-sm outline-none transition ${
+                      ingrediente.unidade
+                        ? "border-gray-300 text-gray-800"
+                        : "border-gray-200 text-gray-400"
+                    } focus:border-orange-400 focus:ring-2 focus:ring-orange-500 bg-white`}
                   >
                     <option value="" disabled>
                       Unidade
                     </option>
                     {Object.values(UnidadeMedida).map((unidade) => (
-                      <option
-                        key={unidade}
-                        value={unidade}
-                        className="text-gray-800"
-                      >
+                      <option key={unidade} value={unidade} className="text-gray-800">
                         {UnidadeMedidaLabel[unidade]}
                       </option>
                     ))}
@@ -318,8 +331,10 @@ export function CriarReceita() {
 
               {ingredientes.length > 1 && (
                 <button
+                  type="button"
                   onClick={() => removerIngrediente(index)}
-                  className="text-red-400 cursor-pointer mt-2"
+                  className="mt-2 text-red-400"
+                  aria-label="Remover ingrediente"
                 >
                   <X size={18} />
                 </button>
@@ -328,33 +343,38 @@ export function CriarReceita() {
           ))}
 
           <button
+            type="button"
             onClick={adicionarIngrediente}
-            className="flex items-center gap-2 text-orange-600 text-sm font-medium cursor-pointer"
+            className="inline-flex items-center gap-2 text-sm font-medium text-orange-600"
           >
             <Plus size={16} />
             Adicionar ingrediente
           </button>
-        </div>
+        </section>
 
-        <div className="bg-white rounded-2xl shadow-sm p-4 space-y-3">
-          <h2 className="font-semibold text-gray-800">Modo de Preparo</h2>
+        <section className="space-y-3 rounded-2xl bg-white p-4 shadow-sm">
+          <h2 className="font-semibold text-gray-800">Modo de preparo</h2>
 
           {instrucoes.map((instrucao, index) => (
-            <div key={index} className="flex gap-2 items-start">
-              <span className="shrink-0 w-6 h-6 bg-orange-600 text-white rounded-full flex items-center justify-center text-xs font-bold mt-2">
+            <div key={index} className="flex items-start gap-2">
+              <span className="mt-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-orange-600 text-xs font-bold text-white">
                 {index + 1}
               </span>
+
               <textarea
                 value={instrucao}
-                onChange={(e) => atualizarInstrucao(index, e.target.value)}
+                onChange={(event) => atualizarInstrucao(index, event.target.value)}
                 placeholder={`Passo ${index + 1}...`}
                 rows={2}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm resize-none"
+                className="flex-1 resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition focus:ring-2 focus:ring-orange-500"
               />
+
               {instrucoes.length > 1 && (
                 <button
+                  type="button"
                   onClick={() => removerInstrucao(index)}
-                  className="text-red-400 cursor-pointer mt-2"
+                  className="mt-2 text-red-400"
+                  aria-label="Remover passo"
                 >
                   <X size={18} />
                 </button>
@@ -363,20 +383,22 @@ export function CriarReceita() {
           ))}
 
           <button
+            type="button"
             onClick={adicionarInstrucao}
-            className="flex items-center gap-2 text-orange-600 text-sm font-medium cursor-pointer"
+            className="inline-flex items-center gap-2 text-sm font-medium text-orange-600"
           >
             <Plus size={16} />
             Adicionar passo
           </button>
-        </div>
+        </section>
 
         <button
+          type="button"
           onClick={handleSalvar}
           disabled={carregando}
-          className="w-full bg-linear-to-r from-orange-500 to-orange-600 text-white py-3 rounded-lg font-medium hover:from-orange-600 hover:to-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all cursor-pointer"
+          className="w-full cursor-pointer rounded-lg bg-linear-to-r from-orange-500 to-orange-600 py-3 font-medium text-white transition-all hover:from-orange-600 hover:to-orange-700 disabled:cursor-not-allowed disabled:bg-gray-300"
         >
-          {carregando ? "Salvando..." : "Salvar Receita"}
+          {carregando ? "Salvando..." : "Salvar receita"}
         </button>
       </div>
     </div>

@@ -6,10 +6,10 @@ interface BackendIngredientDTO {
   name?: string;
 }
 
-function mapBackendIngredientToFrontend(item: BackendIngredientDTO): Ingrediente {
+function mapIngredient(item: BackendIngredientDTO): Ingrediente {
   return {
     id: item.id ?? crypto.randomUUID(),
-    nome: item.name ?? "",
+    nome: item.name?.trim() ?? "",
     quantidade: "",
     unidade: "",
   };
@@ -18,15 +18,15 @@ function mapBackendIngredientToFrontend(item: BackendIngredientDTO): Ingrediente
 export const ingredienteService = {
   listar: async () => {
     const resposta = await api.get<BackendIngredientDTO[]>("/ingredients");
-    return resposta
-      .map(mapBackendIngredientToFrontend)
-      .filter((item) => item.nome.trim().length > 0);
+    return resposta.map(mapIngredient).filter((item) => item.nome.length > 0);
   },
 
   buscar: async (termo: string) => {
-    const resposta = await api.get<BackendIngredientDTO[]>("/ingredients/search", { q: termo });
-    return resposta
-      .map(mapBackendIngredientToFrontend)
-      .filter((item) => item.nome.trim().length > 0);
+    const resposta = await api.get<BackendIngredientDTO[]>(
+      "/ingredients/search",
+      { q: termo },
+    );
+
+    return resposta.map(mapIngredient).filter((item) => item.nome.length > 0);
   },
 };

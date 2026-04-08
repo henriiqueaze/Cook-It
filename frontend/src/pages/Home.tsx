@@ -1,203 +1,120 @@
-import { useEffect, useRef, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ReceitaCard } from "@/components/ReceitaCard";
 import { receitaService } from "@/services/receitaService";
 import type { Receita } from "@/types";
-import { ReceitaCard } from "@/components/ReceitaCard";
-
-const AUTO_ADVANCE_MS = 5000;
 
 export function Home() {
   const navigate = useNavigate();
   const carrosselRef = useRef<HTMLDivElement>(null);
-  const autoTimerRef = useRef<number | null>(null);
-  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const [receitas, setReceitas] = useState<Receita[]>([]);
   const [destaques, setDestaques] = useState<Receita[]>([]);
-  const [carregandoDestaques, setCarregandoDestaques] = useState(true);
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [direction, setDirection] = useState<"left" | "right">("right");
+  const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
     let ativo = true;
 
-    receitaService
-      .listar()
-      .then((lista) => {
-        if (ativo) setReceitas(lista);
-      })
-      .catch((erro) => {
-        console.error("Erro ao carregar receitas:", erro);
-        if (ativo) setReceitas([]);
-      });
+    async function carregar() {
+      try {
+        const [lista, topRated] = await Promise.all([
+          receitaService.listar(),
+          receitaService.destaques(),
+        ]);
 
-    receitaService
-      .destaques()
-      .then((lista) => {
-        if (ativo) setDestaques(lista);
-      })
-      .catch((erro) => {
-        console.error("Erro ao carregar destaques:", erro);
-        if (ativo) setDestaques([]);
-      })
-      .finally(() => {
-        if (ativo) setCarregandoDestaques(false);
-      });
+        if (!ativo) {
+          return;
+        }
+
+        setReceitas(lista);
+        setDestaques(topRated);
+      } catch {
+        if (ativo) {
+          setReceitas([]);
+          setDestaques([]);
+        }
+      } finally {
+        if (ativo) {
+          setCarregando(false);
+        }
+      }
+    }
+
+    void carregar();
 
     return () => {
       ativo = false;
     };
   }, []);
 
-  const scrollToIndex = useCallback((index: number, smooth = true) => {
-    const elemento = itemRefs.current[index];
-    if (!elemento) return;
+  const moverCarrossel = useCallback((direcao: "left" | "right") => {
+    const container = carrosselRef.current;
 
-    elemento.scrollIntoView({
-      behavior: smooth ? "smooth" : "auto",
-      inline: "center",
-      block: "nearest",
+    if (!container) {
+      return;
+    }
+
+    const deslocamento = container.clientWidth * 0.85;
+    container.scrollBy({
+      left: direcao === "right" ? deslocamento : -deslocamento,
+      behavior: "smooth",
     });
   }, []);
 
-  useEffect(() => {
-    if (destaques.length === 0) return;
-
-    itemRefs.current = itemRefs.current.slice(0, destaques.length);
-
-    const initialIndex = 0;
-    setActiveIndex(initialIndex);
-    setDirection("right");
-
-    const id = window.requestAnimationFrame(() => {
-      scrollToIndex(initialIndex, false);
-    });
-
-    return () => {
-      window.cancelAnimationFrame(id);
-    };
-  }, [destaques.length, scrollToIndex]);
-
-  const goNext = useCallback(
-    (smooth = true) => {
-      if (destaques.length <= 1) return;
-
-      setDirection("right");
-      setActiveIndex((current) => {
-        const next = Math.min(current + 1, destaques.length - 1);
-        scrollToIndex(next, smooth);
-        return next;
-      });
-    },
-    [destaques.length, scrollToIndex],
-  );
-
-  const goPrev = useCallback(
-    (smooth = true) => {
-      if (destaques.length <= 1) return;
-
-      setDirection("left");
-      setActiveIndex((current) => {
-        const prev = Math.max(current - 1, 0);
-        scrollToIndex(prev, smooth);
-        return prev;
-      });
-    },
-    [destaques.length, scrollToIndex],
-  );
-
-  useEffect(() => {
-    if (destaques.length <= 1) return;
-
-    if (autoTimerRef.current) {
-      window.clearTimeout(autoTimerRef.current);
-    }
-
-    autoTimerRef.current = window.setTimeout(() => {
-      setActiveIndex((current) => {
-        let next = current;
-        let nextDirection = direction;
-
-        if (current >= destaques.length - 1) {
-          nextDirection = "left";
-          next = Math.max(current - 1, 0);
-        } else if (current <= 0) {
-          nextDirection = "right";
-          next = Math.min(current + 1, destaques.length - 1);
-        } else if (direction === "right") {
-          next = current + 1;
-        } else {
-          next = current - 1;
-        }
-
-        setDirection(nextDirection);
-        scrollToIndex(next, true);
-        return next;
-      });
-    }, AUTO_ADVANCE_MS);
-
-    return () => {
-      if (autoTimerRef.current) {
-        window.clearTimeout(autoTimerRef.current);
-      }
-    };
-  }, [activeIndex, direction, destaques.length, scrollToIndex]);
-
-  const totalReceitas = receitas.length;
-
   return (
     <div className="min-h-screen bg-linear-to-b from-orange-50 via-amber-50/30 to-white pb-5">
-      <div className="bg-linear-to-br from-orange-500 via-orange-600 to-red-600 text-white pt-12 pb-8 px-6 rounded-b-3xl shadow-lg">
-        <div className="flex items-center gap-3 mb-2">
+      <div className="rounded-b-3xl bg-linear-to-br from-orange-500 via-orange-600 to-red-600 px-6 pb-8 pt-12 text-white shadow-lg">
+        <div className="mb-2 flex items-center gap-3">
           <img
             src="/brand-cook-it.png"
             alt="Cook-It"
-            className="w-8 h-8 object-contain"
+            className="h-8 w-8 object-contain"
           />
           <h1 className="text-2xl font-bold">COOK-IT</h1>
         </div>
-        <p className="text-orange-50 text-sm text-center">
+        <p className="text-center text-sm text-orange-50">
           Encontre receitas com os ingredientes que você tem
         </p>
       </div>
 
-      <div className="px-6 -mt-4">
-        <div className="bg-white rounded-2xl shadow-lg p-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-2">
+      <div className="-mt-4 px-6">
+        <section className="rounded-2xl bg-white p-6 shadow-lg">
+          <h2 className="mb-2 text-lg font-semibold text-gray-800">
             Comece sua busca
           </h2>
-          <p className="text-sm text-gray-600 mb-4">
-            Vá para a tela de busca e adicione os ingredientes que você tem em
-            casa.
+          <p className="mb-4 text-sm text-gray-600">
+            Vá para a tela de busca e adicione os ingredientes que você tem em casa.
           </p>
           <button
+            type="button"
             onClick={() => navigate("/busca")}
-            className="w-full bg-linear-to-r from-orange-500 to-orange-600 text-white py-3 rounded-lg font-medium hover:from-orange-600 hover:to-orange-700 transition-all shadow-md"
+            className="w-full rounded-lg bg-linear-to-r from-orange-500 to-orange-600 py-3 font-medium text-white shadow-md transition-all hover:from-orange-600 hover:to-orange-700"
           >
             Ir para a busca
           </button>
-        </div>
+        </section>
 
-        <div className="mt-8">
-          <div className="flex items-center justify-between gap-2 mb-4">
-            <h2 className="font-semibold text-lg">Receitas em Destaque</h2>
+        <section className="mt-8">
+          <div className="mb-4 flex items-center justify-between gap-2">
+            <h2 className="text-lg font-semibold text-gray-800">
+              Receitas em destaque
+            </h2>
 
             {destaques.length > 0 && (
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => goPrev(true)}
-                  className="w-9 h-9 rounded-full bg-white shadow-md flex items-center justify-center text-gray-700 hover:bg-gray-50 active:scale-95 transition"
+                  onClick={() => moverCarrossel("left")}
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-gray-700 shadow-md transition hover:bg-gray-50 active:scale-95"
                   aria-label="Voltar destaque"
                 >
                   <ChevronLeft size={20} />
                 </button>
-
                 <button
                   type="button"
-                  onClick={() => goNext(true)}
-                  className="w-9 h-9 rounded-full bg-white shadow-md flex items-center justify-center text-gray-700 hover:bg-gray-50 active:scale-95 transition"
+                  onClick={() => moverCarrossel("right")}
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-gray-700 shadow-md transition hover:bg-gray-50 active:scale-95"
                   aria-label="Avançar destaque"
                 >
                   <ChevronRight size={20} />
@@ -206,83 +123,68 @@ export function Home() {
             )}
           </div>
 
-          {carregandoDestaques ? (
-            <div className="text-sm text-gray-500">Carregando destaques...</div>
+          {carregando ? (
+            <div className="text-sm text-gray-500">Carregando receitas...</div>
           ) : destaques.length > 0 ? (
-            <div className="overflow-hidden">
-              <div
-                ref={carrosselRef}
-                className="flex items-center gap-4 overflow-x-auto scroll-smooth pb-3 px-[8%] snap-x snap-mandatory scrollbar-hide"
-              >
-                {destaques.map((receita, index) => (
-                  <div
-                    key={receita.id}
-                    ref={(el) => {
-                      itemRefs.current[index] = el;
-                    }}
-                    className="shrink-0 w-[82%] sm:w-[62%] md:w-[44%] lg:w-[32%] snap-center"
-                  >
-                    <ReceitaCard receita={receita} />
-                  </div>
-                ))}
-              </div>
+            <div
+              ref={carrosselRef}
+              className="flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-3 [scrollbar-width:none]"
+            >
+              {destaques.map((receita) => (
+                <div
+                  key={receita.id}
+                  className="w-[82%] shrink-0 snap-center sm:w-[62%] md:w-[44%] lg:w-[32%]"
+                >
+                  <ReceitaCard receita={receita} />
+                </div>
+              ))}
             </div>
           ) : (
             <div className="text-sm text-gray-500">
               Nenhuma receita encontrada no momento.
             </div>
           )}
-        </div>
+        </section>
 
-        <div className="mt-8 grid grid-cols-2 gap-4">
-          <div className="bg-linear-to-br from-orange-500 to-orange-600 rounded-xl p-4 text-center shadow-md">
-            <div className="text-3xl font-bold text-white mb-1">
-              {totalReceitas}+
+        <section className="mt-8 grid grid-cols-2 gap-4">
+          <div className="rounded-xl bg-linear-to-br from-orange-500 to-orange-600 p-4 text-center shadow-md">
+            <div className="mb-1 text-3xl font-bold text-white">
+              {receitas.length}+
             </div>
             <div className="text-sm text-orange-50">Receitas</div>
           </div>
-          <div className="bg-linear-to-br from-green-500 to-green-600 rounded-xl p-4 text-center shadow-md">
-            <div className="text-3xl font-bold text-white mb-1">1000+</div>
+          <div className="rounded-xl bg-linear-to-br from-green-500 to-green-600 p-4 text-center shadow-md">
+            <div className="mb-1 text-3xl font-bold text-white">1000+</div>
             <div className="text-sm text-green-50">Usuários</div>
           </div>
-        </div>
+        </section>
 
-        <div className="mt-8 space-y-4 mb-8">
-          <h2 className="font-semibold text-lg">Como funciona</h2>
-
-          {[
-            {
-              n: 1,
-              titulo: "Adicione ingredientes",
-              desc: "Digite os ingredientes que você tem em casa",
-            },
-            {
-              n: 2,
-              titulo: "Encontre receitas",
-              desc: "Veja receitas compatíveis com seus ingredientes",
-            },
-            {
-              n: 3,
-              titulo: "Cozinhe e aproveite",
-              desc: "Siga o passo a passo e prepare pratos deliciosos",
-            },
-          ].map(({ n, titulo, desc }) => (
-            <div
-              key={n}
-              className="bg-white rounded-xl p-4 shadow-sm border-l-4 border-orange-500"
+        <section className="mb-8 mt-8 space-y-4">
+          <h2 className="text-lg font-semibold text-gray-800">Ações rápidas</h2>
+          <div className="grid gap-3">
+            <button
+              type="button"
+              onClick={() => navigate("/busca")}
+              className="rounded-xl bg-white p-4 text-left shadow-sm transition hover:shadow-md"
             >
-              <div className="flex gap-3">
-                <div className="shrink-0 w-8 h-8 bg-linear-to-br from-orange-500 to-orange-600 text-white rounded-full flex items-center justify-center font-bold shadow-md">
-                  {n}
-                </div>
-                <div>
-                  <h3 className="font-medium mb-1">{titulo}</h3>
-                  <p className="text-sm text-gray-600">{desc}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+              <p className="font-semibold text-gray-800">Buscar por ingredientes</p>
+              <p className="mt-1 text-sm text-gray-500">
+                Monte uma busca rápida com o que você tem em casa.
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => navigate("/favoritos")}
+              className="rounded-xl bg-white p-4 text-left shadow-sm transition hover:shadow-md"
+            >
+              <p className="font-semibold text-gray-800">Ver favoritos</p>
+              <p className="mt-1 text-sm text-gray-500">
+                Acesse as receitas que você salvou.
+              </p>
+            </button>
+          </div>
+        </section>
       </div>
     </div>
   );

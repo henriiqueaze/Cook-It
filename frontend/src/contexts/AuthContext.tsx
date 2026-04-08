@@ -1,6 +1,12 @@
-import { createContext, useContext, useState } from "react";
-import type { ReactNode } from "react";
-import type { Usuario } from "../types";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import type { Usuario } from "@/types";
 
 interface AuthContextData {
   usuario: Usuario | null;
@@ -11,60 +17,66 @@ interface AuthContextData {
   atualizarUsuario: (usuario: Usuario) => void;
 }
 
-const AuthContext = createContext<AuthContextData>({} as AuthContextData);
+const AuthContext = createContext<AuthContextData | undefined>(undefined);
+
+function readUsuario() {
+  const salvo = localStorage.getItem("usuario");
+
+  if (!salvo || salvo === "undefined") {
+    return null;
+  }
+
+  try {
+    return JSON.parse(salvo) as Usuario;
+  } catch {
+    return null;
+  }
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [usuario, setUsuario] = useState<Usuario | null>(() => {
-    const salvo = localStorage.getItem("usuario");
+  const [usuario, setUsuario] = useState<Usuario | null>(() => readUsuario());
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem("token"));
 
-    if (!salvo || salvo === "undefined") return null;
-
-    try {
-      return JSON.parse(salvo);
-    } catch {
-      return null;
-    }
-  });
-
-  const [token, setToken] = useState<string | null>(() => {
-    return localStorage.getItem("token");
-  });
-
-  function salvarAuth(novoToken: string, novoUsuario: Usuario) {
+  const salvarAuth = useCallback((novoToken: string, novoUsuario: Usuario) => {
     setToken(novoToken);
     setUsuario(novoUsuario);
     localStorage.setItem("token", novoToken);
     localStorage.setItem("usuario", JSON.stringify(novoUsuario));
-  }
+  }, []);
 
-  function sair() {
+  const sair = useCallback(() => {
     setToken(null);
     setUsuario(null);
     localStorage.removeItem("token");
     localStorage.removeItem("usuario");
-  }
+  }, []);
 
-  function atualizarUsuario(novoUsuario: Usuario) {
+  const atualizarUsuario = useCallback((novoUsuario: Usuario) => {
     setUsuario(novoUsuario);
     localStorage.setItem("usuario", JSON.stringify(novoUsuario));
-  }
+  }, []);
 
-  return (
-    <AuthContext.Provider
-      value={{
-        usuario,
-        token,
-        estaAutenticado: !!token,
-        salvarAuth,
-        sair,
-        atualizarUsuario,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({
+      usuario,
+      token,
+      estaAutenticado: Boolean(token),
+      salvarAuth,
+      sair,
+      atualizarUsuario,
+    }),
+    [usuario, token, salvarAuth, sair, atualizarUsuario],
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+
+  if (!context) {
+    throw new Error("useAuth must be used within AuthProvider");
+  }
+
+  return context;
 }

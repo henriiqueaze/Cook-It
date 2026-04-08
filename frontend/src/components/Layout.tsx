@@ -3,8 +3,8 @@ import { BottomNav } from "./BottomNav";
 
 export function Layout() {
   return (
-    <div className="min-h-screen bg-gray-50 relative">
-      <main className="pb-16">
+    <div className="min-h-screen bg-gray-50">
+      <main className="pb-20">
         <Outlet />
       </main>
       <BottomNav />

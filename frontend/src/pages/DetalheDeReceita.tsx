@@ -1,26 +1,45 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
+  Check,
   Clock,
-  Users,
   Heart,
   Minus,
-  Plus,
-  Trash2,
-  Send,
   PencilLine,
+  Plus,
+  Send,
+  Trash2,
+  Users,
   X,
-  Check,
 } from "lucide-react";
-import { useAuth } from "../contexts/AuthContext";
-import { useFavorites } from "../contexts/FavoritesContext";
-import { RatingStars } from "../components/AvaliacaoEstrelas";
-import { UnidadeMedidaLabel } from "../enums/UnidadeMedida";
-import { receitaService } from "../services/receitaService";
-import { comentarioService } from "@/services/comentarioService";
-import type { Comentario, Receita } from "../types";
 import { toast } from "sonner";
+import { RatingStars } from "@/components/AvaliacaoEstrelas";
+import { useAuth } from "@/contexts/AuthContext";
+import { useFavorites } from "@/contexts/FavoritesContext";
+import { comentarioService } from "@/services/comentarioService";
+import { receitaService } from "@/services/receitaService";
+import type { Comentario, Receita } from "@/types";
+import { UnidadeMedidaLabel } from "@/enums/UnidadeMedida";
+
+function formatarData(data?: string) {
+  if (!data) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(new Date(data));
+}
+
+function obterLabelUnidade(unidade?: string) {
+  if (!unidade) {
+    return "";
+  }
+
+  return UnidadeMedidaLabel[unidade as keyof typeof UnidadeMedidaLabel] ?? unidade;
+}
 
 export function DetalheReceita() {
   const { id } = useParams();
@@ -35,20 +54,108 @@ export function DetalheReceita() {
   const [novoComentario, setNovoComentario] = useState("");
   const [avaliacaoUsuario, setAvaliacaoUsuario] = useState(0);
   const [comentarios, setComentarios] = useState<Comentario[]>([]);
-  const [comentarioEditandoId, setComentarioEditandoId] = useState<
-    Comentario["id"] | null
-  >(null);
+  const [comentarioEditandoId, setComentarioEditandoId] = useState<Comentario["id"] | null>(null);
   const [textoEdicaoComentario, setTextoEdicaoComentario] = useState("");
 
-  const chaveAvaliacao = useMemo(() => {
-    if (!id || !usuario?.id) return null;
-    return `rating-recipe-${id}-user-${usuario.id}`;
-  }, [id, usuario?.id]);
+  const favoritada = useMemo(() => {
+    if (!receita) {
+      return false;
+    }
+
+    return isFavorite(receita.id);
+  }, [isFavorite, receita]);
+
+  useEffect(() => {
+    if (!id) {
+      setReceita(null);
+      setCarregandoReceita(false);
+      return;
+    }
+
+    let ativo = true;
+    setCarregandoReceita(true);
+
+    receitaService
+      .buscarPorId(id)
+      .then((dados) => {
+        if (ativo) {
+          setReceita(dados);
+          setAvaliacaoUsuario(dados.avaliacaoUsuario ?? 0);
+        }
+      })
+      .catch(() => {
+        if (ativo) {
+          setReceita(null);
+        }
+      })
+      .finally(() => {
+        if (ativo) {
+          setCarregandoReceita(false);
+        }
+      });
+
+    return () => {
+      ativo = false;
+    };
+  }, [id]);
+
+  useEffect(() => {
+    if (!id) {
+      setComentarios([]);
+      setCarregandoComentarios(false);
+      return;
+    }
+
+    let ativo = true;
+    setCarregandoComentarios(true);
+
+    comentarioService
+      .listarPorReceita(id)
+      .then((lista) => {
+        if (ativo) {
+          setComentarios(Array.isArray(lista) ? lista : []);
+        }
+      })
+      .catch(() => {
+        if (ativo) {
+          setComentarios([]);
+        }
+      })
+      .finally(() => {
+        if (ativo) {
+          setCarregandoComentarios(false);
+        }
+      });
+
+    return () => {
+      ativo = false;
+    };
+  }, [id]);
+
+  useEffect(() => {
+    if (!receita || avaliacaoUsuario > 0 || !id || !usuario?.id) {
+      return;
+    }
+
+    const chave = `rating-recipe-${id}-user-${usuario.id}`;
+    const salvo = localStorage.getItem(chave);
+
+    if (!salvo) {
+      return;
+    }
+
+    const nota = Number(salvo);
+
+    if (Number.isNaN(nota) || nota < 1 || nota > 5) {
+      localStorage.removeItem(chave);
+      return;
+    }
+
+    setAvaliacaoUsuario(nota);
+  }, [avaliacaoUsuario, id, receita, usuario?.id]);
 
   function handleVoltar() {
-    const historico = window.history.state as { idx?: number } | null;
-
-    if (typeof historico?.idx === "number" && historico.idx > 0) {
+    if (window.history.length > 1) {
       navigate(-1);
       return;
     }
@@ -56,126 +163,10 @@ export function DetalheReceita() {
     navigate("/");
   }
 
-  function formatarData(data?: string) {
-    if (!data) return "";
-    return new Intl.DateTimeFormat("pt-BR", {
-      dateStyle: "short",
-      timeStyle: "short",
-    }).format(new Date(data));
-  }
-
-  useEffect(() => {
-    if (!chaveAvaliacao) {
-      setAvaliacaoUsuario(0);
-      return;
-    }
-
-    const salvo = localStorage.getItem(chaveAvaliacao);
-    if (!salvo) {
-      setAvaliacaoUsuario(0);
-      return;
-    }
-
-    const nota = Number(salvo);
-    if (Number.isNaN(nota) || nota < 1 || nota > 5) {
-      localStorage.removeItem(chaveAvaliacao);
-      setAvaliacaoUsuario(0);
-      return;
-    }
-
-    setAvaliacaoUsuario(nota);
-  }, [chaveAvaliacao]);
-
-  useEffect(() => {
-    let ativo = true;
-
-    if (!id) {
-      setReceita(null);
-      setCarregandoReceita(false);
-      return;
-    }
-
-    setCarregandoReceita(true);
-    receitaService
-      .buscarPorId(id)
-      .then((dados) => {
-        if (ativo) setReceita(dados);
-      })
-      .catch(() => {
-        if (ativo) setReceita(null);
-      })
-      .finally(() => {
-        if (ativo) setCarregandoReceita(false);
-      });
-
-    return () => {
-      ativo = false;
-    };
-  }, [id]);
-
-  useEffect(() => {
-    let ativo = true;
-
-    if (!id) {
-      setComentarios([]);
-      return;
-    }
-
-    setCarregandoComentarios(true);
-    comentarioService
-      .listarPorReceita(id)
-      .then((lista) => {
-        if (ativo) setComentarios(Array.isArray(lista) ? lista : []);
-      })
-      .catch(() => {
-        if (ativo) setComentarios([]);
-      })
-      .finally(() => {
-        if (ativo) setCarregandoComentarios(false);
-      });
-
-    return () => {
-      ativo = false;
-    };
-  }, [id]);
-
-  const favoritada = useMemo(() => {
-    if (!receita) return false;
-    return isFavorite(receita.id);
-  }, [receita, isFavorite]);
-
-  function obterLabelUnidade(unidade?: string) {
-    if (!unidade) return "";
-    return (UnidadeMedidaLabel as Record<string, string>)[unidade] ?? unidade;
-  }
-
-  if (carregandoReceita && !receita) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <p className="text-gray-500">Carregando receita...</p>
-      </div>
-    );
-  }
-
-  if (!receita) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <p className="text-gray-500">Receita não encontrada.</p>
-        <button
-          onClick={handleVoltar}
-          className="mt-4 text-orange-600 font-medium"
-        >
-          Voltar
-        </button>
-      </div>
-    );
-  }
-
-  const ehMinhaReceita = usuario?.id === receita.autor.id;
-  const porcoesBase = receita.porcoes ?? 1;
-
   async function handleFavoritar() {
-    if (!receita) return;
+    if (!receita) {
+      return;
+    }
 
     if (!estaAutenticado) {
       toast.error("Faça login para favoritar receitas");
@@ -185,16 +176,16 @@ export function DetalheReceita() {
 
     try {
       const adicionou = await toggleFavorite(receita);
-      toast.success(
-        adicionou ? "Adicionado aos favoritos!" : "Removido dos favoritos",
-      );
+      toast.success(adicionou ? "Adicionado aos favoritos" : "Removido dos favoritos");
     } catch {
       toast.error("Não foi possível atualizar os favoritos");
     }
   }
 
   async function handleAvaliar(nota: number) {
-    if (!receita) return;
+    if (!receita) {
+      return;
+    }
 
     if (!estaAutenticado) {
       toast.error("Faça login para avaliar receitas");
@@ -206,22 +197,22 @@ export function DetalheReceita() {
       await receitaService.avaliar(receita.id, nota);
       setAvaliacaoUsuario(nota);
 
-      if (chaveAvaliacao) {
-        localStorage.setItem(chaveAvaliacao, String(nota));
+      if (usuario?.id && id) {
+        localStorage.setItem(`rating-recipe-${id}-user-${usuario.id}`, String(nota));
       }
 
       const atualizada = await receitaService.buscarPorId(receita.id);
       setReceita(atualizada);
-
       toast.success("Avaliação enviada!");
-    } catch (error) {
-      console.error(error);
+    } catch {
       toast.error("Não foi possível enviar sua avaliação");
     }
   }
 
   async function handleComentario() {
-    if (!receita) return;
+    if (!receita) {
+      return;
+    }
 
     if (!estaAutenticado) {
       toast.error("Faça login para comentar");
@@ -229,17 +220,17 @@ export function DetalheReceita() {
       return;
     }
 
-    if (!novoComentario.trim()) return;
+    const texto = novoComentario.trim();
+
+    if (!texto) {
+      return;
+    }
 
     try {
-      const comentario = await comentarioService.adicionar(
-        receita.id,
-        novoComentario.trim(),
-      );
-
-      setComentarios((atual) => [comentario, ...atual]);
-      toast.success("Comentário adicionado!");
+      const comentario = await comentarioService.adicionar(receita.id, texto);
+      setComentarios((current) => [comentario, ...current]);
       setNovoComentario("");
+      toast.success("Comentário adicionado!");
     } catch {
       toast.error("Não foi possível adicionar o comentário");
     }
@@ -256,21 +247,23 @@ export function DetalheReceita() {
   }
 
   async function salvarEdicaoComentario(comentarioId: Comentario["id"]) {
-    if (!textoEdicaoComentario.trim()) return;
+    const texto = textoEdicaoComentario.trim();
+
+    if (!texto) {
+      return;
+    }
 
     try {
-      const atualizado = await comentarioService.atualizar(comentarioId, {
-        text: textoEdicaoComentario.trim(),
-      });
+      const atualizado = await comentarioService.atualizar(comentarioId, { text: texto });
 
-      setComentarios((atual) =>
-        atual.map((comentario) =>
+      setComentarios((current) =>
+        current.map((comentario) =>
           comentario.id === comentarioId ? atualizado : comentario,
         ),
       );
 
-      toast.success("Comentário atualizado!");
       cancelarEdicao();
+      toast.success("Comentário atualizado!");
     } catch {
       toast.error("Não foi possível atualizar o comentário");
     }
@@ -279,103 +272,117 @@ export function DetalheReceita() {
   async function excluirComentario(comentarioId: Comentario["id"]) {
     try {
       await comentarioService.deletar(comentarioId);
-      setComentarios((atual) =>
-        atual.filter((comentario) => comentario.id !== comentarioId),
-      );
-      toast.success("Comentário excluído!");
+      setComentarios((current) => current.filter((comentario) => comentario.id !== comentarioId));
+
       if (comentarioEditandoId === comentarioId) {
         cancelarEdicao();
       }
+
+      toast.success("Comentário excluído!");
     } catch {
       toast.error("Não foi possível excluir o comentário");
     }
   }
 
   async function handleDeletar() {
-    if (!receita) return;
+    if (!receita) {
+      return;
+    }
 
     try {
       await receitaService.deletar(receita.id);
       toast.success("Receita deletada!");
       navigate("/minhas-receitas");
-    } catch (erroInicial) {
-      const mensagemInicial =
-        erroInicial instanceof Error ? erroInicial.message : "";
-
-      const erroServidor = mensagemInicial.includes("500");
-      if (!erroServidor) {
-        toast.error("Não foi possível deletar a receita");
-        return;
-      }
-
+    } catch {
       try {
-        const listaComentarios = await comentarioService.listarPorReceita(
-          receita.id,
-        );
+        const listaComentarios = await comentarioService.listarPorReceita(receita.id);
 
-        if (Array.isArray(listaComentarios) && listaComentarios.length > 0) {
-          await Promise.allSettled(
-            listaComentarios.map((comentario) =>
-              comentarioService.deletar(comentario.id),
-            ),
-          );
-        }
+        await Promise.allSettled(
+          listaComentarios.map((comentario) => comentarioService.deletar(comentario.id)),
+        );
 
         await receitaService.deletar(receita.id);
         toast.success("Receita deletada!");
         navigate("/minhas-receitas");
       } catch {
-        toast.error(
-          "Não foi possível deletar a receita. Remova avaliações/comentários e tente novamente.",
-        );
+        toast.error("Não foi possível deletar a receita");
       }
     }
   }
 
+  if (carregandoReceita && !receita) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-gray-500">Carregando receita...</p>
+      </div>
+    );
+  }
+
+  if (!receita) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
+        <p className="text-gray-500">Receita não encontrada.</p>
+        <button onClick={handleVoltar} className="mt-4 font-medium text-orange-600">
+          Voltar
+        </button>
+      </div>
+    );
+  }
+
+  const ehMinhaReceita = usuario?.id === receita.autor.id;
+  const porcoesBase = receita.porcoes || 1;
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <div className="relative w-full h-64 bg-gray-200">
-        {receita.imagemUrl && (
+      <div className="relative h-64 w-full bg-gray-200">
+        {receita.imagemUrl ? (
           <img
             src={receita.imagemUrl}
             alt={receita.titulo}
-            className="w-full h-full object-cover"
+            className="h-full w-full object-cover"
           />
-        )}
+        ) : null}
+
         <button
+          type="button"
           onClick={handleVoltar}
-          className="absolute top-4 left-4 bg-white/90 rounded-full p-2 shadow-md cursor-pointer"
+          className="absolute left-4 top-4 rounded-full bg-white/90 p-2 shadow-md"
+          aria-label="Voltar"
         >
           <ArrowLeft size={20} className="text-gray-700" />
         </button>
+
         <button
+          type="button"
           onClick={handleFavoritar}
-          className="absolute top-4 right-4 bg-white/90 rounded-full p-2 shadow-md cursor-pointer"
+          className="absolute right-4 top-4 rounded-full bg-white/90 p-2 shadow-md"
+          aria-label={favoritada ? "Remover dos favoritos" : "Adicionar aos favoritos"}
         >
           <Heart
             size={20}
-            className={
-              favoritada ? "text-red-500 fill-red-500" : "text-gray-400"
-            }
+            className={favoritada ? "fill-red-500 text-red-500" : "text-gray-400"}
           />
         </button>
+
         {ehMinhaReceita && (
           <button
+            type="button"
             onClick={handleDeletar}
-            className="absolute top-4 right-16 bg-white/90 rounded-full p-2 shadow-md cursor-pointer"
+            className="absolute right-16 top-4 rounded-full bg-white/90 p-2 shadow-md"
+            aria-label="Excluir receita"
           >
             <Trash2 size={20} className="text-red-500" />
           </button>
         )}
       </div>
 
-      <div className="px-6 py-4 space-y-4">
-        <div>
+      <div className="space-y-4 px-6 py-4">
+        <section>
           <h1 className="text-xl font-bold text-gray-800">{receita.titulo}</h1>
-          <p className="text-sm text-gray-500 mt-1">{receita.descricao}</p>
-        </div>
+          <p className="mt-1 text-sm text-gray-500">{receita.descricao}</p>
+        </section>
 
-        <div className="flex gap-4 flex-wrap">
+        <section className="flex flex-wrap gap-4">
           <div className="flex items-center gap-1 text-sm text-gray-500">
             <Clock size={16} className="text-orange-600" />
             {receita.tempoPreparo} min
@@ -385,32 +392,30 @@ export function DetalheReceita() {
             {porcoesBase * multiplicador} porções
           </div>
           <div className="flex items-center gap-1 text-sm text-gray-500">
-            <RatingStars
-              avaliacao={receita.avaliacao}
-              somenteLeitura
-              tamanho="sm"
-            />
+            <RatingStars avaliacao={receita.avaliacao} somenteLeitura tamanho="sm" />
             <span className="text-xs text-gray-400">
               ({receita.totalAvaliacoes})
             </span>
           </div>
-        </div>
+        </section>
 
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <h2 className="font-semibold text-gray-800 mb-3">Ajustar Porções</h2>
-          <div className="flex items-center gap-4 flex-wrap">
+        <section className="rounded-2xl bg-white p-4 shadow-sm">
+          <h2 className="mb-3 font-semibold text-gray-800">Ajustar porções</h2>
+          <div className="flex flex-wrap items-center gap-4">
             <button
-              onClick={() => setMultiplicador(Math.max(1, multiplicador - 1))}
-              className="w-8 h-8 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-orange-200 transition-colors"
+              type="button"
+              onClick={() => setMultiplicador((valor) => Math.max(1, valor - 1))}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-100 text-orange-600 transition-colors hover:bg-orange-200"
+              aria-label="Diminuir porções"
             >
               <Minus size={16} />
             </button>
-            <span className="text-lg font-semibold text-gray-800">
-              {multiplicador}x
-            </span>
+            <span className="text-lg font-semibold text-gray-800">{multiplicador}x</span>
             <button
-              onClick={() => setMultiplicador(multiplicador + 1)}
-              className="w-8 h-8 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-orange-200 transition-colors"
+              type="button"
+              onClick={() => setMultiplicador((valor) => valor + 1)}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-100 text-orange-600 transition-colors hover:bg-orange-200"
+              aria-label="Aumentar porções"
             >
               <Plus size={16} />
             </button>
@@ -418,45 +423,47 @@ export function DetalheReceita() {
               {porcoesBase * multiplicador} porções no total
             </span>
           </div>
-        </div>
+        </section>
 
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <h2 className="font-semibold text-gray-800 mb-3">Ingredientes</h2>
+        <section className="rounded-2xl bg-white p-4 shadow-sm">
+          <h2 className="mb-3 font-semibold text-gray-800">Ingredientes</h2>
           <ul className="space-y-2">
-            {receita.ingredientes.map((ing) => (
-              <li key={ing.id} className="flex justify-between text-sm">
-                <span className="text-gray-700">{ing.nome}</span>
-                <span className="text-gray-400">
-                  {(Number(ing.quantidade) * multiplicador).toFixed(
-                    Number(ing.quantidade) % 1 === 0 ? 0 : 1,
-                  )}{" "}
-                  {obterLabelUnidade(ing.unidade)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
+            {receita.ingredientes.map((ingrediente) => {
+              const quantidade = Number(ingrediente.quantidade || 0) * multiplicador;
+              const precisaDecimal = Number(ingrediente.quantidade || 0) % 1 !== 0;
+              const quantidadeFormatada = quantidade.toFixed(precisaDecimal ? 1 : 0);
 
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <h2 className="font-semibold text-gray-800 mb-3">Modo de Preparo</h2>
+              return (
+                <li key={ingrediente.id} className="flex items-center justify-between gap-3 text-sm">
+                  <span className="text-gray-700">{ingrediente.nome}</span>
+                  <span className="text-gray-400">
+                    {quantidadeFormatada} {obterLabelUnidade(ingrediente.unidade)}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+
+        <section className="rounded-2xl bg-white p-4 shadow-sm">
+          <h2 className="mb-3 font-semibold text-gray-800">Modo de preparo</h2>
           <ol className="space-y-3">
             {receita.instrucoes.map((passo, index) => (
-              <li key={index} className="flex gap-3 text-sm">
-                <span className="shrink-0 w-6 h-6 bg-orange-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
+              <li key={`${passo}-${index}`} className="flex gap-3 text-sm">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-orange-600 text-xs font-bold text-white">
                   {index + 1}
                 </span>
-                <span className="text-gray-600 pt-0.5">{passo}</span>
+                <span className="pt-0.5 text-gray-600">{passo}</span>
               </li>
             ))}
           </ol>
-        </div>
+        </section>
 
-        <div className="flex justify-center">
-          <div className="bg-white rounded-2xl p-4 shadow-sm text-center max-w-md w-full">
-            <h2 className="font-semibold text-gray-800 mb-3">
+        <section className="flex justify-center">
+          <div className="w-full max-w-md rounded-2xl bg-white p-4 text-center shadow-sm">
+            <h2 className="mb-3 font-semibold text-gray-800">
               Avalie esta receita
             </h2>
-
             <div className="flex justify-center">
               <RatingStars
                 avaliacao={avaliacaoUsuario}
@@ -464,31 +471,32 @@ export function DetalheReceita() {
                 tamanho="lg"
               />
             </div>
-
             {avaliacaoUsuario > 0 && (
-              <p className="text-sm text-gray-500 mt-2">
+              <p className="mt-2 text-sm text-gray-500">
                 Você avaliou com {avaliacaoUsuario} estrela
                 {avaliacaoUsuario > 1 ? "s" : ""}
               </p>
             )}
           </div>
-        </div>
+        </section>
 
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <h2 className="font-semibold text-gray-800 mb-3">Comentários</h2>
+        <section className="rounded-2xl bg-white p-4 shadow-sm">
+          <h2 className="mb-3 font-semibold text-gray-800">Comentários</h2>
 
           <div className="flex gap-2">
             <input
               type="text"
               value={novoComentario}
-              onChange={(e) => setNovoComentario(e.target.value)}
+              onChange={(event) => setNovoComentario(event.target.value)}
               placeholder="Deixe seu comentário..."
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm"
+              className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm outline-none transition focus:ring-2 focus:ring-orange-500"
             />
             <button
+              type="button"
               onClick={handleComentario}
               disabled={!novoComentario.trim()}
-              className="bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              className="rounded-lg bg-orange-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+              aria-label="Enviar comentário"
             >
               <Send size={16} />
             </button>
@@ -496,11 +504,11 @@ export function DetalheReceita() {
 
           <div className="mt-4 space-y-3">
             {carregandoComentarios ? (
-              <div className="text-sm text-gray-400 py-4 text-center">
+              <div className="py-4 text-center text-sm text-gray-400">
                 Carregando comentários...
               </div>
             ) : comentarios.length === 0 ? (
-              <div className="text-center py-8 text-gray-400 text-sm">
+              <div className="py-8 text-center text-sm text-gray-400">
                 Nenhum comentário ainda. Seja o primeiro!
               </div>
             ) : (
@@ -509,26 +517,26 @@ export function DetalheReceita() {
                 const estaEditando = comentarioEditandoId === comentario.id;
 
                 return (
-                  <div
+                  <article
                     key={comentario.id}
                     className="rounded-xl border border-gray-100 p-3"
                   >
-                    <div className="flex items-start justify-between gap-3 mb-2">
+                    <div className="mb-2 flex items-start justify-between gap-3">
                       <div className="flex items-center gap-2">
                         {comentario.userPhoto ? (
                           <img
                             src={comentario.userPhoto}
                             alt={comentario.userName}
-                            className="w-8 h-8 rounded-full object-cover"
+                            className="h-8 w-8 rounded-full object-cover"
                           />
                         ) : (
-                          <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-xs font-semibold">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-100 text-xs font-semibold text-orange-700">
                             {comentario.userName?.charAt(0)?.toUpperCase() || "U"}
                           </div>
                         )}
 
                         <div>
-                          <span className="font-medium text-sm text-gray-700 block">
+                          <span className="block text-sm font-medium text-gray-700">
                             {comentario.userName}
                           </span>
                           <span className="text-xs text-gray-400">
@@ -540,16 +548,18 @@ export function DetalheReceita() {
                       {podeGerenciar && !estaEditando && (
                         <div className="flex items-center gap-2">
                           <button
+                            type="button"
                             onClick={() => iniciarEdicao(comentario)}
-                            className="text-gray-400 hover:text-orange-600 transition-colors"
-                            title="Editar comentário"
+                            className="text-gray-400 transition-colors hover:text-orange-600"
+                            aria-label="Editar comentário"
                           >
                             <PencilLine size={16} />
                           </button>
                           <button
+                            type="button"
                             onClick={() => excluirComentario(comentario.id)}
-                            className="text-gray-400 hover:text-red-600 transition-colors"
-                            title="Excluir comentário"
+                            className="text-gray-400 transition-colors hover:text-red-600"
+                            aria-label="Excluir comentário"
                           >
                             <Trash2 size={16} />
                           </button>
@@ -561,22 +571,24 @@ export function DetalheReceita() {
                       <div className="space-y-2">
                         <textarea
                           value={textoEdicaoComentario}
-                          onChange={(e) => setTextoEdicaoComentario(e.target.value)}
-                          className="w-full min-h-[90px] px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm resize-none"
+                          onChange={(event) => setTextoEdicaoComentario(event.target.value)}
+                          className="min-h-[90px] w-full resize-none rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-orange-500"
                         />
 
                         <div className="flex justify-end gap-2">
                           <button
+                            type="button"
                             onClick={cancelarEdicao}
-                            className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                            className="inline-flex items-center gap-1 rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200"
                           >
                             <X size={16} />
                             Cancelar
                           </button>
                           <button
+                            type="button"
                             onClick={() => salvarEdicaoComentario(comentario.id)}
                             disabled={!textoEdicaoComentario.trim()}
-                            className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium bg-orange-600 text-white hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                            className="inline-flex items-center gap-1 rounded-lg bg-orange-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-gray-300"
                           >
                             <Check size={16} />
                             Salvar
@@ -584,16 +596,16 @@ export function DetalheReceita() {
                         </div>
                       </div>
                     ) : (
-                      <p className="text-sm text-gray-600 whitespace-pre-wrap">
+                      <p className="whitespace-pre-wrap text-sm text-gray-600">
                         {comentario.text}
                       </p>
                     )}
-                  </div>
+                  </article>
                 );
               })
             )}
           </div>
-        </div>
+        </section>
       </div>
     </div>
   );

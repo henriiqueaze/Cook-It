@@ -1,9 +1,13 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ChefHat, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { authService } from "@/services/authService";
+
+function validarEmail(email: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
 
 export function Cadastro() {
   const navigate = useNavigate();
@@ -17,20 +21,19 @@ export function Cadastro() {
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
 
-  async function handleCadastro() {
-    if (!nome || !email || !senha || !confirmarSenha) {
-      setErro("Preencha todos os campos. Não deixe faltar nenhum.");
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const nomeLimpo = nome.trim();
+    const emailLimpo = email.trim();
+
+    if (!nomeLimpo || !emailLimpo || !senha || !confirmarSenha) {
+      setErro("Preencha todos os campos.");
       return;
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    if (!emailRegex) {
-      setErro("Digite um email válido.");
-      return;
-    }
-
-    if (senha !== confirmarSenha) {
-      setErro("As senhas não são iguais.");
+    if (!validarEmail(emailLimpo)) {
+      setErro("Digite um e-mail válido.");
       return;
     }
 
@@ -39,85 +42,87 @@ export function Cadastro() {
       return;
     }
 
+    if (senha !== confirmarSenha) {
+      setErro("As senhas não coincidem.");
+      return;
+    }
+
     setCarregando(true);
     setErro("");
 
     try {
-      const resposta = await authService.cadastrar(nome, email, senha);
+      const resposta = await authService.cadastrar(nomeLimpo, emailLimpo, senha);
       salvarAuth(resposta.token, resposta.user);
       toast.success("Conta criada com sucesso!");
-      navigate("/");
+      navigate("/", { replace: true });
     } catch (error) {
-      setErro(
-        error instanceof Error
-          ? error.message
-          : "Erro ao criar conta. Tente de novo.",
-      );
+      setErro(error instanceof Error ? error.message : "Erro ao criar conta.");
     } finally {
       setCarregando(false);
     }
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-orange-50 to-white flex flex-col">
-      <div className="bg-linear-to-br from-orange-500 via-orange-600 to-red-600 text-white pt-10 pb-12 px-6 rounded-b-3xl text-center">
-        <div className="flex justify-center mb-3">
+    <div className="flex min-h-screen flex-col bg-linear-to-b from-orange-50 to-white">
+      <div className="rounded-b-3xl bg-linear-to-br from-orange-500 via-orange-600 to-red-600 px-6 pb-12 pt-10 text-center text-white">
+        <div className="mb-3 flex justify-center">
           <ChefHat size={48} />
         </div>
         <h1 className="text-3xl font-bold">Cook-It</h1>
-        <p className="text-orange-100 text-2xl mt-2">Crie sua conta</p>
+        <p className="mt-2 text-2xl text-orange-100">Crie sua conta</p>
       </div>
 
-      <div className="px-6 mt-20 flex-1">
-        <div className="bg-white rounded-2xl shadow-lg p-6 space-y-4">
+      <div className="mt-20 flex-1 px-6">
+        <form className="space-y-4 rounded-2xl bg-white p-6 shadow-lg" onSubmit={handleSubmit}>
           {erro && (
-            <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg">
+            <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
               {erro}
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="mb-1 block text-sm font-medium text-gray-700">
               Nome
             </label>
             <input
               type="text"
               value={nome}
-              onChange={(e) => setNome(e.target.value)}
+              onChange={(event) => setNome(event.target.value)}
               placeholder="Seu nome completo"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-transparent focus:ring-2 focus:ring-orange-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="mb-1 block text-sm font-medium text-gray-700">
               E-mail
             </label>
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(event) => setEmail(event.target.value)}
               placeholder="seu@email.com"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-transparent focus:ring-2 focus:ring-orange-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="mb-1 block text-sm font-medium text-gray-700">
               Senha
             </label>
             <div className="relative">
               <input
                 type={mostrarSenha ? "text" : "password"}
                 value={senha}
-                onChange={(e) => setSenha(e.target.value)}
+                onChange={(event) => setSenha(event.target.value)}
                 placeholder="••••••••"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm pr-12"
+                className="w-full rounded-lg border border-gray-300 py-3 pl-4 pr-12 text-sm outline-none transition focus:border-transparent focus:ring-2 focus:ring-orange-500"
               />
               <button
                 type="button"
-                onClick={() => setMostrarSenha(!mostrarSenha)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer"
+                onClick={() => setMostrarSenha((valor) => !valor)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600"
+                aria-label={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
               >
                 {mostrarSenha ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
@@ -125,30 +130,30 @@ export function Cadastro() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Confirmar Senha
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Confirmar senha
             </label>
             <input
               type={mostrarSenha ? "text" : "password"}
               value={confirmarSenha}
-              onChange={(e) => setConfirmarSenha(e.target.value)}
+              onChange={(event) => setConfirmarSenha(event.target.value)}
               placeholder="••••••••"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-transparent focus:ring-2 focus:ring-orange-500"
             />
           </div>
 
           <button
-            onClick={handleCadastro}
+            type="submit"
             disabled={carregando}
-            className="w-full bg-linear-to-r from-orange-500 to-orange-600 text-white py-3 rounded-lg font-medium hover:from-orange-600 hover:to-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all cursor-pointer"
+            className="w-full cursor-pointer rounded-lg bg-linear-to-r from-orange-500 to-orange-600 py-3 font-medium text-white transition-all hover:from-orange-600 hover:to-orange-700 disabled:cursor-not-allowed disabled:bg-gray-300"
           >
             {carregando ? "Criando conta..." : "Criar conta"}
           </button>
-        </div>
+        </form>
 
-        <p className="text-center text-sm text-gray-500 mt-6">
+        <p className="mt-6 text-center text-sm text-gray-500">
           Já tem uma conta?{" "}
-          <Link to="/login" className="text-orange-600 font-medium">
+          <Link to="/login" className="font-medium text-orange-600">
             Entrar
           </Link>
         </p>

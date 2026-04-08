@@ -1,37 +1,47 @@
-const base_URL = import.meta.env.VITE_API_URL;
+const baseUrl = (import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "");
 
 type QueryValue = string | number | boolean | null | undefined;
 
-function montarUrl(endpoint: string, params?: Record<string, QueryValue>) {
-  const urlBase = `${base_URL}${endpoint}`;
+function buildUrl(endpoint: string, params?: Record<string, QueryValue>) {
+  const url = `${baseUrl}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
 
-  if (!params) return urlBase;
+  if (!params) {
+    return url;
+  }
 
   const searchParams = new URLSearchParams();
 
-  for (const [chave, valor] of Object.entries(params)) {
-    if (valor === undefined || valor === null || valor === "") continue;
-    searchParams.set(chave, String(valor));
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === null || value === "") {
+      continue;
+    }
+
+    searchParams.set(key, String(value));
   }
 
   const query = searchParams.toString();
-  return query ? `${urlBase}${urlBase.includes("?") ? "&" : "?"}${query}` : urlBase;
+  return query ? `${url}${url.includes("?") ? "&" : "?"}${query}` : url;
 }
 
-async function parseResposta<T>(resposta: Response): Promise<T> {
-  if (resposta.status === 204) return undefined as T;
+async function parseResponse<T>(response: Response): Promise<T> {
+  if (response.status === 204) {
+    return undefined as T;
+  }
 
-  const texto = await resposta.text();
-  if (!texto) return undefined as T;
+  const text = await response.text();
 
-  return JSON.parse(texto) as T;
+  if (!text) {
+    return undefined as T;
+  }
+
+  return JSON.parse(text) as T;
 }
 
-function montarHeaders(opcoes?: RequestInit) {
+function buildHeaders(init?: RequestInit) {
+  const headers = new Headers(init?.headers);
   const token = localStorage.getItem("token");
-  const headers = new Headers(opcoes?.headers);
 
-  if (!headers.has("Content-Type") && !(opcoes?.body instanceof FormData)) {
+  if (!headers.has("Content-Type") && !(init?.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
   }
 
@@ -42,54 +52,63 @@ function montarHeaders(opcoes?: RequestInit) {
   return headers;
 }
 
-async function requisicao<T>(
+async function request<T>(
   endpoint: string,
-  opcoes?: RequestInit,
+  init?: RequestInit,
   params?: Record<string, QueryValue>,
 ): Promise<T> {
-  const resposta = await fetch(montarUrl(endpoint, params), {
-    ...opcoes,
-    headers: montarHeaders(opcoes),
+  const response = await fetch(buildUrl(endpoint, params), {
+    ...init,
+    headers: buildHeaders(init),
   });
 
-  if (!resposta.ok) {
-    let mensagem = `Erro ${resposta.status}`;
+  if (!response.ok) {
+    let message = `Erro ${response.status}`;
 
     try {
-      const erro = await resposta.json();
-      mensagem = erro.error || erro.message || mensagem;
-    } catch {}
+      const error = await response.json();
+      message = error.message || error.error || message;
+    } catch {
+      const text = await response.text();
+      if (text) {
+        message = text;
+      }
+    }
 
-    throw new Error(mensagem);
+    throw new Error(message);
   }
 
-  return parseResposta<T>(resposta);
+  return parseResponse<T>(response);
 }
 
 export const api = {
   get: <T>(endpoint: string, params?: Record<string, QueryValue>) =>
-    requisicao<T>(endpoint, undefined, params),
+    request<T>(endpoint, undefined, params),
 
-  post: <T>(endpoint: string, corpo: unknown, opcoes?: RequestInit) =>
-    requisicao<T>(endpoint, {
+  post: <T>(endpoint: string, body: unknown, init?: RequestInit) =>
+    request<T>(endpoint, {
       method: "POST",
       body:
-        corpo instanceof FormData || corpo instanceof Blob
-          ? corpo
-          : JSON.stringify(corpo),
-      ...opcoes,
+        body instanceof FormData || body instanceof Blob
+          ? body
+          : typeof body === "string"
+            ? body
+            : JSON.stringify(body),
+      ...init,
     }),
 
-  put: <T>(endpoint: string, corpo: unknown, opcoes?: RequestInit) =>
-    requisicao<T>(endpoint, {
+  put: <T>(endpoint: string, body: unknown, init?: RequestInit) =>
+    request<T>(endpoint, {
       method: "PUT",
       body:
-        corpo instanceof FormData || corpo instanceof Blob
-          ? corpo
-          : JSON.stringify(corpo),
-      ...opcoes,
+        body instanceof FormData || body instanceof Blob
+          ? body
+          : typeof body === "string"
+            ? body
+            : JSON.stringify(body),
+      ...init,
     }),
 
   delete: <T>(endpoint: string) =>
-    requisicao<T>(endpoint, { method: "DELETE" }),
+    request<T>(endpoint, { method: "DELETE" }),
 };

@@ -2,21 +2,11 @@ import { api } from "./api";
 import type { RespostaAuth, Usuario } from "@/types";
 
 export const authService = {
-  login: (email: string, senha: string) =>
-    api.post<RespostaAuth>("/auth/login", {
-      email,
-      senha,
-      password: senha,
-    }),
+  login: (email: string, password: string) =>
+    api.post<RespostaAuth>("/auth/login", { email, password }),
 
-  cadastrar: (nome: string, email: string, senha: string) =>
-    api.post<RespostaAuth>("/auth/register", {
-      nome,
-      name: nome,
-      email,
-      senha,
-      password: senha,
-    }),
+  cadastrar: (name: string, email: string, password: string) =>
+    api.post<RespostaAuth>("/auth/register", { name, email, password }),
 
   logout: () => api.post<void>("/auth/logout", {}),
 
@@ -25,12 +15,8 @@ export const authService = {
   forgotPassword: (email: string) =>
     api.post<void>("/auth/forgot-password", { email }),
 
-  resetPassword: (token: string, senha: string) =>
-    api.post<void>("/auth/reset-password", {
-      token,
-      senha,
-      password: senha,
-    }),
+  resetPassword: (token: string, password: string) =>
+    api.post<void>("/auth/reset-password", { token, password }),
 
   atualizarPerfil: async (
     id: Usuario["id"],

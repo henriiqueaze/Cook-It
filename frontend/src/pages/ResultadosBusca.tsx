@@ -1,34 +1,50 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Search, ChefHat, SlidersHorizontal } from "lucide-react";
-import { ReceitaCard } from "@/components/ReceitaCard";
+import { ChefHat, Search, SlidersHorizontal } from "lucide-react";
 import { IngredientTag } from "@/components/IngredientTag";
+import { ReceitaCard } from "@/components/ReceitaCard";
 import { ingredienteService } from "@/services/ingredienteService";
 import { receitaService } from "@/services/receitaService";
 import type { Ingrediente, Receita } from "@/types";
 
 type OpcaoOrdenacao = "compatibilidade" | "tempo" | "avaliacao";
 
+function calcularCompatibilidade(receita: Receita, ingredientesBuscados: string[]) {
+  if (!ingredientesBuscados.length || !receita.ingredientes.length) {
+    return 0;
+  }
+
+  const ingredientesDaReceita = receita.ingredientes.map((item) =>
+    item.nome.toLowerCase(),
+  );
+
+  const acertos = ingredientesBuscados.filter((ingrediente) =>
+    ingredientesDaReceita.some((nome) => nome.includes(ingrediente.toLowerCase())),
+  ).length;
+
+  return Math.round((acertos / ingredientesDaReceita.length) * 100);
+}
+
 export function ResultadosBusca() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const ingredientesDaUrl = useMemo(() => {
-    return searchParams.get("ingredientes")?.split(",").filter(Boolean) ?? [];
-  }, [searchParams]);
+  const ingredientesDaUrl = useMemo(
+    () => searchParams.get("ingredientes")?.split(",").map((item) => item.trim()).filter(Boolean) ?? [],
+    [searchParams],
+  );
 
+  const [busca, setBusca] = useState("");
+  const [mostrarSugestoes, setMostrarSugestoes] = useState(false);
+  const [mostrarFiltros, setMostrarFiltros] = useState(false);
+  const [ordenacao, setOrdenacao] = useState<OpcaoOrdenacao>("compatibilidade");
+  const [ingredientesDisponiveis, setIngredientesDisponiveis] = useState<Ingrediente[]>(
+    [],
+  );
   const [ingredientesSelecionados, setIngredientesSelecionados] =
     useState<string[]>(ingredientesDaUrl);
   const [ingredientesBuscados, setIngredientesBuscados] =
     useState<string[]>(ingredientesDaUrl);
-  const [busca, setBusca] = useState("");
-  const [mostrarSugestoes, setMostrarSugestoes] = useState(false);
-  const [mostrarFiltros, setMostrarFiltros] = useState(false);
-  const [ordenacao, setOrdenacao] =
-    useState<OpcaoOrdenacao>("compatibilidade");
-  const [ingredientesDisponiveis, setIngredientesDisponiveis] = useState<
-    Ingrediente[]
-  >([]);
   const [resultados, setResultados] = useState<Receita[]>([]);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState("");
@@ -46,73 +62,76 @@ export function ResultadosBusca() {
       return;
     }
 
-    const timer = setTimeout(() => {
+    const timer = window.setTimeout(() => {
       ingredienteService
         .buscar(termo)
-        .then((lista) => {
-          setIngredientesDisponiveis(lista);
-        })
-        .catch(() => {
-          setIngredientesDisponiveis([]);
-        });
+        .then(setIngredientesDisponiveis)
+        .catch(() => setIngredientesDisponiveis([]));
     }, 250);
 
-    return () => clearTimeout(timer);
+    return () => window.clearTimeout(timer);
   }, [busca]);
 
+  useEffect(() => {
+    if (ingredientesDaUrl.length === 0) {
+      setResultados([]);
+      setErro("");
+      setCarregando(false);
+      return;
+    }
+
+    void buscarReceitas(ingredientesDaUrl);
+  }, [ingredientesDaUrl]);
+
   const sugestoesFiltradas = useMemo(() => {
-    if (!busca.trim()) return [];
+    const termo = busca.trim().toLowerCase();
+
+    if (!termo) {
+      return [];
+    }
 
     return ingredientesDisponiveis
       .filter(
-        (ing) =>
-          ing.nome.toLowerCase().includes(busca.toLowerCase()) &&
-          !ingredientesSelecionados.includes(ing.nome),
+        (ingrediente) =>
+          ingrediente.nome.toLowerCase().includes(termo) &&
+          !ingredientesSelecionados.includes(ingrediente.nome),
       )
       .slice(0, 5);
-  }, [busca, ingredientesSelecionados, ingredientesDisponiveis]);
+  }, [busca, ingredientesDisponiveis, ingredientesSelecionados]);
 
   const resultadosOrdenados = useMemo(() => {
-    const comCompatibilidade = resultados
-      .map((receita) => {
-const ingredientesDaReceita = receita.ingredientes ?? [];
+    const receitasComCompatibilidade = resultados
+      .map((receita) => ({
+        ...receita,
+        compatibilidade: calcularCompatibilidade(receita, ingredientesBuscados),
+      }))
+      .filter((receita) => receita.compatibilidade > 0);
 
-  const matches = ingredientesDaReceita.filter((i) =>
-    ingredientesBuscados.some((ingred) =>
-      i.nome.toLowerCase().includes(ingred.toLowerCase()),
-    ),
-  ).length;
+    const ordenados = [...receitasComCompatibilidade];
 
-  const compatibilidade = ingredientesDaReceita.length
-    ? Math.round((matches / ingredientesDaReceita.length) * 100)
-    : 0;
-
-        return { ...receita, compatibilidade };
-      })
-      .filter((r) => r.compatibilidade > 0);
-
-    switch (ordenacao) {
-      case "tempo":
-        return [...comCompatibilidade].sort(
-          (a, b) => a.tempoPreparo - b.tempoPreparo,
-        );
-      case "avaliacao":
-        return [...comCompatibilidade].sort((a, b) => b.avaliacao - a.avaliacao);
-      case "compatibilidade":
-      default:
-        return [...comCompatibilidade].sort(
-          (a, b) => b.compatibilidade - a.compatibilidade,
-        );
+    if (ordenacao === "tempo") {
+      ordenados.sort((a, b) => a.tempoPreparo - b.tempoPreparo);
+    } else if (ordenacao === "avaliacao") {
+      ordenados.sort((a, b) => b.avaliacao - a.avaliacao);
+    } else {
+      ordenados.sort((a, b) => b.compatibilidade - a.compatibilidade);
     }
-  }, [resultados, ordenacao, ingredientesBuscados]);
+
+    return ordenados;
+  }, [ingredientesBuscados, ordenacao, resultados]);
 
   async function buscarReceitas(ingredientes: string[]) {
+    if (!ingredientes.length) {
+      setResultados([]);
+      return;
+    }
+
     setCarregando(true);
     setErro("");
 
     try {
       const retorno = await receitaService.buscarPorIngredientes(ingredientes);
-      setResultados(Array.isArray(retorno) ? retorno : []);
+      setResultados(retorno);
     } catch {
       setResultados([]);
       setErro("Não foi possível buscar as receitas agora.");
@@ -121,24 +140,18 @@ const ingredientesDaReceita = receita.ingredientes ?? [];
     }
   }
 
-  useEffect(() => {
-    if (ingredientesDaUrl.length > 0) {
-      void buscarReceitas(ingredientesDaUrl);
-    }
-  }, [ingredientesDaUrl]);
-
   function adicionarIngrediente(nome: string) {
-    if (!ingredientesSelecionados.includes(nome)) {
-      setIngredientesSelecionados([...ingredientesSelecionados, nome]);
-      setBusca("");
-      setMostrarSugestoes(false);
+    if (ingredientesSelecionados.includes(nome)) {
+      return;
     }
+
+    setIngredientesSelecionados((current) => [...current, nome]);
+    setBusca("");
+    setMostrarSugestoes(false);
   }
 
   function removerIngrediente(nome: string) {
-    setIngredientesSelecionados(
-      ingredientesSelecionados.filter((i) => i !== nome),
-    );
+    setIngredientesSelecionados((current) => current.filter((item) => item !== nome));
   }
 
   function handleBuscar() {
@@ -155,28 +168,30 @@ const ingredientesDaReceita = receita.ingredientes ?? [];
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <div className="bg-linear-to-br from-orange-500 via-orange-600 to-red-600 text-white pt-12 pb-6 px-6 rounded-b-3xl shadow-lg">
-        <div className="flex items-center justify-between mb-2">
+      <div className="rounded-b-3xl bg-linear-to-br from-orange-500 via-orange-600 to-red-600 px-6 pb-6 pt-12 text-white shadow-lg">
+        <div className="mb-2 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <ChefHat className="w-7 h-7" />
-            <h1 className="text-xl font-bold">Resultados da Busca</h1>
+            <ChefHat className="h-7 w-7" />
+            <h1 className="text-xl font-bold">Resultados da busca</h1>
           </div>
           <button
-            onClick={() => setMostrarFiltros(!mostrarFiltros)}
-            className="p-2 bg-white/20 rounded-lg hover:bg-white/30 transition-colors cursor-pointer"
+            type="button"
+            onClick={() => setMostrarFiltros((valor) => !valor)}
+            className="rounded-lg bg-white/20 p-2 transition-colors hover:bg-white/30"
+            aria-label="Mostrar filtros"
           >
             <SlidersHorizontal size={20} />
           </button>
         </div>
-        <p className="text-orange-100 text-sm">
+        <p className="text-sm text-orange-100">
           Adicione ingredientes e clique em buscar para ver as receitas
         </p>
       </div>
 
       {mostrarFiltros && (
-        <div className="bg-white border-b border-gray-200 px-6 py-4">
-          <p className="text-sm font-medium text-gray-700 mb-2">Ordenar por</p>
-          <div className="flex gap-2">
+        <div className="border-b border-gray-200 bg-white px-6 py-4">
+          <p className="mb-2 text-sm font-medium text-gray-700">Ordenar por</p>
+          <div className="flex flex-wrap gap-2">
             {[
               { valor: "compatibilidade", label: "Compatibilidade" },
               { valor: "tempo", label: "Tempo" },
@@ -184,8 +199,9 @@ const ingredientesDaReceita = receita.ingredientes ?? [];
             ].map(({ valor, label }) => (
               <button
                 key={valor}
+                type="button"
                 onClick={() => setOrdenacao(valor as OpcaoOrdenacao)}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer ${
+                className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
                   ordenacao === valor
                     ? "bg-orange-600 text-white"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -200,44 +216,42 @@ const ingredientesDaReceita = receita.ingredientes ?? [];
 
       <div className="px-6 -mt-4">
         <form
-          onSubmit={(e) => {
-            e.preventDefault();
+          onSubmit={(event) => {
+            event.preventDefault();
             handleBuscar();
           }}
-          className="bg-white rounded-2xl shadow-lg p-6"
+          className="rounded-2xl bg-white p-6 shadow-lg"
         >
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="mb-2 block text-sm font-medium text-gray-700">
             Quais ingredientes você tem?
           </label>
 
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               value={busca}
-              onChange={(e) => {
-                setBusca(e.target.value);
+              onChange={(event) => {
+                setBusca(event.target.value);
                 setMostrarSugestoes(true);
               }}
               onFocus={() => setMostrarSugestoes(true)}
-              onBlur={() => {
-                setTimeout(() => setMostrarSugestoes(false), 150);
-              }}
+              onBlur={() => window.setTimeout(() => setMostrarSugestoes(false), 150)}
               placeholder="Digite um ingrediente..."
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+              className="w-full rounded-lg border border-gray-300 py-3 pl-10 pr-4 outline-none transition focus:border-transparent focus:ring-2 focus:ring-orange-500"
             />
 
             {mostrarSugestoes && sugestoesFiltradas.length > 0 && (
-              <div className="absolute z-10 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                {sugestoesFiltradas.map((ing) => (
+              <div className="absolute z-10 mt-2 max-h-48 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+                {sugestoesFiltradas.map((ingrediente) => (
                   <button
-                    key={ing.id}
+                    key={ingrediente.id}
                     type="button"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => adicionarIngrediente(ing.nome)}
-                    className="w-full px-4 py-2 text-left hover:bg-orange-50 transition-colors text-sm"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => adicionarIngrediente(ingrediente.nome)}
+                    className="w-full px-4 py-2 text-left text-sm transition-colors hover:bg-orange-50"
                   >
-                    {ing.nome}
+                    {ingrediente.nome}
                   </button>
                 ))}
               </div>
@@ -246,9 +260,7 @@ const ingredientesDaReceita = receita.ingredientes ?? [];
 
           {ingredientesSelecionados.length > 0 && (
             <div className="mt-4">
-              <p className="text-sm text-gray-600 mb-2">
-                Ingredientes selecionados:
-              </p>
+              <p className="mb-2 text-sm text-gray-600">Ingredientes selecionados:</p>
               <div className="flex flex-wrap gap-2">
                 {ingredientesSelecionados.map((nome) => (
                   <IngredientTag
@@ -264,45 +276,46 @@ const ingredientesDaReceita = receita.ingredientes ?? [];
           <button
             type="submit"
             disabled={ingredientesSelecionados.length === 0 || carregando}
-            className="w-full mt-6 bg-linear-to-r from-orange-500 to-orange-600 text-white py-3 rounded-lg font-medium hover:from-orange-600 hover:to-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all"
+            className="mt-6 w-full rounded-lg bg-linear-to-r from-orange-500 to-orange-600 py-3 font-medium text-white transition-all hover:from-orange-600 hover:to-orange-700 disabled:cursor-not-allowed disabled:bg-gray-300"
           >
-            {carregando ? "Buscando..." : "Buscar Receitas"}
+            {carregando ? "Buscando..." : "Buscar receitas"}
           </button>
         </form>
 
         <div className="mt-6">
           {erro && (
-            <div className="mb-4 bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg">
+            <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
               {erro}
             </div>
           )}
 
           {ingredientesBuscados.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <ChefHat size={48} className="text-gray-300 mb-4" />
+              <ChefHat size={48} className="mb-4 text-gray-300" />
               <h2 className="text-lg font-semibold text-gray-500">
                 Adicione ingredientes e clique em buscar
               </h2>
-              <p className="text-sm text-gray-400 mt-1">
+              <p className="mt-1 text-sm text-gray-400">
                 As receitas vão aparecer somente após a busca.
               </p>
             </div>
           ) : resultadosOrdenados.length === 0 && !carregando ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <ChefHat size={48} className="text-gray-300 mb-4" />
+              <ChefHat size={48} className="mb-4 text-gray-300" />
               <h2 className="text-lg font-semibold text-gray-500">
-                Nenhuma receita encontrada!
+                Nenhuma receita encontrada
               </h2>
-              <p className="text-sm text-gray-400 mt-1">
-                Adicione mais ingredientes ou tente buscar outros!
+              <p className="mt-1 text-sm text-gray-400">
+                Adicione mais ingredientes ou tente buscar outros.
               </p>
             </div>
           ) : (
             <>
-              <p className="text-sm text-gray-500 mb-4">
-                {resultadosOrdenados.length} receita(s) encontrada(s) — ordenado
-                por{" "}
-                <span className="text-orange-600 font-medium">
+              <p className="mb-4 text-sm text-gray-500">
+                {resultadosOrdenados.length} receita
+                {resultadosOrdenados.length !== 1 ? "s" : ""} encontrada
+                {resultadosOrdenados.length !== 1 ? "s" : ""} — ordenado por{" "}
+                <span className="font-medium text-orange-600">
                   {ordenacao === "compatibilidade"
                     ? "compatibilidade"
                     : ordenacao === "tempo"
@@ -315,11 +328,8 @@ const ingredientesDaReceita = receita.ingredientes ?? [];
                 {resultadosOrdenados.map((receita) => (
                   <ReceitaCard
                     key={receita.id}
-                    receita={receita as Receita}
-                    compatibilidade={
-                      (receita as Receita & { compatibilidade?: number })
-                        .compatibilidade
-                    }
+                    receita={receita}
+                    compatibilidade={receita.compatibilidade}
                   />
                 ))}
               </div>

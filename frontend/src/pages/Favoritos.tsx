@@ -1,8 +1,8 @@
-import { useNavigate } from "react-router-dom";
 import { Heart } from "lucide-react";
-import { ReceitaCard } from "../components/ReceitaCard";
-import { useAuth } from "../contexts/AuthContext";
-import { useFavorites } from "../contexts/FavoritesContext";
+import { useNavigate } from "react-router-dom";
+import { ReceitaCard } from "@/components/ReceitaCard";
+import { useAuth } from "@/contexts/AuthContext";
+import { useFavorites } from "@/contexts/FavoritesContext";
 
 export function Favoritos() {
   const navigate = useNavigate();
@@ -11,17 +11,18 @@ export function Favoritos() {
 
   if (!estaAutenticado) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-6 text-center">
-        <Heart size={48} className="text-gray-300 mb-4" />
+      <div className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
+        <Heart size={48} className="mb-4 text-gray-300" />
         <h2 className="text-lg font-semibold text-gray-500">
           Você precisa estar logado
         </h2>
-        <p className="text-sm text-gray-400 mt-1 mb-6">
+        <p className="mt-1 mb-6 text-sm text-gray-400">
           Entre na sua conta para ver seus favoritos
         </p>
         <button
+          type="button"
           onClick={() => navigate("/login")}
-          className="bg-orange-600 text-white px-6 py-3 rounded-lg font-medium cursor-pointer"
+          className="rounded-lg bg-orange-600 px-6 py-3 font-medium text-white transition-colors hover:bg-orange-700"
         >
           Fazer login
         </button>
@@ -31,11 +32,10 @@ export function Favoritos() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <div className="bg-linear-to-br from-orange-500 via-orange-600 to-red-600 text-white pt-12 pb-6 px-6 rounded-b-3xl shadow-lg">
+      <div className="rounded-b-3xl bg-linear-to-br from-orange-500 via-orange-600 to-red-600 px-6 pb-6 pt-12 text-white shadow-lg">
         <h1 className="text-xl font-bold">Favoritos</h1>
-        <p className="text-orange-100 text-sm mt-1">
-          {favoritos.length} receita
-          {favoritos.length !== 1 ? "s" : ""} favorita
+        <p className="mt-1 text-sm text-orange-100">
+          {favoritos.length} receita{favoritos.length !== 1 ? "s" : ""} favorita
           {favoritos.length !== 1 ? "s" : ""}
         </p>
       </div>
@@ -45,16 +45,17 @@ export function Favoritos() {
           <div className="text-sm text-gray-500">Carregando favoritos...</div>
         ) : favoritos.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <Heart size={48} className="text-gray-300 mb-4" />
+            <Heart size={48} className="mb-4 text-gray-300" />
             <h2 className="text-lg font-semibold text-gray-500">
               Nenhum favorito ainda
             </h2>
-            <p className="text-sm text-gray-400 mt-1 mb-6">
+            <p className="mt-1 mb-6 text-sm text-gray-400">
               Explore receitas e favorite as que você mais gostar
             </p>
             <button
+              type="button"
               onClick={() => navigate("/")}
-              className="bg-orange-600 text-white px-6 py-3 rounded-lg font-medium cursor-pointer"
+              className="rounded-lg bg-orange-600 px-6 py-3 font-medium text-white transition-colors hover:bg-orange-700"
             >
               Explorar receitas
             </button>

@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { LogOut, User, BookOpen, Heart, Star, Edit } from "lucide-react";
-import { useAuth } from "../contexts/AuthContext";
-import { useFavorites } from "../contexts/FavoritesContext";
-import { ReceitaCard } from "../components/ReceitaCard";
+import { BookOpen, Edit, Heart, LogOut, Star, User } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { ReceitaCard } from "@/components/ReceitaCard";
+import { useAuth } from "@/contexts/AuthContext";
+import { useFavorites } from "@/contexts/FavoritesContext";
 import { receitaService } from "@/services/receitaService";
 import type { Receita } from "@/types";
-import { toast } from "sonner";
 
 export function Perfil() {
   const navigate = useNavigate();
@@ -15,20 +15,24 @@ export function Perfil() {
   const [minhasReceitas, setMinhasReceitas] = useState<Receita[]>([]);
 
   useEffect(() => {
-    let ativo = true;
-
     if (!usuario?.id) {
       setMinhasReceitas([]);
       return;
     }
 
+    let ativo = true;
+
     receitaService
       .minhasReceitas(usuario.id)
       .then((lista) => {
-        if (ativo) setMinhasReceitas(lista);
+        if (ativo) {
+          setMinhasReceitas(lista);
+        }
       })
       .catch(() => {
-        if (ativo) setMinhasReceitas([]);
+        if (ativo) {
+          setMinhasReceitas([]);
+        }
       });
 
     return () => {
@@ -36,9 +40,8 @@ export function Perfil() {
     };
   }, [usuario?.id]);
 
-  const meusFavoritos = favoritos;
   const totalAvaliacoes = minhasReceitas.reduce(
-    (soma, receita) => soma + (receita.totalAvaliacoes || 0),
+    (soma, receita) => soma + receita.totalAvaliacoes,
     0,
   );
 
@@ -50,17 +53,18 @@ export function Perfil() {
 
   if (!estaAutenticado) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-6 text-center">
-        <User size={48} className="text-gray-300 mb-4" />
+      <div className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
+        <User size={48} className="mb-4 text-gray-300" />
         <h2 className="text-lg font-semibold text-gray-500">
           Você precisa estar logado
         </h2>
-        <p className="text-sm text-gray-400 mt-1 mb-6">
+        <p className="mt-1 mb-6 text-sm text-gray-400">
           Entre na sua conta para ver seu perfil
         </p>
         <button
+          type="button"
           onClick={() => navigate("/login")}
-          className="bg-orange-600 text-white px-6 py-3 rounded-lg font-medium cursor-pointer"
+          className="rounded-lg bg-orange-600 px-6 py-3 font-medium text-white transition-colors hover:bg-orange-700"
         >
           Fazer login
         </button>
@@ -70,72 +74,72 @@ export function Perfil() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <div className="bg-linear-to-b from-orange-500 to-orange-600 text-white pt-12 pb-12 px-6 rounded-b-3xl">
-        <div className="flex items-start justify-between mb-6">
+      <div className="rounded-b-3xl bg-linear-to-b from-orange-500 to-orange-600 px-6 pb-12 pt-12 text-white">
+        <div className="mb-6 flex items-start justify-between">
           <h1 className="text-2xl font-bold">Perfil</h1>
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="w-20 h-20 rounded-full bg-white overflow-hidden border-4 border-white shadow-lg">
+          <div className="h-20 w-20 overflow-hidden rounded-full border-4 border-white bg-white shadow-lg">
             {usuario?.photo ? (
               <img
                 src={usuario.photo}
                 alt={usuario.name}
-                className="w-full h-full object-cover"
+                className="h-full w-full object-cover"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center">
+              <div className="flex h-full w-full items-center justify-center">
                 <User size={36} className="text-orange-600" />
               </div>
             )}
           </div>
           <div className="flex-1">
             <h2 className="text-xl font-bold">{usuario?.name}</h2>
-            <p className="text-orange-100 text-sm">{usuario?.email}</p>
+            <p className="text-sm text-orange-100">{usuario?.email}</p>
           </div>
         </div>
 
         <Link
           to="/editar-perfil"
-          className="mt-4 w-full flex items-center justify-center gap-2 bg-white/20 hover:bg-white/30 py-2 px-4 rounded-lg font-medium transition-colors"
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-white/20 px-4 py-2 font-medium transition-colors hover:bg-white/30"
         >
           <Edit size={16} />
           Configurações
         </Link>
       </div>
 
-      <div className="px-6 mt-6 space-y-4">
-        <div className="bg-white rounded-2xl shadow-sm p-4 grid grid-cols-3 gap-4 text-center">
+      <div className="mt-6 space-y-4 px-6">
+        <div className="grid grid-cols-3 gap-4 rounded-2xl bg-white p-4 text-center shadow-sm">
           <div>
             <div className="text-2xl font-bold text-orange-600">
               {minhasReceitas.length}
             </div>
-            <div className="text-xs text-gray-500 mt-1">Receitas</div>
+            <div className="mt-1 text-xs text-gray-500">Receitas</div>
           </div>
           <div>
             <div className="text-2xl font-bold text-orange-600">
-              {meusFavoritos.length}
+              {favoritos.length}
             </div>
-            <div className="text-xs text-gray-500 mt-1">Favoritos</div>
+            <div className="mt-1 text-xs text-gray-500">Favoritos</div>
           </div>
           <div>
             <div className="text-2xl font-bold text-orange-600">
               {totalAvaliacoes}
             </div>
-            <div className="text-xs text-gray-500 mt-1">Avaliações</div>
+            <div className="mt-1 text-xs text-gray-500">Avaliações</div>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm divide-y divide-gray-100">
+        <div className="divide-y divide-gray-100 rounded-2xl bg-white shadow-sm">
           <Link
             to="/minhas-receitas"
-            className="flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors"
+            className="flex items-center gap-3 p-4 transition-colors hover:bg-gray-50"
           >
-            <div className="p-2 bg-orange-100 rounded-lg">
+            <div className="rounded-lg bg-orange-100 p-2">
               <BookOpen size={20} className="text-orange-600" />
             </div>
             <div className="flex-1">
-              <h3 className="font-medium">Minhas Receitas</h3>
+              <h3 className="font-medium">Minhas receitas</h3>
               <p className="text-sm text-gray-500">
                 {minhasReceitas.length} receitas criadas
               </p>
@@ -144,25 +148,25 @@ export function Perfil() {
 
           <Link
             to="/favoritos"
-            className="flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors"
+            className="flex items-center gap-3 p-4 transition-colors hover:bg-gray-50"
           >
-            <div className="p-2 bg-red-100 rounded-lg">
+            <div className="rounded-lg bg-red-100 p-2">
               <Heart size={20} className="text-red-500" />
             </div>
             <div className="flex-1">
-              <h3 className="font-medium">Receitas Favoritas</h3>
+              <h3 className="font-medium">Receitas favoritas</h3>
               <p className="text-sm text-gray-500">
-                {meusFavoritos.length} receitas salvas
+                {favoritos.length} receitas salvas
               </p>
             </div>
           </Link>
 
           <div className="flex items-center gap-3 p-4">
-            <div className="p-2 bg-yellow-100 rounded-lg">
+            <div className="rounded-lg bg-yellow-100 p-2">
               <Star size={20} className="text-yellow-500" />
             </div>
             <div className="flex-1">
-              <h3 className="font-medium">Minhas Avaliações</h3>
+              <h3 className="font-medium">Minhas avaliações</h3>
               <p className="text-sm text-gray-500">
                 {totalAvaliacoes} receitas avaliadas
               </p>
@@ -172,8 +176,8 @@ export function Perfil() {
 
         {minhasReceitas.length > 0 && (
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-semibold text-gray-800">Minhas Receitas</h2>
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="font-semibold text-gray-800">Minhas receitas</h2>
               <Link to="/minhas-receitas" className="text-sm text-orange-600">
                 Ver todas
               </Link>
@@ -187,8 +191,9 @@ export function Perfil() {
         )}
 
         <button
+          type="button"
           onClick={handleSair}
-          className="w-full flex items-center justify-center gap-2 bg-white border border-red-300 text-red-600 py-3 rounded-lg font-medium cursor-pointer hover:bg-red-50 transition-colors"
+          className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-300 bg-white py-3 font-medium text-red-600 transition-colors hover:bg-red-50"
         >
           <LogOut size={18} />
           Sair da conta

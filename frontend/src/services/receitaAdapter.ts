@@ -1,14 +1,10 @@
-﻿import type { Id, Ingrediente, Receita, Usuario } from "@/types";
+import type { Id, Ingrediente, Receita, Usuario } from "@/types";
 
 interface BackendUserDTO {
   id?: Id;
   email?: string;
   displayName?: string;
   avatarUrl?: string;
-}
-
-interface BackendImageDTO {
-  url?: string;
 }
 
 interface BackendRatingDTO {
@@ -40,50 +36,94 @@ export interface BackendRecipeDTO {
   id?: Id;
   author?: BackendUserDTO;
   title?: string;
+  name?: string;
   description?: string;
   steps?: string;
+  instructions?: string[];
   servings?: number;
   portions?: number;
   prepTimeMinutes?: number;
+  prepTime?: number;
   createdAt?: string;
   updatedAt?: string;
-  images?: BackendImageDTO[];
+  image?: string;
+  imageUrl?: string;
+  images?: Array<{ url?: string }>;
+  rating?: number;
   ratings?: BackendRatingDTO[];
+  ratingsCount?: number;
+  userRating?: number;
   recipeIngredients?: BackendRecipeIngredientDTO[];
+  ingredients?: Array<{
+    ingredient?: string;
+    quantity?: number;
+    unit?: string;
+    id?: Id;
+  }>;
   recipeTags?: BackendRecipeTagDTO[];
+  category?: string;
 }
 
-interface BackendRecipeListResponse {
+export interface BackendRecipeListResponse {
   _embedded?: Record<string, BackendRecipeDTO[]>;
   content?: BackendRecipeDTO[];
 }
 
-function adaptarAutor(author?: BackendUserDTO): Usuario {
+function buildAuthor(author?: BackendUserDTO): Usuario {
   return {
     id: author?.id ?? "sem-autor",
     name: author?.displayName ?? "Usuário",
     email: author?.email ?? "",
-    photo: author?.avatarUrl,
+    photo: author?.avatarUrl ?? null,
   };
 }
 
-function adaptarIngredientes(
-  ingredients?: BackendRecipeIngredientDTO[],
+function buildIngredients(
+  ingredients?: BackendRecipeIngredientDTO[] | BackendRecipeDTO["ingredients"],
 ): Ingrediente[] {
-  return (
-    ingredients?.map((item, index) => ({
-      id: item.ingredient?.id ?? item.id ?? `ingrediente-${index}`,
-      nome: item.ingredient?.name ?? "Ingrediente",
-      quantidade:
-        item.quantity !== undefined && item.quantity !== null
-          ? String(item.quantity)
-          : "",
-      unidade: item.unit ?? item.ingredient?.unitDefault ?? "",
-    })) ?? []
-  );
+  if (!ingredients?.length) {
+    return [];
+  }
+
+  return ingredients.map((item, index) => {
+    const structuredIngredient =
+      "ingredient" in item && typeof item.ingredient === "object"
+        ? item.ingredient
+        : undefined;
+
+    const ingredientName =
+      structuredIngredient?.name ??
+      ("ingredient" in item && typeof item.ingredient === "string"
+        ? item.ingredient
+        : "Ingrediente");
+
+    const quantity =
+      "quantity" in item && item.quantity !== undefined && item.quantity !== null
+        ? String(item.quantity)
+        : "";
+
+    const unidade =
+      "unit" in item && item.unit
+        ? item.unit
+        : structuredIngredient?.unitDefault ?? "";
+
+    return {
+      id:
+        structuredIngredient?.id ??
+        ("ingredient" in item ? item.id : undefined) ??
+        `ingrediente-${index}`,
+      nome: ingredientName,
+      quantity,
+      unidade,
+    };
+  });
 }
 
-function adaptarInstrucoes(steps?: string) {
+function buildInstructions(steps?: string, instructions?: string[]) {
+  if (instructions?.length) {
+    return instructions.map((step) => step.trim()).filter(Boolean);
+  }
+
   if (!steps) {
     return [];
   }
@@ -94,33 +134,44 @@ function adaptarInstrucoes(steps?: string) {
     .filter(Boolean);
 }
 
-function calcularMediaAvaliacoes(ratings?: BackendRatingDTO[]) {
+function buildRating(rating?: number, ratings?: BackendRatingDTO[]) {
+  if (typeof rating === "number") {
+    return Number(rating.toFixed(1));
+  }
+
   if (!ratings?.length) {
     return 0;
   }
 
-  const total = ratings.reduce((soma, rating) => soma + (rating.score ?? 0), 0);
-  return Number((total / ratings.length).toFixed(1));
+  const total = ratings.reduce((sum, item) => sum + (item.score ?? 0), 0);
+  const average = total / ratings.length;
+  return Number(average.toFixed(1));
 }
 
 export function adaptBackendRecipeToReceita(recipe: BackendRecipeDTO): Receita {
-  const fallbackId = recipe.title ?? "receita-sem-id";
+  const fallbackId = recipe.id ?? recipe.name ?? recipe.title ?? "receita-sem-id";
+  const imagemUrl =
+    recipe.image ??
+    recipe.imageUrl ??
+    recipe.images?.[0]?.url ??
+    undefined;
 
   return {
-    id: recipe.id ?? fallbackId,
-    titulo: recipe.title ?? "Receita sem título",
+    id: fallbackId,
+    titulo: recipe.name ?? recipe.title ?? "Receita sem título",
     descricao: recipe.description ?? "",
-    imagemUrl: recipe.images?.[0]?.url,
-    tempoPreparo: recipe.prepTimeMinutes ?? 0,
+    imagemUrl,
+    tempoPreparo: recipe.prepTime ?? recipe.prepTimeMinutes ?? 0,
     porcoes: recipe.portions ?? recipe.servings ?? 1,
-    categoria: recipe.recipeTags?.[0]?.tag?.name ?? "Sem categoria",
-    avaliacao: calcularMediaAvaliacoes(recipe.ratings),
-    totalAvaliacoes: recipe.ratings?.length ?? 0,
-    autor: adaptarAutor(recipe.author),
-    ingredientes: adaptarIngredientes(recipe.recipeIngredients),
-    instrucoes: adaptarInstrucoes(recipe.steps),
+    categoria: recipe.category ?? recipe.recipeTags?.[0]?.tag?.name,
+    avaliacao: buildRating(recipe.rating, recipe.ratings),
+    totalAvaliacoes: recipe.ratingsCount ?? recipe.ratings?.length ?? 0,
+    autor: buildAuthor(recipe.author),
+    ingredientes: buildIngredients(recipe.recipeIngredients ?? recipe.ingredients),
+    instrucoes: buildInstructions(recipe.steps, recipe.instructions),
     favoritada: false,
     criadoEm: recipe.createdAt ?? recipe.updatedAt ?? new Date().toISOString(),
+    avaliacaoUsuario: recipe.userRating,
   };
 }
 
@@ -135,9 +186,9 @@ export function adaptBackendRecipeListToReceitas(
     return data.content.map(adaptBackendRecipeToReceita);
   }
 
-  const embeddedRecipes = data._embedded
+  const embedded = data._embedded
     ? Object.values(data._embedded).find(Array.isArray)
     : undefined;
 
-  return embeddedRecipes?.map(adaptBackendRecipeToReceita) ?? [];
+  return embedded?.map(adaptBackendRecipeToReceita) ?? [];
 }

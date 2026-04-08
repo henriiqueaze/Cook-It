@@ -1,46 +1,62 @@
 import { api } from "./api";
-import type { Id, Receita } from "@/types";
 import {
   adaptBackendRecipeListToReceitas,
+  adaptBackendRecipeToReceita,
   type BackendRecipeDTO,
 } from "./receitaAdapter";
+import type { Id, Receita } from "@/types";
 
-interface BackendRecipeListResponse {
-  _embedded?: Record<string, BackendRecipeDTO[]>;
-  content?: BackendRecipeDTO[];
+interface SearchRecipePayload {
+  ingredients: string[];
+  exactMatch?: boolean;
+  sortBy?: string;
 }
 
-export interface NovaReceitaPayload {
+interface RecipeIngredientInput {
+  nome: string;
+  quantidade: string;
+  unidade: string;
+}
+
+export interface ReceitaFormPayload {
   titulo: string;
   descricao: string;
   imagemArquivo?: File | null;
   tempoPreparo: number;
   porcoes: number;
-  ingredientes: Array<{
-    nome: string;
-    quantidade: string;
-    unidade: string;
-  }>;
+  ingredientes: RecipeIngredientInput[];
   instrucoes: string[];
   categoria?: string;
 }
 
-function montarPayloadBackend(receita: NovaReceitaPayload) {
-  const formData = new FormData();
+export interface AtualizarReceitaPayload extends Partial<ReceitaFormPayload> {
+  imagemArquivo?: File | null;
+}
 
+function mapIngredients(ingredientes: RecipeIngredientInput[]) {
+  return ingredientes.map((ingrediente) => ({
+    ingredient: ingrediente.nome.trim(),
+    quantity: Number.parseFloat(ingrediente.quantidade.replace(",", ".")) || 0,
+    unit: ingrediente.unidade,
+  }));
+}
+
+function mapInstructions(instrucoes: string[]) {
+  return instrucoes.map((step) => step.trim()).filter(Boolean);
+}
+
+function buildRecipeFormData(receita: ReceitaFormPayload | AtualizarReceitaPayload) {
   const data = {
-    name: receita.titulo,
-    description: receita.descricao,
-    prepTime: receita.tempoPreparo,
-    portions: receita.porcoes,
-    ingredients: receita.ingredientes.map((ingrediente) => ({
-      ingredient: ingrediente.nome,
-      quantity: parseFloat(ingrediente.quantidade) || 0,
-      unit: ingrediente.unidade,
-    })),
-    instructions: receita.instrucoes,
-    ...(receita.categoria ? { category: receita.categoria } : {}),
+    ...(receita.titulo ? { name: receita.titulo.trim() } : {}),
+    ...(receita.descricao ? { description: receita.descricao.trim() } : {}),
+    ...(receita.tempoPreparo ? { prepTime: receita.tempoPreparo } : {}),
+    ...(receita.porcoes ? { portions: receita.porcoes } : {}),
+    ...(receita.ingredientes ? { ingredients: mapIngredients(receita.ingredientes) } : {}),
+    ...(receita.instrucoes ? { instructions: mapInstructions(receita.instrucoes) } : {}),
+    ...(receita.categoria?.trim() ? { category: receita.categoria.trim() } : {}),
   };
+
+  const formData = new FormData();
 
   formData.append(
     "data",
@@ -54,86 +70,77 @@ function montarPayloadBackend(receita: NovaReceitaPayload) {
   return formData;
 }
 
-export function mapBackendToFrontend(receita: any): Receita {
-  return {
-    id: receita.id,
-    titulo: receita.name ?? receita.title ?? "Receita sem título",
-    descricao: receita.description ?? "",
-    imagemUrl: receita.imageUrl ?? receita.image ?? "",
-    tempoPreparo: receita.prepTime ?? receita.prepTimeMinutes ?? 0,
-    porcoes: receita.portions ?? receita.servings ?? 1,
-    categoria: receita.category ?? receita.recipeTags?.[0]?.tag?.name ?? "",
-    avaliacao: receita.rating ?? 0,
-    totalAvaliacoes: receita.ratingsCount ?? receita.ratings?.length ?? 0,
-    autor: {
-      id: receita.authorId ?? receita.author?.id ?? "sem-autor",
-      name: receita.authorName ?? receita.author?.displayName ?? "Usuário",
-      photo: receita.authorPhoto ?? receita.author?.avatarUrl ?? null,
-      email: receita.author?.email ?? "",
-    },
-    ingredientes:
-      receita.ingredients?.map((i: any) => ({
-        id: i.id ?? i.ingredient?.id ?? crypto.randomUUID(),
-        nome: i.ingredient ?? i.name ?? i.ingredient?.name ?? "Ingrediente",
-        quantidade: String(i.quantity ?? ""),
-        unidade: i.unit ?? i.ingredient?.unitDefault ?? "",
-      })) ??
-      receita.recipeIngredients?.map((i: any) => ({
-        id: i.id ?? i.ingredient?.id ?? crypto.randomUUID(),
-        nome: i.ingredient?.name ?? "Ingrediente",
-        quantidade: String(i.quantity ?? ""),
-        unidade: i.unit ?? i.ingredient?.unitDefault ?? "",
-      })) ??
-      [],
-    instrucoes:
-      receita.instructions ??
-      receita.steps?.split(/\r?\n/).map((step: string) => step.trim()).filter(Boolean) ??
-      [],
-    criadoEm: receita.createdAt ?? receita.updatedAt ?? new Date().toISOString(),
-  };
+function adaptRecipeResponse(recipe: BackendRecipeDTO | Receita) {
+  if (
+    recipe &&
+    typeof recipe === "object" &&
+    "titulo" in recipe &&
+    "autor" in recipe
+  ) {
+    return recipe as Receita;
+  }
+
+  return adaptBackendRecipeToReceita(recipe as BackendRecipeDTO);
 }
 
 export const receitaService = {
   listar: async () => {
-    const resposta = await api.get<BackendRecipeListResponse>("/recipes");
-    return adaptBackendRecipeListToReceitas(resposta);
+    const resposta = await api.get<BackendRecipeDTO[] | { content?: BackendRecipeDTO[] }>(
+      "/recipes",
+    );
+    return adaptBackendRecipeListToReceitas(resposta as BackendRecipeDTO[]);
   },
 
   destaques: async () => {
-    const resposta = await api.get<any[]>("/recipes/top-rated");
-    return resposta.map(mapBackendToFrontend);
+    const resposta = await api.get<BackendRecipeDTO[]>("/recipes/top-rated");
+    return resposta.map(adaptBackendRecipeToReceita);
   },
 
   buscarPorId: async (id: Id): Promise<Receita> => {
-    const resposta = await api.get<any>(`/recipes/${id}`);
-    return mapBackendToFrontend(resposta);
+    const resposta = await api.get<BackendRecipeDTO>(`/recipes/${id}`);
+    return adaptBackendRecipeToReceita(resposta);
   },
 
   buscarPorIngredientes: async (ingredientes: string[]) => {
-    const resposta = await api.post<any[]>("/recipes/search", {
+    const resposta = await api.post<BackendRecipeDTO[]>("/recipes/search", {
       ingredients: ingredientes,
       exactMatch: false,
       sortBy: "compatibility",
-    });
+    } satisfies SearchRecipePayload);
 
     return Array.isArray(resposta)
-      ? resposta.map(mapBackendToFrontend)
+      ? resposta.map(adaptBackendRecipeToReceita)
       : [];
   },
 
-  criar: (receita: NovaReceitaPayload) =>
-    api.post<Receita>("/recipes", montarPayloadBackend(receita)),
+  criar: async (receita: ReceitaFormPayload) => {
+    const resposta = await api.post<BackendRecipeDTO>(
+      "/recipes",
+      buildRecipeFormData(receita),
+    );
 
-  atualizar: (id: Id, receita: Partial<Receita>) =>
-    api.put<Receita>(`/recipes/${id}`, receita),
+    return adaptBackendRecipeToReceita(resposta);
+  },
+
+  atualizar: async (id: Id, receita: AtualizarReceitaPayload) => {
+    const resposta = await api.put<BackendRecipeDTO>(
+      `/recipes/${id}`,
+      buildRecipeFormData(receita),
+    );
+
+    return adaptBackendRecipeToReceita(resposta);
+  },
 
   deletar: (id: Id) => api.delete<void>(`/recipes/${id}`),
 
   avaliar: (id: Id, nota: number) =>
-    api.post<void>(`/recipes/${id}/rate`, { rating: nota, nota }),
+    api.post<void>(`/recipes/${id}/rate`, { rating: nota }),
 
   minhasReceitas: async (userId: Id) => {
-    const resposta = await api.get<any[]>(`/users/${userId}/recipes`);
-    return resposta.map(mapBackendToFrontend);
+    const resposta = await api.get<BackendRecipeDTO[] | { content?: BackendRecipeDTO[] }>(
+      `/users/${userId}/recipes`,
+    );
+
+    return adaptBackendRecipeListToReceitas(resposta as BackendRecipeDTO[]);
   },
 };

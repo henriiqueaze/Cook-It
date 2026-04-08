@@ -1,4 +1,4 @@
-﻿export type Id = number | string;
+export type Id = number | string;
 
 export interface Usuario {
   id: Id;
@@ -7,7 +7,7 @@ export interface Usuario {
   photo?: string | null;
   createdRecipes?: Id[];
   favoriteRecipes?: Id[];
-  ratings?: any;
+  ratings?: Record<string, number>;
 }
 
 export interface Ingrediente {
@@ -24,7 +24,7 @@ export interface Receita {
   imagemUrl?: string;
   tempoPreparo: number;
   porcoes: number;
-  categoria: string;
+  categoria?: string;
   avaliacao: number;
   totalAvaliacoes: number;
   autor: Usuario;
@@ -32,6 +32,7 @@ export interface Receita {
   instrucoes: string[];
   favoritada?: boolean;
   criadoEm: string;
+  avaliacaoUsuario?: number;
 }
 
 export interface Comentario {
