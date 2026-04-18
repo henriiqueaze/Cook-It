@@ -35,6 +35,9 @@ interface BackendRecipeIngredientDTO {
 export interface BackendRecipeDTO {
   id?: Id;
   author?: BackendUserDTO;
+  authorId?: Id;
+  authorName?: string;
+  authorPhoto?: string;
   title?: string;
   name?: string;
   description?: string;
@@ -69,12 +72,12 @@ export interface BackendRecipeListResponse {
   content?: BackendRecipeDTO[];
 }
 
-function buildAuthor(author?: BackendUserDTO): Usuario {
+function buildAuthor(author?: BackendUserDTO, authorId?: Id, authorName?: string, authorPhoto?: string): Usuario {
   return {
-    id: author?.id ?? "sem-autor",
-    name: author?.displayName ?? "Usuário",
+    id: authorId ?? author?.id ?? "sem-autor",
+    name: authorName ?? author?.displayName ?? "Usuário",
     email: author?.email ?? "",
-    photo: author?.avatarUrl ?? null,
+    photo: authorPhoto ?? author?.avatarUrl ?? null,
   };
 }
 
@@ -166,7 +169,7 @@ export function adaptBackendRecipeToReceita(recipe: BackendRecipeDTO): Receita {
     categoria: recipe.category ?? recipe.recipeTags?.[0]?.tag?.name,
     avaliacao: buildRating(recipe.rating, recipe.ratings),
     totalAvaliacoes: recipe.ratingsCount ?? recipe.ratings?.length ?? 0,
-    autor: buildAuthor(recipe.author),
+    autor: buildAuthor(recipe.author, recipe.authorId, recipe.authorName, recipe.authorPhoto),
     ingredientes: buildIngredients(recipe.recipeIngredients ?? recipe.ingredients),
     instrucoes: buildInstructions(recipe.steps, recipe.instructions),
     favoritada: false,

@@ -3,6 +3,7 @@ import { Layout } from "@/components/Layout";
 import { RotaProtegida } from "@/components/RotaProtegida";
 import { Cadastro } from "@/pages/Cadastro";
 import { CriarReceita } from "@/pages/CriarReceita";
+import { EditarReceita } from "@/pages/EditarReceita";
 import { DetalheReceita } from "@/pages/DetalheDeReceita";
 import { EditarPerfil } from "@/pages/EditarPerfil";
 import { Favoritos } from "@/pages/Favoritos";
@@ -42,6 +43,14 @@ export function AppRoutes() {
             element={
               <RotaProtegida>
                 <CriarReceita />
+              </RotaProtegida>
+            }
+          />
+          <Route
+            path="/editar-receita/:id"
+            element={
+              <RotaProtegida>
+                <EditarReceita />
               </RotaProtegida>
             }
           />

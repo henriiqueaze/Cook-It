@@ -54,7 +54,8 @@ public interface RecipeControllerDocs {
     })
     RecipeDTO update(@PathVariable String id,
                      @RequestPart("data") UpdateRecipeRequest request,
-                     @RequestPart(value = "image", required = false) MultipartFile image);
+                     @RequestPart(value = "image", required = false) MultipartFile image,
+                     @AuthenticationPrincipal UserPrincipal user);
 
     @Operation(summary = "Excluir receita", description = "Remove uma receita")
     @ApiResponses({

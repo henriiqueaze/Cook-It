@@ -367,6 +367,17 @@ export function DetalheReceita() {
         {ehMinhaReceita && (
           <button
             type="button"
+            onClick={() => navigate(`/editar-receita/${receita.id}`)}
+            className="absolute right-28 top-4 rounded-full bg-white/90 p-2 shadow-md"
+            aria-label="Editar receita"
+          >
+            <PencilLine size={20} className="text-orange-500" />
+          </button>
+        )}
+
+        {ehMinhaReceita && (
+          <button
+            type="button"
             onClick={handleDeletar}
             className="absolute right-16 top-4 rounded-full bg-white/90 p-2 shadow-md"
             aria-label="Excluir receita"

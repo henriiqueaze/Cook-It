@@ -10,6 +10,8 @@ import com.p5Project.cookIt.entities.RecipeIngredient;
 import com.p5Project.cookIt.entities.User;
 import com.p5Project.cookIt.exceptions.ResourceNotFoundException;
 import com.p5Project.cookIt.mappers.RecipeIngredientMapper;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import com.p5Project.cookIt.mappers.RecipeMapper;
 import com.p5Project.cookIt.repository.RecipeRepository;
 import com.p5Project.cookIt.repository.UserRepository;
@@ -61,8 +63,11 @@ public class RecipeService {
     }
 
     @Transactional
-    public RecipeDTO updateRecipe(String id, UpdateRecipeRequest request, MultipartFile image) {
-        Recipe recipe = recipeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Recipe not found!"));;
+    public RecipeDTO updateRecipe(String id, UpdateRecipeRequest request, MultipartFile image, String requestingUserId) {
+        Recipe recipe = recipeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Recipe not found!"));
+        if (!recipe.getAuthor().getId().equals(requestingUserId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Você não tem permissão para editar esta receita");
+        }
         recipeMapper.updateRecipeFromRequest(request, recipe);
         updateIngredientsIfPresent(recipe, request.getIngredients());
         applyImageIfPresent(recipe, image);

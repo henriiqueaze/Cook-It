@@ -1,5 +1,5 @@
 cors:
-  originPatterns: ${CORS_ALLOWED_ORIGINS}
+  originPatterns: ${CORS_ALLOWED_ORIGINS:http://localhost:8080,http://localhost:5173,http://localhost:4173}
 
 spring:
   application:
@@ -7,9 +7,9 @@ spring:
 
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: ${SPRING_DATASOURCE_URL}
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/cookit}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:fttffttf}
 
   jpa:
     open-in-view: false
@@ -32,9 +32,9 @@ spring:
         max-page-size: 50
 
 cloudinary:
-  cloud-name: ${CLOUDINARY_CLOUD_NAME}
-  api-key: ${CLOUDINARY_API_KEY}
-  api-secret: ${CLOUDINARY_API_SECRET}
+  cloud-name: ${CLOUDINARY_CLOUD_NAME:dnbdpr1dm}
+  api-key: ${CLOUDINARY_API_KEY:416535772361971}
+  api-secret: ${CLOUDINARY_API_SECRET:sngy0-ddJKnRbk-WeZena5dbhyY}
 
 jwt:
-  secret: ${JWT_SECRET}
+  secret: ${JWT_SECRET:7fK9xP2vLmQ8rT4wZcA6bN3dYhU1sE5jG0oRkM9p}

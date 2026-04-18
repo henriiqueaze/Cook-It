@@ -51,8 +51,8 @@ public class RecipeController implements RecipeControllerDocs {
 
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Override
-    public RecipeDTO update(@PathVariable String id, @RequestPart("data") UpdateRecipeRequest request, @RequestPart(value = "image", required = false) MultipartFile image) {
-        return recipeService.updateRecipe(id, request, image);
+    public RecipeDTO update(@PathVariable String id, @RequestPart("data") UpdateRecipeRequest request, @RequestPart(value = "image", required = false) MultipartFile image, @AuthenticationPrincipal UserPrincipal user) {
+        return recipeService.updateRecipe(id, request, image, user.getId());
     }
 
     @DeleteMapping("/{id}")
