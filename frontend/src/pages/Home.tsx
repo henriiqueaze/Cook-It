@@ -63,8 +63,8 @@ export function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-orange-50 via-amber-50/30 to-white pb-5">
-      <div className="rounded-b-3xl bg-linear-to-br from-orange-500 via-orange-600 to-red-600 px-6 pb-8 pt-12 text-white shadow-lg">
+    <div className="min-h-screen bg-linear-to-b from-orange-50 via-amber-50/30 to-white pb-3">
+      <div className="rounded-b-3xl bg-linear-to-br from-orange-500 via-orange-600 to-red-600 px-6 pb-8 pt-9 text-white shadow-lg">
         <div className="mb-2 flex items-center gap-3">
           <img
             src="/brand-cook-it.png"

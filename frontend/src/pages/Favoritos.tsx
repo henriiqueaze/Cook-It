@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ReceitaCard } from "@/components/ReceitaCard";
@@ -8,6 +9,24 @@ export function Favoritos() {
   const navigate = useNavigate();
   const { estaAutenticado } = useAuth();
   const { favoritos, carregandoFavoritos } = useFavorites();
+  const travarRolagem = estaAutenticado && !carregandoFavoritos && favoritos.length === 0;
+
+  useEffect(() => {
+    if (!travarRolagem) {
+      return;
+    }
+
+    const overflowBodyAnterior = document.body.style.overflowY;
+    const overflowHtmlAnterior = document.documentElement.style.overflowY;
+
+    document.body.style.overflowY = "hidden";
+    document.documentElement.style.overflowY = "hidden";
+
+    return () => {
+      document.body.style.overflowY = overflowBodyAnterior;
+      document.documentElement.style.overflowY = overflowHtmlAnterior;
+    };
+  }, [travarRolagem]);
 
   if (!estaAutenticado) {
     return (
@@ -32,7 +51,7 @@ export function Favoritos() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="rounded-b-3xl bg-linear-to-br from-orange-500 via-orange-600 to-red-600 px-6 pb-6 pt-12 text-white shadow-lg">
+      <div className="rounded-b-3xl bg-linear-to-br from-orange-500 via-orange-600 to-red-600 px-6 pb-6 pt-9 text-white shadow-lg">
         <h1 className="text-xl font-bold">Favoritos</h1>
         <p className="mt-1 text-sm text-orange-100">
           {favoritos.length} receita{favoritos.length !== 1 ? "s" : ""} favorita

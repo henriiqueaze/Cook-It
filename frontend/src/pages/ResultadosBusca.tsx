@@ -130,6 +130,26 @@ export function ResultadosBusca() {
     return ordenados;
   }, [ingredientesBuscados, ordenacao, resultados]);
 
+  const travarRolagem =
+    !carregando && resultadosOrdenados.length === 0 && ingredientesSelecionados.length === 0;
+
+  useEffect(() => {
+    if (!travarRolagem) {
+      return;
+    }
+
+    const overflowBodyAnterior = document.body.style.overflowY;
+    const overflowHtmlAnterior = document.documentElement.style.overflowY;
+
+    document.body.style.overflowY = "hidden";
+    document.documentElement.style.overflowY = "hidden";
+
+    return () => {
+      document.body.style.overflowY = overflowBodyAnterior;
+      document.documentElement.style.overflowY = overflowHtmlAnterior;
+    };
+  }, [travarRolagem]);
+
   async function buscarReceitas(ingredientes: string[]) {
     if (!ingredientes.length) {
       setResultados([]);
@@ -180,7 +200,7 @@ export function ResultadosBusca() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="rounded-b-3xl bg-linear-to-br from-orange-500 via-orange-600 to-red-600 px-6 pb-6 pt-12 text-white shadow-lg">
+      <div className="rounded-b-3xl bg-linear-to-br from-orange-500 via-orange-600 to-red-600 px-6 pb-6 pt-9 text-white shadow-lg">
         <div className="mb-2 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <ChefHat className="h-7 w-7" />
@@ -308,7 +328,7 @@ export function ResultadosBusca() {
           )}
 
           {ingredientesBuscados.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="flex flex-col items-center justify-center pt-8 pb-24 text-center">
               <ChefHat size={48} className="mb-4 text-gray-300" />
               <h2 className="text-lg font-semibold text-gray-500">
                 Adicione ingredientes e clique em buscar

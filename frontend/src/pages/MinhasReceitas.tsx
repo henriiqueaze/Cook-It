@@ -11,6 +11,7 @@ export function MinhasReceitas() {
   const { usuario, estaAutenticado } = useAuth();
   const [minhasReceitas, setMinhasReceitas] = useState<Receita[]>([]);
   const [carregando, setCarregando] = useState(true);
+  const travarRolagem = estaAutenticado && !carregando && minhasReceitas.length === 0;
 
   useEffect(() => {
     if (!usuario?.id) {
@@ -45,6 +46,23 @@ export function MinhasReceitas() {
     };
   }, [usuario?.id]);
 
+  useEffect(() => {
+    if (!travarRolagem) {
+      return;
+    }
+
+    const overflowBodyAnterior = document.body.style.overflowY;
+    const overflowHtmlAnterior = document.documentElement.style.overflowY;
+
+    document.body.style.overflowY = "hidden";
+    document.documentElement.style.overflowY = "hidden";
+
+    return () => {
+      document.body.style.overflowY = overflowBodyAnterior;
+      document.documentElement.style.overflowY = overflowHtmlAnterior;
+    };
+  }, [travarRolagem]);
+
   if (!estaAutenticado) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
@@ -68,7 +86,7 @@ export function MinhasReceitas() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="rounded-b-3xl bg-linear-to-br from-orange-500 via-orange-600 to-red-600 px-6 pb-6 pt-12 text-white shadow-lg">
+      <div className="rounded-b-3xl bg-linear-to-br from-orange-500 via-orange-600 to-red-600 px-6 pb-6 pt-9 text-white shadow-lg">
         <h1 className="text-xl font-bold">Minhas receitas</h1>
         <p className="mt-1 text-sm text-orange-100">
           {minhasReceitas.length} receita

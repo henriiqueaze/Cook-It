@@ -74,7 +74,7 @@ export function Perfil() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="rounded-b-3xl bg-linear-to-b from-orange-500 to-orange-600 px-6 pb-12 pt-12 text-white">
+      <div className="rounded-b-3xl bg-linear-to-b from-orange-500 to-orange-600 px-6 pb-12 pt-9 text-white">
         <div className="mb-6 flex items-start justify-between">
           <h1 className="text-2xl font-bold">Perfil</h1>
         </div>
