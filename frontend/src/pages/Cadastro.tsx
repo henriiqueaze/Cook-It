@@ -51,7 +51,11 @@ export function Cadastro() {
     setErro("");
 
     try {
-      const resposta = await authService.cadastrar(nomeLimpo, emailLimpo, senha);
+      const resposta = await authService.cadastrar(
+        nomeLimpo,
+        emailLimpo,
+        senha,
+      );
       salvarAuth(resposta.token, resposta.user);
       toast.success("Conta criada com sucesso!");
       navigate("/", { replace: true });
@@ -72,8 +76,11 @@ export function Cadastro() {
         <p className="mt-2 text-2xl text-orange-100">Crie sua conta</p>
       </div>
 
-      <div className="mt-20 flex-1 px-6">
-        <form className="space-y-4 rounded-2xl bg-white p-6 shadow-lg" onSubmit={handleSubmit}>
+      <div className="mt-14 flex-1 px-6 pb-6">
+        <form
+          className="space-y-4 rounded-2xl bg-white p-6 shadow-lg"
+          onSubmit={handleSubmit}
+        >
           {erro && (
             <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
               {erro}

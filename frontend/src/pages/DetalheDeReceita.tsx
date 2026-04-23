@@ -60,6 +60,7 @@ export function DetalheReceita() {
     Comentario["id"] | null
   >(null);
   const [textoEdicaoComentario, setTextoEdicaoComentario] = useState("");
+  const [enviandoComentario, setEnviandoComentario] = useState(false);
 
   const favoritada = useMemo(() => {
     if (!receita) {
@@ -236,12 +237,19 @@ export function DetalheReceita() {
     }
 
     try {
+      setEnviandoComentario(true);
       const comentario = await comentarioService.adicionar(receita.id, texto);
       setComentarios((current) => [comentario, ...current]);
       setNovoComentario("");
       toast.success("Comentário adicionado!");
-    } catch {
-      toast.error("Não foi possível adicionar o comentário");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível adicionar o comentário",
+      );
+    } finally {
+      setEnviandoComentario(false);
     }
   }
 
@@ -351,6 +359,8 @@ export function DetalheReceita() {
 
   const ehMinhaReceita = usuario?.id === receita.autor.id;
   const porcoesBase = receita.porcoes || 1;
+  const botaoComentarioDesabilitado =
+    !novoComentario.trim() || enviandoComentario;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -554,7 +564,7 @@ export function DetalheReceita() {
             <button
               type="button"
               onClick={handleComentario}
-              disabled={!novoComentario.trim()}
+              disabled={botaoComentarioDesabilitado}
               className="rounded-lg bg-orange-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-gray-300"
               aria-label="Enviar comentário"
             >

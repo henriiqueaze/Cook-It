@@ -11,7 +11,8 @@ export function MinhasReceitas() {
   const { usuario, estaAutenticado } = useAuth();
   const [minhasReceitas, setMinhasReceitas] = useState<Receita[]>([]);
   const [carregando, setCarregando] = useState(true);
-  const travarRolagem = estaAutenticado && !carregando && minhasReceitas.length === 0;
+  const travarRolagem =
+    estaAutenticado && !carregando && minhasReceitas.length === 0;
 
   useEffect(() => {
     if (!usuario?.id) {

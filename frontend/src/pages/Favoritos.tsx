@@ -9,7 +9,8 @@ export function Favoritos() {
   const navigate = useNavigate();
   const { estaAutenticado } = useAuth();
   const { favoritos, carregandoFavoritos } = useFavorites();
-  const travarRolagem = estaAutenticado && !carregandoFavoritos && favoritos.length === 0;
+  const travarRolagem =
+    estaAutenticado && !carregandoFavoritos && favoritos.length === 0;
 
   useEffect(() => {
     if (!travarRolagem) {

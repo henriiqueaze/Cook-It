@@ -178,7 +178,7 @@ export function CriarReceita() {
         <h1 className="text-xl font-bold">Criar receita</h1>
       </div>
 
-      <div className="mt-6 space-y-4 px-6">
+      <div className="mt-6 space-y-4 px-6 pb-6">
         {erro && (
           <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
             {erro}

@@ -84,7 +84,8 @@ export function Home() {
             Comece sua busca
           </h2>
           <p className="mb-4 text-sm text-gray-600">
-            Vá para a tela de busca e adicione os ingredientes que você tem em casa.
+            Vá para a tela de busca e adicione os ingredientes que você tem em
+            casa.
           </p>
           <button
             type="button"
@@ -167,7 +168,9 @@ export function Home() {
               onClick={() => navigate("/busca")}
               className="rounded-xl bg-white p-4 text-left shadow-sm transition hover:shadow-md"
             >
-              <p className="font-semibold text-gray-800">Buscar por ingredientes</p>
+              <p className="font-semibold text-gray-800">
+                Buscar por ingredientes
+              </p>
               <p className="mt-1 text-sm text-gray-500">
                 Monte uma busca rápida com o que você tem em casa.
               </p>

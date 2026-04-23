@@ -131,7 +131,9 @@ export function ResultadosBusca() {
   }, [ingredientesBuscados, ordenacao, resultados]);
 
   const travarRolagem =
-    !carregando && resultadosOrdenados.length === 0 && ingredientesSelecionados.length === 0;
+    !carregando &&
+    resultadosOrdenados.length === 0 &&
+    ingredientesSelecionados.length === 0;
 
   useEffect(() => {
     if (!travarRolagem) {
@@ -318,9 +320,7 @@ export function ResultadosBusca() {
           </button>
         </form>
 
-        <div
-          className={`mt-6 ${resultadosOrdenados.length > 0 ? "pb-4" : ""}`}
-        >
+        <div className={`mt-6 ${resultadosOrdenados.length > 0 ? "pb-4" : ""}`}>
           {erro && (
             <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
               {erro}
