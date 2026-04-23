@@ -5,7 +5,6 @@ import com.p5Project.cookIt.dtos.RecipeIngredientDTO;
 import com.p5Project.cookIt.dtos.requests.CreateRecipeRequest;
 import com.p5Project.cookIt.dtos.requests.UpdateRecipeRequest;
 import com.p5Project.cookIt.entities.Recipe;
-import com.p5Project.cookIt.entities.RecipeIngredient;
 import com.p5Project.cookIt.entities.User;
 import com.p5Project.cookIt.mappers.RecipeIngredientMapper;
 import com.p5Project.cookIt.mappers.RecipeMapper;
@@ -13,9 +12,11 @@ import com.p5Project.cookIt.repository.RecipeRepository;
 import com.p5Project.cookIt.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,7 +25,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-// Testes 03, 04 e 05 - Receitas
 @ExtendWith(MockitoExtension.class)
 class RecipeServiceTest {
 
@@ -49,102 +49,97 @@ class RecipeServiceTest {
     @InjectMocks
     private RecipeService recipeService;
 
-    // Teste 03 - Criação de Receita
     @Test
-    void deveCriarReceitaComSucesso() {
-        // Dados que serão enviados para criar a receita
-        String userId = "user-123";
+    void shouldCreateRecipe() {
+        // usuário dono da receita
+        User user = new User();
+        user.setId("1");
+        user.setName("teste");
+
+        // dados da receita
         CreateRecipeRequest request = new CreateRecipeRequest();
-        request.setName("Macarrão ao Molho");
-        request.setDescription("Receita deliciosa");
+        request.setName("Bolo");
+        request.setDescription("Bolo simples");
         request.setPrepTime(30);
         request.setPortions(4);
-        request.setInstructions(List.of("Cozinhe o macarrão", "Prepare o molho"));
+        request.setIngredients(List.of(new RecipeIngredientDTO()));
+        request.setInstructions(List.of("Misturar", "Assar"));
 
-        RecipeIngredientDTO ingrediente = new RecipeIngredientDTO();
-        ingrediente.setIngredient("macarrão");
-        ingrediente.setQuantity(200.0);
-        ingrediente.setUnit("g");
-        request.setIngredients(List.of(ingrediente));
+        // simula o usuário encontrado
+        when(userRepository.findById("1")).thenReturn(Optional.of(user));
 
-        // Simulando o autor da receita
-        User autor = new User();
-        autor.setId(userId);
-        autor.setName("Chef João");
+        // simula o mapper da receita
+        when(recipeMapper.toDTO(any(Recipe.class))).thenReturn(new RecipeDTO());
 
-        // Simulando os dados retornados
-        RecipeDTO receitaDTO = new RecipeDTO();
-        receitaDTO.setId("recipe-456");
-        receitaDTO.setName("Macarrão ao Molho");
-        receitaDTO.setAuthorId(userId);
+        // executa a criação
+        recipeService.createRecipe(request, "1", null);
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(autor));
-        when(recipeIngredientMapper.toEntity(any(RecipeIngredientDTO.class))).thenReturn(new RecipeIngredient());
-        when(recipeMapper.toDTO(any(Recipe.class))).thenReturn(receitaDTO);
+        // captura a receita salva
+        ArgumentCaptor<Recipe> recipeCaptor = ArgumentCaptor.forClass(Recipe.class);
+        verify(recipeRepository).saveAndFlush(recipeCaptor.capture());
 
-        // Executando a criação (null = sem imagem)
-        RecipeDTO resultado = recipeService.createRecipe(request, userId, null);
+        Recipe savedRecipe = recipeCaptor.getValue();
 
-        // Verificando se os dados estão corretos
-        assertNotNull(resultado);
-        assertEquals("Macarrão ao Molho", resultado.getName());
-        assertEquals(userId, resultado.getAuthorId());
-
-        // Verificando se a receita foi salva no banco invocando 1 vez
-        verify(recipeRepository, times(1)).saveAndFlush(any(Recipe.class));
+        // confere os dados principais
+        assertEquals("Bolo", savedRecipe.getName());
+        assertEquals("Bolo simples", savedRecipe.getDescription());
+        assertEquals(30, savedRecipe.getPrepTime());
+        assertEquals(4, savedRecipe.getPortions());
+        assertEquals(user, savedRecipe.getAuthor());
     }
 
-    // Teste 04 - Edição de Receita
     @Test
-    void deveEditarReceitaComSucesso() {
-        // Dados que serão enviados para editar a receita
-        String recipeId = "recipe-456";
-        String userId = "user-123";
+    void shouldUpdateRecipe() {
+        // usuário dono da receita
+        User user = new User();
+        user.setId("1");
+
+        // receita já existente
+        Recipe recipe = new Recipe();
+        recipe.setId("10");
+        recipe.setName("Bolo antigo");
+        recipe.setDescription("Descrição antiga");
+        recipe.setAuthor(user);
+
+        // novos dados
         UpdateRecipeRequest request = new UpdateRecipeRequest();
-        request.setName("Macarrão Carbonara");
-        request.setPrepTime(25);
+        request.setDescription("Descrição nova");
 
-        // Autor da receita (mesmo usuário que está editando)
-        User autor = new User();
-        autor.setId(userId);
+        // simula busca da receita
+        when(recipeRepository.findById("10")).thenReturn(Optional.of(recipe));
 
-        // Receita que ja existe no banco
-        Recipe receitaExistente = new Recipe();
-        receitaExistente.setId(recipeId);
-        receitaExistente.setName("Macarrão ao Molho");
-        receitaExistente.setAuthor(autor);
+        // simula o update do mapper
+        doAnswer(invocation -> {
+            UpdateRecipeRequest req = invocation.getArgument(0);
+            Recipe rec = invocation.getArgument(1);
+            rec.setDescription(req.getDescription());
+            return null;
+        }).when(recipeMapper).updateRecipeFromRequest(any(UpdateRecipeRequest.class), any(Recipe.class));
 
-        // Objeto com os dados atualizados
-        RecipeDTO receitaAtualizada = new RecipeDTO();
-        receitaAtualizada.setId(recipeId);
-        receitaAtualizada.setName("Macarrão Carbonara");
+        // simula o mapper de saída
+        when(recipeMapper.toDTO(any(Recipe.class))).thenReturn(new RecipeDTO());
 
-        when(recipeRepository.findById(recipeId)).thenReturn(Optional.of(receitaExistente));
-        when(recipeMapper.toDTO(any(Recipe.class))).thenReturn(receitaAtualizada);
+        // executa a edição
+        recipeService.updateRecipe("10", request, null, "1");
 
-        // Executando a edição (null = sem imagem nova)
-        RecipeDTO resultado = recipeService.updateRecipe(recipeId, request, null, userId);
+        // captura a receita salva
+        ArgumentCaptor<Recipe> recipeCaptor = ArgumentCaptor.forClass(Recipe.class);
+        verify(recipeRepository).saveAndFlush(recipeCaptor.capture());
 
-        // Verificando se os dados foram atualizados
-        assertNotNull(resultado);
-        assertEquals("Macarrão Carbonara", resultado.getName());
+        Recipe savedRecipe = recipeCaptor.getValue();
 
-        // Verificando o salvamento da receita ivocando 1 vez 
-        verify(recipeRepository, times(1)).saveAndFlush(any(Recipe.class));
+        // confere se a descrição mudou
+        assertEquals("Descrição nova", savedRecipe.getDescription());
     }
 
-    // Teste 05 - Exclusão de Receita
     @Test
-    void deveExcluirReceitaComSucesso() {
-        // ID da receita que será excluída
-        String recipeId = "recipe-456";
+    void shouldDeleteRecipe() {
+        // executa a deleção
+        recipeService.deleteRecipe("10");
 
-        // Executando a exclusão
-        recipeService.deleteRecipe(recipeId);
-
-        // Verificando se todas as etapas de exclusão foram chamadas
-        verify(recipeRepository, times(1)).deleteFromFavoritesByRecipeId(recipeId);
-        verify(recipeRepository, times(1)).deleteFromUserRatingsByRecipeId(recipeId);
-        verify(recipeRepository, times(1)).deleteById(recipeId);
+        // verifica se apagou das tabelas auxiliares e da tabela principal
+        verify(recipeRepository).deleteFromFavoritesByRecipeId("10");
+        verify(recipeRepository).deleteFromUserRatingsByRecipeId("10");
+        verify(recipeRepository).deleteById("10");
     }
 }

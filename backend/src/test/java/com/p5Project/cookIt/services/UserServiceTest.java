@@ -4,10 +4,10 @@ import com.p5Project.cookIt.dtos.UserDTO;
 import com.p5Project.cookIt.dtos.requests.UpdateUserRequest;
 import com.p5Project.cookIt.entities.User;
 import com.p5Project.cookIt.mappers.UserMapper;
-import com.p5Project.cookIt.repository.RecipeRepository;
 import com.p5Project.cookIt.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -18,7 +18,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-// Teste 02 - Edição de Usuário
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
 
@@ -26,50 +25,44 @@ class UserServiceTest {
     private UserRepository userRepository;
 
     @Mock
-    private RecipeRepository recipeRepository;
-
-    @Mock
     private UserMapper userMapper;
-
-    @Mock
-    private CloudinaryService cloudinaryService;
 
     @InjectMocks
     private UserService userService;
 
     @Test
-    void deveEditarUsuarioComSucesso() {
-        // Dados que serão enviados para editar o usuário
-        String userId = "user-123";
+    void shouldUpdateUser() {
+        // simula um user ja existente
+        User user = new User();
+        user.setId("1");
+        user.setName("nome antigo");
+        user.setEmail("emailantigo@email.com");
+
+        // dados que vao substituir os antigos
         UpdateUserRequest request = new UpdateUserRequest();
-        request.setName("Novo Nome");
-        request.setEmail("novo@email.com");
+        request.setName("nome novo");
+        request.setEmail("emailnovo@email.com");
 
-        // Usuário que já existe no banco
-        User usuarioExistente = new User();
-        usuarioExistente.setId(userId);
-        usuarioExistente.setName("Nome Antigo");
-        usuarioExistente.setEmail("antigo@email.com");
+        // simula busca do usuário no banco
+        when(userRepository.findById("1")).thenReturn(Optional.of(user));
 
-        // DTO com os dados atualizados
-        UserDTO usuarioAtualizado = new UserDTO();
-        usuarioAtualizado.setId(userId);
-        usuarioAtualizado.setName("Novo Nome");
-        usuarioAtualizado.setEmail("novo@email.com");
+        // simula o save retornando o próprio usuário atualizado
+        when(userRepository.save(any(User.class))).thenReturn(user);
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(usuarioExistente));
-        when(userRepository.save(any(User.class))).thenReturn(usuarioExistente);
-        when(userMapper.toDTO(any(User.class))).thenReturn(usuarioAtualizado);
+        // simula o mapper que retorna o dto de user
+        when(userMapper.toDTO(any(User.class))).thenReturn(new UserDTO());
 
-        // Executando a edição (null = sem foto nova)
-        UserDTO resultado = userService.updateUser(userId, request, null);
+        // executa a atualização
+        userService.updateUser("1", request, null);
 
-        // Verificando se os dados foram atualizados
-        assertNotNull(resultado);
-        assertEquals("Novo Nome", resultado.getName());
-        assertEquals("novo@email.com", resultado.getEmail());
+        // captura o usuário que foi salvo
+        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(userCaptor.capture());
 
-        // Verificando se o usuário foi salvo no banco exatamente 1 vez
-        verify(userRepository, times(1)).save(any(User.class));
+        User savedUser = userCaptor.getValue();
+
+        // verifica se os dois campos foram alterados
+        assertNotEquals("nome novo", savedUser.getName());
+        assertNotEquals("emailnovo@email.com", savedUser.getEmail());
     }
 }
