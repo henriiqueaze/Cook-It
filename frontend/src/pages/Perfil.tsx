@@ -73,7 +73,7 @@ export function Perfil() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50">
       <div className="rounded-b-3xl bg-linear-to-b from-orange-500 to-orange-600 px-6 pb-12 pt-12 text-white">
         <div className="mb-6 flex items-start justify-between">
           <h1 className="text-2xl font-bold">Perfil</h1>
@@ -108,7 +108,7 @@ export function Perfil() {
         </Link>
       </div>
 
-      <div className="mt-6 space-y-4 px-6">
+      <div className="mt-6 space-y-4 px-6 pb-4">
         <div className="grid grid-cols-3 gap-4 rounded-2xl bg-white p-4 text-center shadow-sm">
           <div>
             <div className="text-2xl font-bold text-orange-600">

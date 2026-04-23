@@ -3,7 +3,11 @@ import type { ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ChevronDown, Plus, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { UnidadeMedida, UnidadeMedidaLabel, type UnidadeMedida as UnidadeMedidaType } from "@/enums/UnidadeMedida";
+import {
+  UnidadeMedida,
+  UnidadeMedidaLabel,
+  type UnidadeMedida as UnidadeMedidaType,
+} from "@/enums/UnidadeMedida";
 import { receitaService } from "@/services/receitaService";
 
 interface IngredienteForm {
@@ -26,7 +30,9 @@ export function CriarReceita() {
   const [tempoPreparo, setTempoPreparo] = useState("");
   const [porcoes, setPorcoes] = useState("1");
   const [instrucoes, setInstrucoes] = useState<string[]>([""]);
-  const [ingredientes, setIngredientes] = useState<IngredienteForm[]>([criarIngredienteVazio()]);
+  const [ingredientes, setIngredientes] = useState<IngredienteForm[]>([
+    criarIngredienteVazio(),
+  ]);
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
 
@@ -49,10 +55,16 @@ export function CriarReceita() {
   }
 
   function removerIngrediente(index: number) {
-    setIngredientes((current) => current.filter((_, itemIndex) => itemIndex !== index));
+    setIngredientes((current) =>
+      current.filter((_, itemIndex) => itemIndex !== index),
+    );
   }
 
-  function atualizarIngrediente(index: number, campo: keyof IngredienteForm, valor: string) {
+  function atualizarIngrediente(
+    index: number,
+    campo: keyof IngredienteForm,
+    valor: string,
+  ) {
     setIngredientes((current) =>
       current.map((item, itemIndex) =>
         itemIndex === index ? { ...item, [campo]: valor } : item,
@@ -65,7 +77,9 @@ export function CriarReceita() {
   }
 
   function removerInstrucao(index: number) {
-    setInstrucoes((current) => current.filter((_, itemIndex) => itemIndex !== index));
+    setInstrucoes((current) =>
+      current.filter((_, itemIndex) => itemIndex !== index),
+    );
   }
 
   function atualizarInstrucao(index: number, valor: string) {
@@ -99,7 +113,11 @@ export function CriarReceita() {
       return;
     }
 
-    if (ingredientes.some((item) => !item.nome.trim() || !item.quantidade.trim() || !item.unidade)) {
+    if (
+      ingredientes.some(
+        (item) => !item.nome.trim() || !item.quantidade.trim() || !item.unidade,
+      )
+    ) {
       setErro("Preencha todos os campos dos ingredientes.");
       return;
     }
@@ -152,7 +170,7 @@ export function CriarReceita() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50">
       <div className="flex items-center gap-3 rounded-b-3xl bg-linear-to-br from-orange-500 via-orange-600 to-red-600 px-6 pb-6 pt-12 text-white shadow-lg">
         <button type="button" onClick={() => navigate(-1)} aria-label="Voltar">
           <ArrowLeft size={22} />
@@ -185,7 +203,7 @@ export function CriarReceita() {
 
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">
-              Descrição *
+              Descrição
             </label>
             <textarea
               value={descricao}
@@ -295,7 +313,11 @@ export function CriarReceita() {
                   type="number"
                   value={ingrediente.quantidade}
                   onChange={(event) =>
-                    atualizarIngrediente(index, "quantidade", event.target.value)
+                    atualizarIngrediente(
+                      index,
+                      "quantidade",
+                      event.target.value,
+                    )
                   }
                   placeholder="Quantidade"
                   className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition focus:ring-2 focus:ring-orange-500"
@@ -317,7 +339,11 @@ export function CriarReceita() {
                       Unidade
                     </option>
                     {Object.values(UnidadeMedida).map((unidade) => (
-                      <option key={unidade} value={unidade} className="text-gray-800">
+                      <option
+                        key={unidade}
+                        value={unidade}
+                        className="text-gray-800"
+                      >
                         {UnidadeMedidaLabel[unidade]}
                       </option>
                     ))}
@@ -363,7 +389,9 @@ export function CriarReceita() {
 
               <textarea
                 value={instrucao}
-                onChange={(event) => atualizarInstrucao(index, event.target.value)}
+                onChange={(event) =>
+                  atualizarInstrucao(index, event.target.value)
+                }
                 placeholder={`Passo ${index + 1}...`}
                 rows={2}
                 className="flex-1 resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition focus:ring-2 focus:ring-orange-500"

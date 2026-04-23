@@ -38,7 +38,9 @@ function obterLabelUnidade(unidade?: string) {
     return "";
   }
 
-  return UnidadeMedidaLabel[unidade as keyof typeof UnidadeMedidaLabel] ?? unidade;
+  return (
+    UnidadeMedidaLabel[unidade as keyof typeof UnidadeMedidaLabel] ?? unidade
+  );
 }
 
 export function DetalheReceita() {
@@ -54,7 +56,9 @@ export function DetalheReceita() {
   const [novoComentario, setNovoComentario] = useState("");
   const [avaliacaoUsuario, setAvaliacaoUsuario] = useState(0);
   const [comentarios, setComentarios] = useState<Comentario[]>([]);
-  const [comentarioEditandoId, setComentarioEditandoId] = useState<Comentario["id"] | null>(null);
+  const [comentarioEditandoId, setComentarioEditandoId] = useState<
+    Comentario["id"] | null
+  >(null);
   const [textoEdicaoComentario, setTextoEdicaoComentario] = useState("");
 
   const favoritada = useMemo(() => {
@@ -176,7 +180,9 @@ export function DetalheReceita() {
 
     try {
       const adicionou = await toggleFavorite(receita);
-      toast.success(adicionou ? "Adicionado aos favoritos" : "Removido dos favoritos");
+      toast.success(
+        adicionou ? "Adicionado aos favoritos" : "Removido dos favoritos",
+      );
     } catch {
       toast.error("Não foi possível atualizar os favoritos");
     }
@@ -198,7 +204,10 @@ export function DetalheReceita() {
       setAvaliacaoUsuario(nota);
 
       if (usuario?.id && id) {
-        localStorage.setItem(`rating-recipe-${id}-user-${usuario.id}`, String(nota));
+        localStorage.setItem(
+          `rating-recipe-${id}-user-${usuario.id}`,
+          String(nota),
+        );
       }
 
       const atualizada = await receitaService.buscarPorId(receita.id);
@@ -254,7 +263,9 @@ export function DetalheReceita() {
     }
 
     try {
-      const atualizado = await comentarioService.atualizar(comentarioId, { text: texto });
+      const atualizado = await comentarioService.atualizar(comentarioId, {
+        text: texto,
+      });
 
       setComentarios((current) =>
         current.map((comentario) =>
@@ -272,7 +283,9 @@ export function DetalheReceita() {
   async function excluirComentario(comentarioId: Comentario["id"]) {
     try {
       await comentarioService.deletar(comentarioId);
-      setComentarios((current) => current.filter((comentario) => comentario.id !== comentarioId));
+      setComentarios((current) =>
+        current.filter((comentario) => comentario.id !== comentarioId),
+      );
 
       if (comentarioEditandoId === comentarioId) {
         cancelarEdicao();
@@ -295,10 +308,14 @@ export function DetalheReceita() {
       navigate("/minhas-receitas");
     } catch {
       try {
-        const listaComentarios = await comentarioService.listarPorReceita(receita.id);
+        const listaComentarios = await comentarioService.listarPorReceita(
+          receita.id,
+        );
 
         await Promise.allSettled(
-          listaComentarios.map((comentario) => comentarioService.deletar(comentario.id)),
+          listaComentarios.map((comentario) =>
+            comentarioService.deletar(comentario.id),
+          ),
         );
 
         await receitaService.deletar(receita.id);
@@ -322,7 +339,10 @@ export function DetalheReceita() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
         <p className="text-gray-500">Receita não encontrada.</p>
-        <button onClick={handleVoltar} className="mt-4 font-medium text-orange-600">
+        <button
+          onClick={handleVoltar}
+          className="mt-4 font-medium text-orange-600"
+        >
           Voltar
         </button>
       </div>
@@ -333,7 +353,7 @@ export function DetalheReceita() {
   const porcoesBase = receita.porcoes || 1;
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50">
       <div className="relative h-64 w-full bg-gray-200">
         {receita.imagemUrl ? (
           <img
@@ -356,18 +376,26 @@ export function DetalheReceita() {
           type="button"
           onClick={handleFavoritar}
           className="absolute right-4 top-4 rounded-full bg-white/90 p-2 shadow-md"
-          aria-label={favoritada ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+          aria-label={
+            favoritada ? "Remover dos favoritos" : "Adicionar aos favoritos"
+          }
         >
           <Heart
             size={20}
-            className={favoritada ? "fill-red-500 text-red-500" : "text-gray-400"}
+            className={
+              favoritada ? "fill-red-500 text-red-500" : "text-gray-400"
+            }
           />
         </button>
 
         {ehMinhaReceita && (
           <button
             type="button"
-            onClick={() => navigate(`/editar-receita/${receita.id}`)}
+            onClick={() =>
+              navigate(`/editar-receita/${receita.id}`, {
+                state: { receita },
+              })
+            }
             className="absolute right-28 top-4 rounded-full bg-white/90 p-2 shadow-md"
             aria-label="Editar receita"
           >
@@ -390,7 +418,12 @@ export function DetalheReceita() {
       <div className="space-y-4 px-6 py-4">
         <section>
           <h1 className="text-xl font-bold text-gray-800">{receita.titulo}</h1>
-          <p className="mt-1 text-sm text-gray-500">{receita.descricao}</p>
+          <h2 className="mt-2 text-sm font-semibold text-gray-700">
+            Descrição
+          </h2>
+          <p className="mt-1 text-sm text-gray-500">
+            {receita.descricao?.trim() || "Sem descrição informada."}
+          </p>
         </section>
 
         <section className="flex flex-wrap gap-4">
@@ -403,7 +436,11 @@ export function DetalheReceita() {
             {porcoesBase * multiplicador} porções
           </div>
           <div className="flex items-center gap-1 text-sm text-gray-500">
-            <RatingStars avaliacao={receita.avaliacao} somenteLeitura tamanho="sm" />
+            <RatingStars
+              avaliacao={receita.avaliacao}
+              somenteLeitura
+              tamanho="sm"
+            />
             <span className="text-xs text-gray-400">
               ({receita.totalAvaliacoes})
             </span>
@@ -415,13 +452,17 @@ export function DetalheReceita() {
           <div className="flex flex-wrap items-center gap-4">
             <button
               type="button"
-              onClick={() => setMultiplicador((valor) => Math.max(1, valor - 1))}
+              onClick={() =>
+                setMultiplicador((valor) => Math.max(1, valor - 1))
+              }
               className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-100 text-orange-600 transition-colors hover:bg-orange-200"
               aria-label="Diminuir porções"
             >
               <Minus size={16} />
             </button>
-            <span className="text-lg font-semibold text-gray-800">{multiplicador}x</span>
+            <span className="text-lg font-semibold text-gray-800">
+              {multiplicador}x
+            </span>
             <button
               type="button"
               onClick={() => setMultiplicador((valor) => valor + 1)}
@@ -440,15 +481,23 @@ export function DetalheReceita() {
           <h2 className="mb-3 font-semibold text-gray-800">Ingredientes</h2>
           <ul className="space-y-2">
             {receita.ingredientes.map((ingrediente) => {
-              const quantidade = Number(ingrediente.quantidade || 0) * multiplicador;
-              const precisaDecimal = Number(ingrediente.quantidade || 0) % 1 !== 0;
-              const quantidadeFormatada = quantidade.toFixed(precisaDecimal ? 1 : 0);
+              const quantidade =
+                Number(ingrediente.quantidade || 0) * multiplicador;
+              const precisaDecimal =
+                Number(ingrediente.quantidade || 0) % 1 !== 0;
+              const quantidadeFormatada = quantidade.toFixed(
+                precisaDecimal ? 1 : 0,
+              );
 
               return (
-                <li key={ingrediente.id} className="flex items-center justify-between gap-3 text-sm">
+                <li
+                  key={ingrediente.id}
+                  className="flex items-center justify-between gap-3 text-sm"
+                >
                   <span className="text-gray-700">{ingrediente.nome}</span>
                   <span className="text-gray-400">
-                    {quantidadeFormatada} {obterLabelUnidade(ingrediente.unidade)}
+                    {quantidadeFormatada}{" "}
+                    {obterLabelUnidade(ingrediente.unidade)}
                   </span>
                 </li>
               );
@@ -542,7 +591,8 @@ export function DetalheReceita() {
                           />
                         ) : (
                           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-100 text-xs font-semibold text-orange-700">
-                            {comentario.userName?.charAt(0)?.toUpperCase() || "U"}
+                            {comentario.userName?.charAt(0)?.toUpperCase() ||
+                              "U"}
                           </div>
                         )}
 
@@ -582,7 +632,9 @@ export function DetalheReceita() {
                       <div className="space-y-2">
                         <textarea
                           value={textoEdicaoComentario}
-                          onChange={(event) => setTextoEdicaoComentario(event.target.value)}
+                          onChange={(event) =>
+                            setTextoEdicaoComentario(event.target.value)
+                          }
                           className="min-h-[90px] w-full resize-none rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-orange-500"
                         />
 
@@ -597,7 +649,9 @@ export function DetalheReceita() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => salvarEdicaoComentario(comentario.id)}
+                            onClick={() =>
+                              salvarEdicaoComentario(comentario.id)
+                            }
                             disabled={!textoEdicaoComentario.trim()}
                             className="inline-flex items-center gap-1 rounded-lg bg-orange-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-gray-300"
                           >

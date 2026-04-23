@@ -66,13 +66,18 @@ async function request<T>(
     let message = `Erro ${response.status}`;
 
     try {
-      const error = await response.json();
-      message = error.message || error.error || message;
-    } catch {
-      const text = await response.text();
-      if (text) {
-        message = text;
+      const raw = await response.text();
+
+      if (raw) {
+        try {
+          const error = JSON.parse(raw) as { message?: string; error?: string };
+          message = error.message || error.error || raw;
+        } catch {
+          message = raw;
+        }
       }
+    } catch {
+      // Keep fallback status message when response body cannot be read.
     }
 
     throw new Error(message);
@@ -109,6 +114,5 @@ export const api = {
       ...init,
     }),
 
-  delete: <T>(endpoint: string) =>
-    request<T>(endpoint, { method: "DELETE" }),
+  delete: <T>(endpoint: string) => request<T>(endpoint, { method: "DELETE" }),
 };

@@ -45,16 +45,30 @@ function mapInstructions(instrucoes: string[]) {
   return instrucoes.map((step) => step.trim()).filter(Boolean);
 }
 
-function buildRecipeFormData(receita: ReceitaFormPayload | AtualizarReceitaPayload) {
-  const data = {
+function buildRecipeData(
+  receita: ReceitaFormPayload | AtualizarReceitaPayload,
+) {
+  return {
     ...(receita.titulo ? { name: receita.titulo.trim() } : {}),
     ...(receita.descricao ? { description: receita.descricao.trim() } : {}),
     ...(receita.tempoPreparo ? { prepTime: receita.tempoPreparo } : {}),
     ...(receita.porcoes ? { portions: receita.porcoes } : {}),
-    ...(receita.ingredientes ? { ingredients: mapIngredients(receita.ingredientes) } : {}),
-    ...(receita.instrucoes ? { instructions: mapInstructions(receita.instrucoes) } : {}),
-    ...(receita.categoria?.trim() ? { category: receita.categoria.trim() } : {}),
+    ...(receita.ingredientes
+      ? { ingredients: mapIngredients(receita.ingredientes) }
+      : {}),
+    ...(receita.instrucoes
+      ? { instructions: mapInstructions(receita.instrucoes) }
+      : {}),
+    ...(receita.categoria?.trim()
+      ? { category: receita.categoria.trim() }
+      : {}),
   };
+}
+
+function buildRecipeFormData(
+  receita: ReceitaFormPayload | AtualizarReceitaPayload,
+) {
+  const data = buildRecipeData(receita);
 
   const formData = new FormData();
 
@@ -85,9 +99,9 @@ function adaptRecipeResponse(recipe: BackendRecipeDTO | Receita) {
 
 export const receitaService = {
   listar: async () => {
-    const resposta = await api.get<BackendRecipeDTO[] | { content?: BackendRecipeDTO[] }>(
-      "/recipes",
-    );
+    const resposta = await api.get<
+      BackendRecipeDTO[] | { content?: BackendRecipeDTO[] }
+    >("/recipes");
     return adaptBackendRecipeListToReceitas(resposta as BackendRecipeDTO[]);
   },
 
@@ -137,9 +151,9 @@ export const receitaService = {
     api.post<void>(`/recipes/${id}/rate`, { rating: nota }),
 
   minhasReceitas: async (userId: Id) => {
-    const resposta = await api.get<BackendRecipeDTO[] | { content?: BackendRecipeDTO[] }>(
-      `/users/${userId}/recipes`,
-    );
+    const resposta = await api.get<
+      BackendRecipeDTO[] | { content?: BackendRecipeDTO[] }
+    >(`/users/${userId}/recipes`);
 
     return adaptBackendRecipeListToReceitas(resposta as BackendRecipeDTO[]);
   },

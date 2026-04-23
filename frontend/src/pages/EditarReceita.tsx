@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
 import type { ChangeEvent } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, ChevronDown, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { UnidadeMedida, UnidadeMedidaLabel, type UnidadeMedida as UnidadeMedidaType } from "@/enums/UnidadeMedida";
+import {
+  UnidadeMedida,
+  UnidadeMedidaLabel,
+  type UnidadeMedida as UnidadeMedidaType,
+} from "@/enums/UnidadeMedida";
 import { receitaService } from "@/services/receitaService";
 import type { Receita } from "@/types";
 
@@ -14,27 +18,52 @@ interface IngredienteForm {
   unidade: UnidadeMedidaType | "";
 }
 
+interface EditarReceitaLocationState {
+  receita?: Receita;
+}
+
 function criarIngredienteVazio(): IngredienteForm {
   return { nome: "", quantidade: "", unidade: "" };
 }
 
 export function EditarReceita() {
   const { id } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const { usuario } = useAuth();
 
-  const [receita, setReceita] = useState<Receita | null>(null);
-  const [carregando, setCarregando] = useState(true);
+  const receitaInicial =
+    (location.state as EditarReceitaLocationState | null)?.receita ?? null;
+
+  const [receita, setReceita] = useState<Receita | null>(receitaInicial);
+  const [carregando, setCarregando] = useState(!receitaInicial);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
 
-  const [titulo, setTitulo] = useState("");
+  const [titulo, setTitulo] = useState(receitaInicial?.titulo ?? "");
   const [imagemArquivo, setImagemArquivo] = useState<File | null>(null);
-  const [previewImagem, setPreviewImagem] = useState("");
-  const [tempoPreparo, setTempoPreparo] = useState("");
-  const [porcoes, setPorcoes] = useState("1");
-  const [instrucoes, setInstrucoes] = useState<string[]>([""]);
-  const [ingredientes, setIngredientes] = useState<IngredienteForm[]>([criarIngredienteVazio()]);
+  const [descricao, setDescricao] = useState(receitaInicial?.descricao ?? "");
+  const [previewImagem, setPreviewImagem] = useState(
+    receitaInicial?.imagemUrl ?? "",
+  );
+  const [tempoPreparo, setTempoPreparo] = useState(
+    receitaInicial ? String(receitaInicial.tempoPreparo) : "",
+  );
+  const [porcoes, setPorcoes] = useState(
+    receitaInicial ? String(receitaInicial.porcoes) : "1",
+  );
+  const [instrucoes, setInstrucoes] = useState<string[]>(
+    receitaInicial?.instrucoes?.length ? receitaInicial.instrucoes : [""],
+  );
+  const [ingredientes, setIngredientes] = useState<IngredienteForm[]>(() =>
+    receitaInicial?.ingredientes?.length
+      ? receitaInicial.ingredientes.map((ing) => ({
+          nome: ing.nome,
+          quantidade: String((ing as any).quantity ?? ing.quantidade ?? ""),
+          unidade: (ing.unidade as UnidadeMedidaType) ?? "",
+        }))
+      : [criarIngredienteVazio()],
+  );
 
   useEffect(() => {
     if (!id) return;
@@ -47,6 +76,7 @@ export function EditarReceita() {
         if (!ativo) return;
         setReceita(dados);
         setTitulo(dados.titulo);
+        setDescricao(dados.descricao ?? "");
         setTempoPreparo(String(dados.tempoPreparo));
         setPorcoes(String(dados.porcoes));
         setInstrucoes(dados.instrucoes.length ? dados.instrucoes : [""]);
@@ -55,7 +85,9 @@ export function EditarReceita() {
             ? dados.ingredientes.map((ing) => ({
                 nome: ing.nome,
                 // adapter retorna "quantity" mas o tipo declara "quantidade"
-                quantidade: String((ing as any).quantity ?? ing.quantidade ?? ""),
+                quantidade: String(
+                  (ing as any).quantity ?? ing.quantidade ?? "",
+                ),
                 unidade: (ing.unidade as UnidadeMedidaType) ?? "",
               }))
             : [criarIngredienteVazio()],
@@ -89,9 +121,15 @@ export function EditarReceita() {
     setIngredientes((current) => current.filter((_, i) => i !== index));
   }
 
-  function atualizarIngrediente(index: number, campo: keyof IngredienteForm, valor: string) {
+  function atualizarIngrediente(
+    index: number,
+    campo: keyof IngredienteForm,
+    valor: string,
+  ) {
     setIngredientes((current) =>
-      current.map((item, i) => (i === index ? { ...item, [campo]: valor } : item)),
+      current.map((item, i) =>
+        i === index ? { ...item, [campo]: valor } : item,
+      ),
     );
   }
 
@@ -104,7 +142,9 @@ export function EditarReceita() {
   }
 
   function atualizarInstrucao(index: number, valor: string) {
-    setInstrucoes((current) => current.map((item, i) => (i === index ? valor : item)));
+    setInstrucoes((current) =>
+      current.map((item, i) => (i === index ? valor : item)),
+    );
   }
 
   function handleImagemChange(event: ChangeEvent<HTMLInputElement>) {
@@ -121,15 +161,20 @@ export function EditarReceita() {
 
   async function handleSalvar() {
     const tituloLimpo = titulo.trim();
+    const descricaoLimpa = descricao.trim();
     const tempo = Number(tempoPreparo);
     const totalPorcoes = Number(porcoes);
 
-    if (!tituloLimpo || !tempo || !totalPorcoes) {
+    if (!tituloLimpo || !descricaoLimpa || !tempo || !totalPorcoes) {
       setErro("Preencha todos os campos obrigatórios.");
       return;
     }
 
-    if (ingredientes.some((item) => !item.nome.trim() || !item.quantidade.trim() || !item.unidade)) {
+    if (
+      ingredientes.some(
+        (item) => !item.nome.trim() || !item.quantidade.trim() || !item.unidade,
+      )
+    ) {
       setErro("Preencha todos os campos dos ingredientes.");
       return;
     }
@@ -145,6 +190,7 @@ export function EditarReceita() {
     try {
       await receitaService.atualizar(id!, {
         titulo: tituloLimpo,
+        descricao: descricaoLimpa,
         imagemArquivo,
         tempoPreparo: tempo,
         porcoes: totalPorcoes,
@@ -154,8 +200,12 @@ export function EditarReceita() {
 
       toast.success("Receita atualizada!");
       navigate(`/receita/${id}`);
-    } catch {
-      setErro("Erro ao salvar receita. Tente novamente.");
+    } catch (error) {
+      setErro(
+        error instanceof Error
+          ? error.message
+          : "Erro ao salvar receita. Tente novamente.",
+      );
     } finally {
       setSalvando(false);
     }
@@ -173,7 +223,10 @@ export function EditarReceita() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
         <p className="text-gray-500">Receita não encontrada.</p>
-        <button onClick={() => navigate(-1)} className="mt-4 font-medium text-orange-600">
+        <button
+          onClick={() => navigate(-1)}
+          className="mt-4 font-medium text-orange-600"
+        >
           Voltar
         </button>
       </div>
@@ -183,8 +236,13 @@ export function EditarReceita() {
   if (usuario?.id !== receita.autor.id) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
-        <p className="text-gray-500">Você não tem permissão para editar esta receita.</p>
-        <button onClick={() => navigate(`/receita/${id}`)} className="mt-4 font-medium text-orange-600">
+        <p className="text-gray-500">
+          Você não tem permissão para editar esta receita.
+        </p>
+        <button
+          onClick={() => navigate(`/receita/${id}`)}
+          className="mt-4 font-medium text-orange-600"
+        >
           Voltar
         </button>
       </div>
@@ -192,9 +250,13 @@ export function EditarReceita() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50">
       <div className="flex items-center gap-3 rounded-b-3xl bg-linear-to-br from-orange-500 via-orange-600 to-red-600 px-6 pb-6 pt-12 text-white shadow-lg">
-        <button type="button" onClick={() => navigate(`/receita/${id}`)} aria-label="Voltar">
+        <button
+          type="button"
+          onClick={() => navigate(`/receita/${id}`)}
+          aria-label="Voltar"
+        >
           <ArrowLeft size={22} />
         </button>
         <h1 className="text-xl font-bold">Editar receita</h1>
@@ -211,7 +273,9 @@ export function EditarReceita() {
           <h2 className="font-semibold text-gray-800">Informações básicas</h2>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Título *</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Título *
+            </label>
             <input
               type="text"
               value={titulo}
@@ -222,17 +286,39 @@ export function EditarReceita() {
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Imagem da receita</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Descrição
+            </label>
+            <textarea
+              value={descricao}
+              onChange={(event) => setDescricao(event.target.value)}
+              placeholder="Descreva brevemente sua receita..."
+              rows={3}
+              className="w-full resize-none rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-orange-500"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Imagem da receita
+            </label>
             <label className="flex w-full cursor-pointer items-center justify-center rounded-lg border border-dashed border-gray-300 px-4 py-3 transition-colors hover:border-orange-400 hover:bg-orange-50">
               <span className="text-sm text-gray-600">
                 {imagemArquivo ? "Trocar imagem" : "Selecionar nova imagem"}
               </span>
-              <input type="file" accept="image/*" onChange={handleImagemChange} className="hidden" />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImagemChange}
+                className="hidden"
+              />
             </label>
 
             {imagemArquivo && (
               <div className="mt-2 flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
-                <p className="truncate text-sm font-medium text-gray-700">{imagemArquivo.name}</p>
+                <p className="truncate text-sm font-medium text-gray-700">
+                  {imagemArquivo.name}
+                </p>
                 <button
                   type="button"
                   onClick={() => {
@@ -248,13 +334,19 @@ export function EditarReceita() {
             )}
 
             {previewImagem && (
-              <img src={previewImagem} alt="Preview" className="mt-2 h-40 w-full rounded-lg object-cover" />
+              <img
+                src={previewImagem}
+                alt="Preview"
+                className="mt-2 h-40 w-full rounded-lg object-cover"
+              />
             )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Tempo (min) *</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Tempo (min) *
+              </label>
               <input
                 type="number"
                 min={1}
@@ -265,7 +357,9 @@ export function EditarReceita() {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Porções *</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Porções *
+              </label>
               <input
                 type="number"
                 min={1}
@@ -286,21 +380,31 @@ export function EditarReceita() {
                 <input
                   type="text"
                   value={ingrediente.nome}
-                  onChange={(event) => atualizarIngrediente(index, "nome", event.target.value)}
+                  onChange={(event) =>
+                    atualizarIngrediente(index, "nome", event.target.value)
+                  }
                   placeholder="Nome"
                   className="col-span-1 rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition focus:ring-2 focus:ring-orange-500"
                 />
                 <input
                   type="number"
                   value={ingrediente.quantidade}
-                  onChange={(event) => atualizarIngrediente(index, "quantidade", event.target.value)}
+                  onChange={(event) =>
+                    atualizarIngrediente(
+                      index,
+                      "quantidade",
+                      event.target.value,
+                    )
+                  }
                   placeholder="Quantidade"
                   className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition focus:ring-2 focus:ring-orange-500"
                 />
                 <div className="relative">
                   <select
                     value={ingrediente.unidade}
-                    onChange={(event) => atualizarIngrediente(index, "unidade", event.target.value)}
+                    onChange={(event) =>
+                      atualizarIngrediente(index, "unidade", event.target.value)
+                    }
                     className={`w-full appearance-none rounded-lg border px-3 py-2 pr-9 text-sm outline-none transition ${
                       ingrediente.unidade
                         ? "border-gray-300 text-gray-800"
@@ -311,7 +415,11 @@ export function EditarReceita() {
                       Unidade
                     </option>
                     {Object.values(UnidadeMedida).map((unidade) => (
-                      <option key={unidade} value={unidade} className="text-gray-800">
+                      <option
+                        key={unidade}
+                        value={unidade}
+                        className="text-gray-800"
+                      >
                         {UnidadeMedidaLabel[unidade]}
                       </option>
                     ))}
@@ -356,7 +464,9 @@ export function EditarReceita() {
               </span>
               <textarea
                 value={instrucao}
-                onChange={(event) => atualizarInstrucao(index, event.target.value)}
+                onChange={(event) =>
+                  atualizarInstrucao(index, event.target.value)
+                }
                 placeholder={`Passo ${index + 1}...`}
                 rows={2}
                 className="flex-1 resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition focus:ring-2 focus:ring-orange-500"

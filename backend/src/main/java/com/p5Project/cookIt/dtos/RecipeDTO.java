@@ -10,6 +10,8 @@ public class RecipeDTO {
 
     private String name;
 
+    private String description;
+
     private String image;
 
     private Integer prepTime;

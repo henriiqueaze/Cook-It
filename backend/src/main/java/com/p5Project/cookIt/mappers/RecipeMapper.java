@@ -16,12 +16,16 @@ public interface RecipeMapper {
             @Mapping(source = "author.photo", target = "authorPhoto"),
             @Mapping(source = "createdAt", target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss"),
             @Mapping(source = "ingredients", target = "ingredients"),
-            @Mapping(source = "instructions", target = "instructions")
+            @Mapping(source = "instructions", target = "instructions"),
+            @Mapping(source = "description", target = "description")
     })
     RecipeDTO toDTO(Recipe recipe);
 
     List<RecipeDTO> toDTOList(List<Recipe> recipes);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mappings({
+            @Mapping(target = "description", source = "description")
+    })
     void updateRecipeFromRequest(UpdateRecipeRequest request, @MappingTarget Recipe recipe);
 }

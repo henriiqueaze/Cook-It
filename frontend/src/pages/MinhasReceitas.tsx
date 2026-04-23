@@ -67,7 +67,7 @@ export function MinhasReceitas() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50">
       <div className="rounded-b-3xl bg-linear-to-br from-orange-500 via-orange-600 to-red-600 px-6 pb-6 pt-12 text-white shadow-lg">
         <h1 className="text-xl font-bold">Minhas receitas</h1>
         <p className="mt-1 text-sm text-orange-100">

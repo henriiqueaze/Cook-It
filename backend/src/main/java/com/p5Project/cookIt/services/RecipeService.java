@@ -23,9 +23,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -130,6 +132,7 @@ public class RecipeService {
     private Recipe buildRecipeFromCreateRequest(CreateRecipeRequest request, String userId) {
         Recipe recipe = new Recipe();
         recipe.setName(request.getName());
+        recipe.setDescription(request.getDescription());
         recipe.setPrepTime(request.getPrepTime());
         recipe.setPortions(request.getPortions());
         recipe.setIngredients(buildRecipeIngredients(request.getIngredients()));
@@ -149,12 +152,12 @@ public class RecipeService {
 
     private List<RecipeIngredient> buildRecipeIngredients(List<RecipeIngredientDTO> ingredients) {
         if (ingredients == null || ingredients.isEmpty()) {
-            return List.of();
+            return new ArrayList<>();
         }
 
         return ingredients.stream()
                 .map(this::toRecipeIngredient)
-                .toList();
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     private RecipeIngredient toRecipeIngredient(RecipeIngredientDTO ingredientDTO) {

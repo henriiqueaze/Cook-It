@@ -9,7 +9,10 @@ import type { Ingrediente, Receita } from "@/types";
 
 type OpcaoOrdenacao = "compatibilidade" | "tempo" | "avaliacao";
 
-function calcularCompatibilidade(receita: Receita, ingredientesBuscados: string[]) {
+function calcularCompatibilidade(
+  receita: Receita,
+  ingredientesBuscados: string[],
+) {
   if (!ingredientesBuscados.length || !receita.ingredientes.length) {
     return 0;
   }
@@ -19,7 +22,9 @@ function calcularCompatibilidade(receita: Receita, ingredientesBuscados: string[
   );
 
   const acertos = ingredientesBuscados.filter((ingrediente) =>
-    ingredientesDaReceita.some((nome) => nome.includes(ingrediente.toLowerCase())),
+    ingredientesDaReceita.some((nome) =>
+      nome.includes(ingrediente.toLowerCase()),
+    ),
   ).length;
 
   return Math.round((acertos / ingredientesDaReceita.length) * 100);
@@ -30,7 +35,12 @@ export function ResultadosBusca() {
   const [searchParams] = useSearchParams();
 
   const ingredientesDaUrl = useMemo(
-    () => searchParams.get("ingredientes")?.split(",").map((item) => item.trim()).filter(Boolean) ?? [],
+    () =>
+      searchParams
+        .get("ingredientes")
+        ?.split(",")
+        .map((item) => item.trim())
+        .filter(Boolean) ?? [],
     [searchParams],
   );
 
@@ -38,9 +48,9 @@ export function ResultadosBusca() {
   const [mostrarSugestoes, setMostrarSugestoes] = useState(false);
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [ordenacao, setOrdenacao] = useState<OpcaoOrdenacao>("compatibilidade");
-  const [ingredientesDisponiveis, setIngredientesDisponiveis] = useState<Ingrediente[]>(
-    [],
-  );
+  const [ingredientesDisponiveis, setIngredientesDisponiveis] = useState<
+    Ingrediente[]
+  >([]);
   const [ingredientesSelecionados, setIngredientesSelecionados] =
     useState<string[]>(ingredientesDaUrl);
   const [ingredientesBuscados, setIngredientesBuscados] =
@@ -151,7 +161,9 @@ export function ResultadosBusca() {
   }
 
   function removerIngrediente(nome: string) {
-    setIngredientesSelecionados((current) => current.filter((item) => item !== nome));
+    setIngredientesSelecionados((current) =>
+      current.filter((item) => item !== nome),
+    );
   }
 
   function handleBuscar() {
@@ -167,7 +179,7 @@ export function ResultadosBusca() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50">
       <div className="rounded-b-3xl bg-linear-to-br from-orange-500 via-orange-600 to-red-600 px-6 pb-6 pt-12 text-white shadow-lg">
         <div className="mb-2 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -236,7 +248,9 @@ export function ResultadosBusca() {
                 setMostrarSugestoes(true);
               }}
               onFocus={() => setMostrarSugestoes(true)}
-              onBlur={() => window.setTimeout(() => setMostrarSugestoes(false), 150)}
+              onBlur={() =>
+                window.setTimeout(() => setMostrarSugestoes(false), 150)
+              }
               placeholder="Digite um ingrediente..."
               className="w-full rounded-lg border border-gray-300 py-3 pl-10 pr-4 outline-none transition focus:border-transparent focus:ring-2 focus:ring-orange-500"
             />
@@ -260,7 +274,9 @@ export function ResultadosBusca() {
 
           {ingredientesSelecionados.length > 0 && (
             <div className="mt-4">
-              <p className="mb-2 text-sm text-gray-600">Ingredientes selecionados:</p>
+              <p className="mb-2 text-sm text-gray-600">
+                Ingredientes selecionados:
+              </p>
               <div className="flex flex-wrap gap-2">
                 {ingredientesSelecionados.map((nome) => (
                   <IngredientTag
@@ -282,7 +298,9 @@ export function ResultadosBusca() {
           </button>
         </form>
 
-        <div className="mt-6">
+        <div
+          className={`mt-6 ${resultadosOrdenados.length > 0 ? "pb-4" : ""}`}
+        >
           {erro && (
             <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
               {erro}

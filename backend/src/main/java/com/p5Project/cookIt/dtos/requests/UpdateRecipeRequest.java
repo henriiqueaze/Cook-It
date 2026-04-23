@@ -10,6 +10,8 @@ public class UpdateRecipeRequest {
 
     private String name;
 
+    private String description;
+
     private Integer prepTime;
 
     private Integer portions;

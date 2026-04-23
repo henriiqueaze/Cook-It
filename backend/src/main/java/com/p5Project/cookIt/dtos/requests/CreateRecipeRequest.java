@@ -14,6 +14,8 @@ public class CreateRecipeRequest {
     @NotBlank(message = "Recipe name is required")
     private String name;
 
+    private String description;
+
     @NotNull(message = "Preparation time is required")
     @Positive(message = "Preparation time must be positive")
     private Integer prepTime;

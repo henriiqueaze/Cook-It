@@ -1,59 +1,60 @@
 CREATE TABLE users (
-                       id VARCHAR(255) PRIMARY KEY,
-                       email VARCHAR(255),
-                       name VARCHAR(255),
-                       password VARCHAR(255),
-                       photo TEXT
+    id VARCHAR(255) PRIMARY KEY,
+    email VARCHAR(255),
+    name VARCHAR(255),
+    password VARCHAR(255),
+    photo TEXT
 );
 
 CREATE TABLE recipes (
-                         id VARCHAR(255) PRIMARY KEY,
-                         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                         image TEXT,
-                         name VARCHAR(255),
-                         prep_time INTEGER,
-                         portions INTEGER NOT NULL DEFAULT 1,
-                         rating DOUBLE PRECISION,
-                         ratings_count INTEGER,
-                         author_id VARCHAR(255)
+    id VARCHAR(255) PRIMARY KEY,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    image TEXT,
+    name VARCHAR(255),
+    description TEXT,
+    prep_time INTEGER,
+    portions INTEGER NOT NULL DEFAULT 1,
+    rating DOUBLE PRECISION,
+    ratings_count INTEGER,
+    author_id VARCHAR(255)
 );
 
 CREATE TABLE ingredients (
-                             id VARCHAR(255) PRIMARY KEY,
-                             name VARCHAR(255) NOT NULL UNIQUE
+    id VARCHAR(255) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE
 );
 
 CREATE TABLE comments (
-                          id VARCHAR(255) PRIMARY KEY,
-                          created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                          text TEXT NOT NULL,
-                          recipe_id VARCHAR(255) NOT NULL,
-                          user_id VARCHAR(255) NOT NULL
+    id VARCHAR(255) PRIMARY KEY,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    text TEXT NOT NULL,
+    recipe_id VARCHAR(255) NOT NULL,
+    user_id VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE favorite_recipes (
-                                  user_id VARCHAR(255),
-                                  recipe_id VARCHAR(255),
-                                  PRIMARY KEY (user_id, recipe_id)
+    user_id VARCHAR(255),
+    recipe_id VARCHAR(255),
+    PRIMARY KEY (user_id, recipe_id)
 );
 
 CREATE TABLE recipe_ingredients (
-                                    recipe_id VARCHAR(255),
-                                    ingredient VARCHAR(255),
-                                    quantity DOUBLE PRECISION,
-                                    unit VARCHAR(255)
+    recipe_id VARCHAR(255),
+    ingredient VARCHAR(255),
+    quantity DOUBLE PRECISION,
+    unit VARCHAR(255)
 );
 
 CREATE TABLE recipe_instructions (
-                                     recipe_id VARCHAR(255),
-                                     instructions VARCHAR(255)
+    recipe_id VARCHAR(255),
+    instructions VARCHAR(255)
 );
 
 CREATE TABLE user_ratings (
-                              user_id VARCHAR(255),
-                              recipe_id VARCHAR(255),
-                              rating INTEGER,
-                              PRIMARY KEY (user_id, recipe_id)
+    user_id VARCHAR(255),
+    recipe_id VARCHAR(255),
+    rating INTEGER,
+    PRIMARY KEY (user_id, recipe_id)
 );
 
 ALTER TABLE recipes
