@@ -60,7 +60,7 @@ export function Login() {
         <p className="mt-2 text-2xl text-orange-100">Entre na sua conta</p>
       </div>
 
-      <div className="mt-20 flex-1 px-6">
+      <div className={`mt-10 flex-1 px-6 ${erro ? "pb-12" : "pb-6"}`}>
         <form
           className="space-y-4 rounded-2xl bg-white p-6 shadow-lg"
           onSubmit={handleSubmit}
@@ -105,6 +105,15 @@ export function Login() {
                 {mostrarSenha ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
+          </div>
+
+          <div className="text-right">
+            <Link
+              to="/esqueci-senha"
+              className="text-sm font-medium text-orange-600 transition-colors hover:text-orange-700"
+            >
+              Esqueci a senha
+            </Link>
           </div>
 
           <button

@@ -73,10 +73,12 @@ public class AuthController implements AuthControllerDocs {
 
     @PostMapping("/change-password")
     @Override
-    public void changePassword(
-            @AuthenticationPrincipal UserPrincipal userPrincipal,
-            @Valid @RequestBody ChangePasswordRequest request
-    ) {
+    public void changePassword(@AuthenticationPrincipal UserPrincipal userPrincipal,@Valid @RequestBody ChangePasswordRequest request) {
         authService.changePassword(userPrincipal.getId(), request);
+    }
+
+    @PostMapping("/validate-reset-code")
+    public void validateResetCode(@RequestBody ResetPasswordRequest request) {
+        authService.validateResetCode(request.getToken());
     }
 }

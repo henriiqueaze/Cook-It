@@ -187,4 +187,13 @@ public class AuthService {
     private String generateResetCode() {
         return String.format("%06d", secureRandom.nextInt(1_000_000));
     }
+
+    @Transactional(readOnly = true)
+    public void validateResetCode(String token) {
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token).orElseThrow(() -> new RuntimeException("Código inválido"));
+
+        if (resetToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Código expirado");
+        }
+    }
 }

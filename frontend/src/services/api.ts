@@ -37,9 +37,9 @@ async function parseResponse<T>(response: Response): Promise<T> {
   return JSON.parse(text) as T;
 }
 
-function buildHeaders(init?: RequestInit) {
+function buildHeaders(init?: RequestInit, skipAuth = false) {
   const headers = new Headers(init?.headers);
-  const token = localStorage.getItem("token");
+  const token = skipAuth ? null : localStorage.getItem("token");
 
   if (!headers.has("Content-Type") && !(init?.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
@@ -56,10 +56,11 @@ async function request<T>(
   endpoint: string,
   init?: RequestInit,
   params?: Record<string, QueryValue>,
+  skipAuth = false,
 ): Promise<T> {
   const response = await fetch(buildUrl(endpoint, params), {
     ...init,
-    headers: buildHeaders(init),
+    headers: buildHeaders(init, skipAuth),
   });
 
   if (!response.ok) {
@@ -90,29 +91,49 @@ export const api = {
   get: <T>(endpoint: string, params?: Record<string, QueryValue>) =>
     request<T>(endpoint, undefined, params),
 
-  post: <T>(endpoint: string, body: unknown, init?: RequestInit) =>
-    request<T>(endpoint, {
-      method: "POST",
-      body:
-        body instanceof FormData || body instanceof Blob
-          ? body
-          : typeof body === "string"
+  post: <T>(
+    endpoint: string,
+    body: unknown,
+    init?: RequestInit,
+    skipAuth = false,
+  ) =>
+    request<T>(
+      endpoint,
+      {
+        method: "POST",
+        body:
+          body instanceof FormData || body instanceof Blob
             ? body
-            : JSON.stringify(body),
-      ...init,
-    }),
+            : typeof body === "string"
+              ? body
+              : JSON.stringify(body),
+        ...init,
+      },
+      undefined,
+      skipAuth,
+    ),
 
-  put: <T>(endpoint: string, body: unknown, init?: RequestInit) =>
-    request<T>(endpoint, {
-      method: "PUT",
-      body:
-        body instanceof FormData || body instanceof Blob
-          ? body
-          : typeof body === "string"
+  put: <T>(
+    endpoint: string,
+    body: unknown,
+    init?: RequestInit,
+    skipAuth = false,
+  ) =>
+    request<T>(
+      endpoint,
+      {
+        method: "PUT",
+        body:
+          body instanceof FormData || body instanceof Blob
             ? body
-            : JSON.stringify(body),
-      ...init,
-    }),
+            : typeof body === "string"
+              ? body
+              : JSON.stringify(body),
+        ...init,
+      },
+      undefined,
+      skipAuth,
+    ),
 
   delete: <T>(endpoint: string) => request<T>(endpoint, { method: "DELETE" }),
 };

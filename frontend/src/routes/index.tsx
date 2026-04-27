@@ -5,6 +5,7 @@ import { RotaProtegida } from "@/components/RotaProtegida";
 import { Cadastro } from "@/pages/Cadastro";
 import { CriarReceita } from "@/pages/CriarReceita";
 import { AlterarSenha } from "@/pages/AlterarSenha";
+import { EsqueciSenha } from "@/pages/EsqueciSenha";
 import { EditarReceita } from "@/pages/EditarReceita";
 import { DetalheReceita } from "@/pages/DetalheDeReceita";
 import { EditarPerfil } from "@/pages/EditarPerfil";
@@ -15,6 +16,8 @@ import { MinhasReceitas } from "@/pages/MinhasReceitas";
 import { NaoEncontrado } from "@/pages/NaoEncontrado";
 import { Perfil } from "@/pages/Perfil";
 import { ResultadosBusca } from "@/pages/ResultadosBusca";
+import { RedefinirSenha } from "@/pages/RedefinirSenha";
+import { NovaSenha } from "@/pages/NovaSenha";
 
 function RotasComScrollTop() {
   const { pathname } = useLocation();
@@ -105,6 +108,9 @@ function RotasComScrollTop() {
         }
       />
       <Route path="/login" element={<Login />} />
+      <Route path="/esqueci-senha" element={<EsqueciSenha />} />
+      <Route path="/redefinir-senha" element={<RedefinirSenha />} />
+      <Route path="/nova-senha" element={<NovaSenha />} />
       <Route path="/cadastro" element={<Cadastro />} />
       <Route path="*" element={<NaoEncontrado />} />
     </Routes>

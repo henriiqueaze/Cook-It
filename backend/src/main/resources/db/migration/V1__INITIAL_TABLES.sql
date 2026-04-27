@@ -65,6 +65,13 @@ CREATE TABLE email_verification_tokens (
     expires_at TIMESTAMP NOT NULL
 );
 
+CREATE TABLE password_reset_tokens (
+    id VARCHAR(255) PRIMARY KEY,
+    token VARCHAR(255) NOT NULL UNIQUE,
+    user_id VARCHAR(255) NOT NULL,
+    expires_at TIMESTAMP NOT NULL
+);
+
 ALTER TABLE recipes
     ADD CONSTRAINT fk_recipes_author
         FOREIGN KEY (author_id) REFERENCES users(id);
@@ -103,4 +110,8 @@ ALTER TABLE user_ratings
 
 ALTER TABLE email_verification_tokens
     ADD CONSTRAINT fk_email_verification_tokens_user
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+ALTER TABLE password_reset_tokens
+    ADD CONSTRAINT fk_password_reset_tokens_user
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;

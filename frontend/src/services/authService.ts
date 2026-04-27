@@ -13,10 +13,18 @@ export const authService = {
   me: () => api.get<Usuario>("/auth/me"),
 
   forgotPassword: (email: string) =>
-    api.post<void>("/auth/forgot-password", { email }),
+    api.post<void>("/auth/forgot-password", { email }, undefined, true),
 
-  resetPassword: (token: string, password: string) =>
-    api.post<void>("/auth/reset-password", { token, password }),
+  validateResetCode: (token: string) =>
+    api.post<void>("/auth/validate-reset-code", { token }, undefined, true),
+
+  resetPassword: (token: string, newPassword: string) =>
+    api.post<void>(
+      "/auth/reset-password",
+      { token, newPassword },
+      undefined,
+      true,
+    ),
 
   alterarSenha: (senhaAtual: string, novaSenha: string) =>
     api.post<void>("/auth/change-password", {
