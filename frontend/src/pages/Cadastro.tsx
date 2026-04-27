@@ -2,7 +2,6 @@ import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ChefHat, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
-import { useAuth } from "@/contexts/AuthContext";
 import { authService } from "@/services/authService";
 
 function validarEmail(email: string) {
@@ -11,7 +10,6 @@ function validarEmail(email: string) {
 
 export function Cadastro() {
   const navigate = useNavigate();
-  const { salvarAuth } = useAuth();
 
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
@@ -51,14 +49,9 @@ export function Cadastro() {
     setErro("");
 
     try {
-      const resposta = await authService.cadastrar(
-        nomeLimpo,
-        emailLimpo,
-        senha,
-      );
-      salvarAuth(resposta.token, resposta.user);
-      toast.success("Conta criada com sucesso!");
-      navigate("/", { replace: true });
+      await authService.cadastrar(nomeLimpo, emailLimpo, senha);
+      toast.success("Conta criada com sucesso! Faça login para continuar.");
+      navigate("/login", { replace: true });
     } catch (error) {
       setErro(error instanceof Error ? error.message : "Erro ao criar conta.");
     } finally {

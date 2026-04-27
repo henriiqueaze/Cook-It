@@ -15,9 +15,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 
 public interface AuthControllerDocs {
-    @Operation(summary = "Registrar usuário", description = "Cria uma nova conta de usuário")
+
+    @Operation(summary = "Registrar usuário", description = "Cria uma nova conta de usuário e envia um email de confirmação")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Usuário registrado com sucesso",
                     content = @Content(schema = @Schema(implementation = AuthResponse.class))),
@@ -29,7 +31,8 @@ public interface AuthControllerDocs {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Login realizado",
                     content = @Content(schema = @Schema(implementation = AuthResponse.class))),
-            @ApiResponse(responseCode = "401", description = "Credenciais inválidas")
+            @ApiResponse(responseCode = "401", description = "Credenciais inválidas"),
+            @ApiResponse(responseCode = "403", description = "Email não confirmado")
     })
     AuthResponse login(@Valid @RequestBody LoginRequest request);
 
@@ -46,6 +49,13 @@ public interface AuthControllerDocs {
             @ApiResponse(responseCode = "401", description = "Usuário não autenticado")
     })
     UserDTO me(@AuthenticationPrincipal UserPrincipal userPrincipal);
+
+    @Operation(summary = "Confirmar email", description = "Confirma o email do usuário usando o token enviado por email")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Email confirmado"),
+            @ApiResponse(responseCode = "400", description = "Token inválido ou expirado")
+    })
+    String confirmEmail(@RequestParam String token);
 
     @Operation(summary = "Solicitar redefinição de senha", description = "Envia um token para redefinir a senha")
     @ApiResponses({

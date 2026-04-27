@@ -11,6 +11,7 @@ public class UserDTO {
     private String name;
     private String email;
     private String photo;
+    private boolean emailVerified;
     private List<String> createdRecipes;
     private List<String> favoriteRecipes;
     private Map<String, Integer> ratings;

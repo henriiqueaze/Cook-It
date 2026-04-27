@@ -1,9 +1,10 @@
 CREATE TABLE users (
     id VARCHAR(255) PRIMARY KEY,
-    email VARCHAR(255),
+    email VARCHAR(255) NOT NULL UNIQUE,
     name VARCHAR(255),
     password VARCHAR(255),
-    photo TEXT
+    photo TEXT,
+    email_verified BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE recipes (
@@ -57,6 +58,13 @@ CREATE TABLE user_ratings (
     PRIMARY KEY (user_id, recipe_id)
 );
 
+CREATE TABLE email_verification_tokens (
+    id VARCHAR(255) PRIMARY KEY,
+    token VARCHAR(255) NOT NULL UNIQUE,
+    user_id VARCHAR(255) NOT NULL,
+    expires_at TIMESTAMP NOT NULL
+);
+
 ALTER TABLE recipes
     ADD CONSTRAINT fk_recipes_author
         FOREIGN KEY (author_id) REFERENCES users(id);
@@ -92,3 +100,7 @@ ALTER TABLE user_ratings
 ALTER TABLE user_ratings
     ADD CONSTRAINT fk_user_ratings_recipe
         FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE;
+
+ALTER TABLE email_verification_tokens
+    ADD CONSTRAINT fk_email_verification_tokens_user
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;

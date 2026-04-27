@@ -31,10 +31,25 @@ spring:
         default-page-size: 10
         max-page-size: 50
 
+  mail:
+    host: ${SPRING_MAIL_HOST:}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+app:
+  email-verification-base-url: ${EMAIL_VERIFICATION_BASE_URL:http://localhost:8080/api/auth/confirm-email?token=}
+
 cloudinary:
-  cloud-name: ${CLOUDINARY_CLOUD_NAME:dnbdpr1dm}
-  api-key: ${CLOUDINARY_API_KEY:416535772361971}
-  api-secret: ${CLOUDINARY_API_SECRET:sngy0-ddJKnRbk-WeZena5dbhyY}
+  cloud-name: ${CLOUDINARY_CLOUD_NAME}
+  api-key: ${CLOUDINARY_API_KEY}
+  api-secret: ${CLOUDINARY_API_SECRET}
 
 jwt:
-  secret: ${JWT_SECRET:7fK9xP2vLmQ8rT4wZcA6bN3dYhU1sE5jG0oRkM9p}
+  secret: ${JWT_SECRET}

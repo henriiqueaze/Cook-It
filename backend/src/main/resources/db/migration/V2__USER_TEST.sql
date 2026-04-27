@@ -1,10 +1,11 @@
-INSERT INTO users (id, email, name, password, photo)
+INSERT INTO users (id, email, name, password, photo, email_verified)
 VALUES (
     '11111111-1111-1111-1111-111111111111',
     'teste@cookit.com',
     'Usuário Teste',
     '$2a$10$PuC02urGBQKG7ivwJC7hcOjEdgrIgmZLy46RBGn.4Pa.BZTNL8dL.',
-    null
+    null,
+    true
 );
 
 INSERT INTO recipes (

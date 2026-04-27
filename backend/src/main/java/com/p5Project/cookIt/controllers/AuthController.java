@@ -52,6 +52,12 @@ public class AuthController implements AuthControllerDocs {
         return userMapper.toDTO(user);
     }
 
+    @GetMapping("/confirm-email")
+    @Override
+    public String confirmEmail(@RequestParam String token) {
+        return authService.confirmEmail(token);
+    }
+
     @PostMapping("/forgot-password")
     @Override
     public void forgotPassword(@RequestBody ForgotPasswordRequest request) {

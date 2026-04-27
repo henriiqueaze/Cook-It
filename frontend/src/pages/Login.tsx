@@ -41,12 +41,9 @@ export function Login() {
 
       const destino = (location.state as { from?: string } | null)?.from ?? "/";
       navigate(destino, { replace: true });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "";
+    } catch {
       setErro(
-        message.toLowerCase().includes("credential")
-          ? "Email ou senha inválidos."
-          : "Erro ao fazer login. Tente novamente.",
+        "Seu e-mail ainda não foi confirmado. Verifique sua caixa de entrada e confirme o cadastro para entrar.",
       );
     } finally {
       setCarregando(false);
@@ -64,7 +61,10 @@ export function Login() {
       </div>
 
       <div className="mt-20 flex-1 px-6">
-        <form className="space-y-4 rounded-2xl bg-white p-6 shadow-lg" onSubmit={handleSubmit}>
+        <form
+          className="space-y-4 rounded-2xl bg-white p-6 shadow-lg"
+          onSubmit={handleSubmit}
+        >
           {erro && (
             <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
               {erro}
