@@ -1,5 +1,6 @@
 package com.p5Project.cookIt.services;
 
+import com.p5Project.cookIt.dtos.requests.ChangePasswordRequest;
 import com.p5Project.cookIt.dtos.requests.LoginRequest;
 import com.p5Project.cookIt.dtos.requests.RegisterRequest;
 import com.p5Project.cookIt.dtos.responses.AuthResponse;
@@ -17,6 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -32,7 +34,9 @@ public class AuthService {
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final EmailService emailService;
 
-    @Value("${app.email-verification-base-url:http://localhost:8080/api/auth/confirm-email?token=}")
+    private final SecureRandom secureRandom = new SecureRandom();
+
+    @Value("${app.email-verification-base-url}")
     private String emailVerificationBaseUrl;
 
     @Transactional
@@ -41,12 +45,19 @@ public class AuthService {
             throw new RuntimeException("Email already in use");
         }
 
-        User user = createUser(request.getName(), request.getEmail(), request.getPassword());
+        User user = new User();
+        user.setName(request.getName());
+        user.setEmail(request.getEmail());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setEmailVerified(false);
-        userRepository.save(user);
 
-        createAndSendVerificationToken(user);
-        return buildAuthResponse(user, false);
+        userRepository.save(user);
+        sendVerificationEmail(user);
+
+        AuthResponse response = new AuthResponse();
+        response.setUser(userMapper.toDTO(user));
+        response.setToken(null);
+        return response;
     }
 
     @Transactional(readOnly = true)
@@ -58,18 +69,44 @@ public class AuthService {
             throw new RuntimeException("Email not verified");
         }
 
-        validatePassword(request.getPassword(), user.getPassword());
-        return buildAuthResponse(user, true);
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new RuntimeException("Invalid credentials");
+        }
+
+        AuthResponse response = new AuthResponse();
+        response.setUser(userMapper.toDTO(user));
+        response.setToken(jwtService.generateToken(user.getId()));
+        return response;
     }
 
     @Transactional
     public void forgotPassword(String email) {
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
-        String token = UUID.randomUUID().toString();
-        passwordResetTokenRepository.save(buildResetToken(user, token));
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // fazer a logica de enviar por email :)
-        System.out.println("Reset token: " + token);
+        passwordResetTokenRepository.deleteAllByUser(user);
+
+        String code = generateResetCode();
+
+        PasswordResetToken resetToken = PasswordResetToken.builder()
+                .token(code)
+                .user(user)
+                .expiresAt(LocalDateTime.now().plusMinutes(15))
+                .build();
+
+        passwordResetTokenRepository.save(resetToken);
+
+        String subject = "Recuperação de senha";
+        String body = String.format(
+                "Olá, %s!%n%n" +
+                        "Seu código para redefinir a senha é:%n%n" +
+                        "%s%n%n" +
+                        "Esse código expira em 15 minutos.%n",
+                user.getName(),
+                code
+        );
+
+        emailService.sendEmail(user.getEmail(), subject, body);
     }
 
     @Transactional
@@ -77,9 +114,28 @@ public class AuthService {
         PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
                 .orElseThrow(() -> new RuntimeException("Invalid token"));
 
-        validateTokenExpiration(resetToken);
-        updateUserPassword(resetToken.getUser(), newPassword);
+        if (resetToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Token expired");
+        }
+
+        User user = resetToken.getUser();
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
         passwordResetTokenRepository.delete(resetToken);
+    }
+
+    @Transactional
+    public void changePassword(String userId, ChangePasswordRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new RuntimeException("Invalid current password");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
     }
 
     @Transactional
@@ -87,7 +143,9 @@ public class AuthService {
         EmailVerificationToken verificationToken = emailVerificationTokenRepository.findByToken(token)
                 .orElseThrow(() -> new RuntimeException("Invalid token"));
 
-        validateEmailVerificationTokenExpiration(verificationToken);
+        if (verificationToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Token expired");
+        }
 
         User user = verificationToken.getUser();
         user.setEmailVerified(true);
@@ -95,22 +153,14 @@ public class AuthService {
 
         emailVerificationTokenRepository.deleteAllByUser(user);
 
-        return "Email confirmado com sucesso. Agora você já pode fazer login.";
+        return "Email confirmado com sucesso.";
     }
 
-    private User createUser(String name, String email, String rawPassword) {
-        User user = new User();
-        user.setName(name);
-        user.setEmail(email);
-        user.setPassword(passwordEncoder.encode(rawPassword));
-        user.setEmailVerified(false);
-        return user;
-    }
-
-    private void createAndSendVerificationToken(User user) {
+    private void sendVerificationEmail(User user) {
         emailVerificationTokenRepository.deleteAllByUser(user);
 
         String token = UUID.randomUUID().toString();
+
         EmailVerificationToken verificationToken = EmailVerificationToken.builder()
                 .token(token)
                 .user(user)
@@ -126,7 +176,7 @@ public class AuthService {
                         "Obrigado por se cadastrar no Cook-It.%n" +
                         "Para confirmar seu email, acesse o link abaixo:%n%n" +
                         "%s%n%n" +
-                        "Esse link expira em 24 horas.%n",
+                        "Esse link expira em 24 horas.",
                 user.getName(),
                 link
         );
@@ -134,41 +184,7 @@ public class AuthService {
         emailService.sendEmail(user.getEmail(), subject, body);
     }
 
-    private void validatePassword(String rawPassword, String encodedPassword) {
-        if (!passwordEncoder.matches(rawPassword, encodedPassword)) {
-            throw new RuntimeException("Invalid credentials");
-        }
-    }
-
-    private AuthResponse buildAuthResponse(User user, boolean issueToken) {
-        AuthResponse response = new AuthResponse();
-        response.setUser(userMapper.toDTO(user));
-        response.setToken(issueToken ? jwtService.generateToken(user.getId()) : null);
-        return response;
-    }
-
-    private PasswordResetToken buildResetToken(User user, String token) {
-        return PasswordResetToken.builder()
-                .token(token)
-                .user(user)
-                .expiresAt(LocalDateTime.now().plusHours(1))
-                .build();
-    }
-
-    private void validateTokenExpiration(PasswordResetToken resetToken) {
-        if (resetToken.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Token expired");
-        }
-    }
-
-    private void validateEmailVerificationTokenExpiration(EmailVerificationToken verificationToken) {
-        if (verificationToken.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Email verification token expired");
-        }
-    }
-
-    private void updateUserPassword(User user, String newPassword) {
-        user.setPassword(passwordEncoder.encode(newPassword));
-        userRepository.save(user);
+    private String generateResetCode() {
+        return String.format("%06d", secureRandom.nextInt(1_000_000));
     }
 }

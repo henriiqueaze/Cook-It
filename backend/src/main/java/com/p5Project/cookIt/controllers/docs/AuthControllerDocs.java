@@ -1,6 +1,7 @@
 package com.p5Project.cookIt.controllers.docs;
 
 import com.p5Project.cookIt.dtos.UserDTO;
+import com.p5Project.cookIt.dtos.requests.ChangePasswordRequest;
 import com.p5Project.cookIt.dtos.requests.ForgotPasswordRequest;
 import com.p5Project.cookIt.dtos.requests.LoginRequest;
 import com.p5Project.cookIt.dtos.requests.RegisterRequest;
@@ -57,17 +58,28 @@ public interface AuthControllerDocs {
     })
     String confirmEmail(@RequestParam String token);
 
-    @Operation(summary = "Solicitar redefinição de senha", description = "Envia um token para redefinir a senha")
+    @Operation(summary = "Solicitar redefinição de senha", description = "Envia um código por email para redefinir a senha")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Solicitação enviada"),
             @ApiResponse(responseCode = "404", description = "Email não encontrado")
     })
     void forgotPassword(@RequestBody ForgotPasswordRequest request);
 
-    @Operation(summary = "Redefinir senha", description = "Redefine a senha usando o token")
+    @Operation(summary = "Redefinir senha", description = "Redefine a senha usando o código enviado por email")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Senha redefinida"),
             @ApiResponse(responseCode = "400", description = "Token inválido")
     })
     void resetPassword(@RequestBody ResetPasswordRequest request);
+
+    @Operation(summary = "Alterar senha", description = "Altera a senha atual do usuário logado")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Senha alterada"),
+            @ApiResponse(responseCode = "400", description = "Senha atual inválida"),
+            @ApiResponse(responseCode = "401", description = "Usuário não autenticado")
+    })
+    void changePassword(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @Valid @RequestBody ChangePasswordRequest request
+    );
 }

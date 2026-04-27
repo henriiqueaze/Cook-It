@@ -1,5 +1,5 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
-import { Camera, ArrowLeft, Mail, Save, User } from "lucide-react";
+import { Camera, ArrowLeft, Lock, Mail, Save, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,7 +12,7 @@ function validarEmail(email: string) {
 export function EditarPerfil() {
   const navigate = useNavigate();
   const { usuario, atualizarUsuario } = useAuth();
-  const [carregando, setCarregando] = useState(false);
+  const [carregandoPerfil, setCarregandoPerfil] = useState(false);
   const [fotoArquivo, setFotoArquivo] = useState<File | null>(null);
   const [formData, setFormData] = useState({
     nome: usuario?.name ?? "",
@@ -56,7 +56,7 @@ export function EditarPerfil() {
       return;
     }
 
-    setCarregando(true);
+    setCarregandoPerfil(true);
 
     try {
       const atualizado = await authService.atualizarPerfil(usuario.id, {
@@ -71,7 +71,7 @@ export function EditarPerfil() {
     } catch {
       toast.error("Erro ao atualizar perfil. Tente novamente.");
     } finally {
-      setCarregando(false);
+      setCarregandoPerfil(false);
     }
   }
 
@@ -153,12 +153,21 @@ export function EditarPerfil() {
         </div>
 
         <button
+          type="button"
+          onClick={() => navigate("/alterar-senha")}
+          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-orange-200 bg-orange-50 py-3 font-medium text-orange-700 transition-colors hover:bg-orange-100"
+        >
+          <Lock size={18} />
+          Alterar senha
+        </button>
+
+        <button
           type="submit"
-          disabled={carregando}
+          disabled={carregandoPerfil}
           className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-linear-to-r from-orange-500 to-orange-600 py-3 font-medium text-white transition-all hover:from-orange-600 hover:to-orange-700 disabled:cursor-not-allowed disabled:bg-gray-300"
         >
           <Save size={18} />
-          {carregando ? "Salvando..." : "Salvar alterações"}
+          {carregandoPerfil ? "Salvando..." : "Salvar alterações"}
         </button>
       </form>
     </div>

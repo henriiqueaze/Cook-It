@@ -4,6 +4,7 @@ import { Layout } from "@/components/Layout";
 import { RotaProtegida } from "@/components/RotaProtegida";
 import { Cadastro } from "@/pages/Cadastro";
 import { CriarReceita } from "@/pages/CriarReceita";
+import { AlterarSenha } from "@/pages/AlterarSenha";
 import { EditarReceita } from "@/pages/EditarReceita";
 import { DetalheReceita } from "@/pages/DetalheDeReceita";
 import { EditarPerfil } from "@/pages/EditarPerfil";
@@ -92,6 +93,14 @@ function RotasComScrollTop() {
         element={
           <RotaProtegida>
             <EditarPerfil />
+          </RotaProtegida>
+        }
+      />
+      <Route
+        path="/alterar-senha"
+        element={
+          <RotaProtegida>
+            <AlterarSenha />
           </RotaProtegida>
         }
       />

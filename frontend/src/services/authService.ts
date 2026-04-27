@@ -18,6 +18,12 @@ export const authService = {
   resetPassword: (token: string, password: string) =>
     api.post<void>("/auth/reset-password", { token, password }),
 
+  alterarSenha: (senhaAtual: string, novaSenha: string) =>
+    api.post<void>("/auth/change-password", {
+      currentPassword: senhaAtual,
+      newPassword: novaSenha,
+    }),
+
   atualizarPerfil: async (
     id: Usuario["id"],
     dados: { name: string; email: string; photoFile?: File | null },

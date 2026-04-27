@@ -2,6 +2,7 @@ package com.p5Project.cookIt.controllers;
 
 import com.p5Project.cookIt.controllers.docs.AuthControllerDocs;
 import com.p5Project.cookIt.dtos.UserDTO;
+import com.p5Project.cookIt.dtos.requests.ChangePasswordRequest;
 import com.p5Project.cookIt.dtos.requests.ForgotPasswordRequest;
 import com.p5Project.cookIt.dtos.requests.LoginRequest;
 import com.p5Project.cookIt.dtos.requests.RegisterRequest;
@@ -68,5 +69,14 @@ public class AuthController implements AuthControllerDocs {
     @Override
     public void resetPassword(@RequestBody ResetPasswordRequest request) {
         authService.resetPassword(request.getToken(), request.getNewPassword());
+    }
+
+    @PostMapping("/change-password")
+    @Override
+    public void changePassword(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @Valid @RequestBody ChangePasswordRequest request
+    ) {
+        authService.changePassword(userPrincipal.getId(), request);
     }
 }

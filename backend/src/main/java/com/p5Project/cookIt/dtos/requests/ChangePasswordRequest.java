@@ -5,10 +5,10 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
-public class ResetPasswordRequest {
+public class ChangePasswordRequest {
 
-    @NotBlank(message = "Token is required")
-    private String token;
+    @NotBlank(message = "Current password is required")
+    private String currentPassword;
 
     @Size(min = 6, message = "Password must have at least 6 characters")
     private String newPassword;
