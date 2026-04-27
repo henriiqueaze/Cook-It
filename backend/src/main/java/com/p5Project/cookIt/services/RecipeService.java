@@ -22,7 +22,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -71,7 +70,7 @@ public class RecipeService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Você não tem permissão para editar esta receita");
         }
         recipeMapper.updateRecipeFromRequest(request, recipe);
-        updateIngredientsIfPresent(recipe, request.getIngredients());
+        updateIngredientsIfPresent(recipe, request.ingredients());
         applyImageIfPresent(recipe, image);
         recipeRepository.saveAndFlush(recipe);
         return recipeMapper.toDTO(recipe);
@@ -101,11 +100,11 @@ public class RecipeService {
         List<String> normalizedIngredients = normalizeIngredients(request);
         List<Recipe> recipes = recipeRepository.findByIngredientNames(normalizedIngredients);
 
-        if (Boolean.TRUE.equals(request.getExactMatch())) {
+        if (request.exactMatch()) {
             recipes = filterExactMatch(recipes, normalizedIngredients);
         }
 
-        return sortRecipes(recipes, request.getSortBy()).stream()
+        return sortRecipes(recipes, request.sortBy()).stream()
                 .map(recipeMapper::toDTO)
                 .toList();
     }
@@ -120,8 +119,10 @@ public class RecipeService {
     private Recipe findRecipeWithDetails(String id) {
         Recipe recipe = recipeRepository.findByIdWithDetails(id).orElseThrow(() -> new ResourceNotFoundException("Recipe not found!"));
 
-        recipe.getIngredients().size();
-        recipe.getInstructions().size();
+        recipe.getIngredients().forEach(ignored -> {
+        });
+        recipe.getInstructions().forEach(ignored -> {
+        });
         return recipe;
     }
 
@@ -131,14 +132,13 @@ public class RecipeService {
 
     private Recipe buildRecipeFromCreateRequest(CreateRecipeRequest request, String userId) {
         Recipe recipe = new Recipe();
-        recipe.setName(request.getName());
-        recipe.setDescription(request.getDescription());
-        recipe.setPrepTime(request.getPrepTime());
-        recipe.setPortions(request.getPortions());
-        recipe.setIngredients(buildRecipeIngredients(request.getIngredients()));
-        recipe.setInstructions(request.getInstructions());
+        recipe.setName(request.name());
+        recipe.setDescription(request.description());
+        recipe.setPrepTime(request.prepTime());
+        recipe.setPortions(request.portions());
+        recipe.setIngredients(buildRecipeIngredients(request.ingredients()));
+        recipe.setInstructions(request.instructions());
         recipe.setAuthor(findUserById(userId));
-        recipe.setCreatedAt(LocalDateTime.now());
         recipe.setRating(0.0);
         recipe.setRatingsCount(0);
         return recipe;
@@ -161,7 +161,7 @@ public class RecipeService {
     }
 
     private RecipeIngredient toRecipeIngredient(RecipeIngredientDTO ingredientDTO) {
-        ingredientService.findOrCreate(ingredientDTO.getIngredient());
+        ingredientService.findOrCreate(ingredientDTO.ingredient());
         return recipeIngredientMapper.toEntity(ingredientDTO);
     }
 
@@ -215,11 +215,11 @@ public class RecipeService {
     }
 
     private List<String> normalizeIngredients(SearchRecipeRequest request) {
-        if (request.getIngredients() == null) {
+        if (request.ingredients() == null) {
             return List.of();
         }
 
-        return request.getIngredients().stream()
+        return request.ingredients().stream()
                 .filter(ingredient -> ingredient != null && !ingredient.isBlank())
                 .map(String::toLowerCase)
                 .toList();

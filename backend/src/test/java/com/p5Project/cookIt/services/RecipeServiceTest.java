@@ -16,7 +16,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
@@ -57,13 +56,14 @@ class RecipeServiceTest {
         user.setName("teste");
 
         // dados da receita
-        CreateRecipeRequest request = new CreateRecipeRequest();
-        request.setName("Bolo");
-        request.setDescription("Bolo simples");
-        request.setPrepTime(30);
-        request.setPortions(4);
-        request.setIngredients(List.of(new RecipeIngredientDTO()));
-        request.setInstructions(List.of("Misturar", "Assar"));
+        CreateRecipeRequest request = new CreateRecipeRequest(
+                "Bolo",
+                "Bolo simples",
+                30,
+                4,
+                List.of(new RecipeIngredientDTO("sal", 1.0, "g")),
+                List.of("Misturar", "Assar")
+        );
 
         // simula o usuário encontrado
         when(userRepository.findById("1")).thenReturn(Optional.of(user));
@@ -102,8 +102,7 @@ class RecipeServiceTest {
         recipe.setAuthor(user);
 
         // novos dados
-        UpdateRecipeRequest request = new UpdateRecipeRequest();
-        request.setDescription("Descrição nova");
+        UpdateRecipeRequest request = new UpdateRecipeRequest(null, "Descrição nova", null, null, null, null);
 
         // simula busca da receita
         when(recipeRepository.findById("10")).thenReturn(Optional.of(recipe));
@@ -112,7 +111,7 @@ class RecipeServiceTest {
         doAnswer(invocation -> {
             UpdateRecipeRequest req = invocation.getArgument(0);
             Recipe rec = invocation.getArgument(1);
-            rec.setDescription(req.getDescription());
+            rec.setDescription(req.description());
             return null;
         }).when(recipeMapper).updateRecipeFromRequest(any(UpdateRecipeRequest.class), any(Recipe.class));
 

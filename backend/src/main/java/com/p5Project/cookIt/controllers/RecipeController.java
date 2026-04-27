@@ -70,7 +70,7 @@ public class RecipeController implements RecipeControllerDocs {
     @PostMapping("/{id}/rate")
     @Override
     public void rateRecipe(@PathVariable String id, @Valid @RequestBody RateRecipeRequest request, @AuthenticationPrincipal UserPrincipal user) {
-        recipeService.rateRecipe(id, user.getId(), request.getRating());
+        recipeService.rateRecipe(id, user.getId(), request.rating());
     }
 
     @GetMapping("/{recipeId}/comments")

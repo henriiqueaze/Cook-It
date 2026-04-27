@@ -34,6 +34,6 @@ public class IngredientController implements IngredientControllerDocs {
     @PostMapping
     @Override
     public IngredientDTO create(@Valid @RequestBody CreateIngredientRequest request) {
-        return ingredientService.create(request.getName());
+        return ingredientService.create(request.name());
     }
 }

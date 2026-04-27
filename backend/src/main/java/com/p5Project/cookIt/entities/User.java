@@ -15,11 +15,7 @@ import lombok.ToString;
 @Setter
 @Entity
 @Table(name = "users")
-public class User {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private String id;
+public class User extends BaseEntity {
 
     @Column(unique = true, nullable = false)
     private String email;

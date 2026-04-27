@@ -3,18 +3,13 @@ package com.p5Project.cookIt.entities;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
 @Setter
 @Entity
 @Table(name = "recipes")
-public class Recipe {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private String id;
+public class Recipe extends AuditableEntity {
 
     private String name;
     private String description;
@@ -38,7 +33,6 @@ public class Recipe {
     @ToString.Exclude
     private User author;
 
-    private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "recipe")
     @EqualsAndHashCode.Exclude

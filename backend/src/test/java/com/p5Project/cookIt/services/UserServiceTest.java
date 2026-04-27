@@ -39,9 +39,7 @@ class UserServiceTest {
         user.setEmail("emailantigo@email.com");
 
         // dados que vao substituir os antigos
-        UpdateUserRequest request = new UpdateUserRequest();
-        request.setName("nome novo");
-        request.setEmail("emailnovo@email.com");
+        UpdateUserRequest request = new UpdateUserRequest("nome novo", "emailnovo@email.com");
 
         // simula busca do usuário no banco
         when(userRepository.findById("1")).thenReturn(Optional.of(user));
@@ -50,7 +48,7 @@ class UserServiceTest {
         when(userRepository.save(any(User.class))).thenReturn(user);
 
         // simula o mapper que retorna o dto de user
-        when(userMapper.toDTO(any(User.class))).thenReturn(new UserDTO());
+        when(userMapper.toDTO(any(User.class))).thenReturn(null);
 
         // executa a atualização
         userService.updateUser("1", request, null);

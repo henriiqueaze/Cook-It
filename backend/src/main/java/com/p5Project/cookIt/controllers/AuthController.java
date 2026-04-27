@@ -62,13 +62,13 @@ public class AuthController implements AuthControllerDocs {
     @PostMapping("/forgot-password")
     @Override
     public void forgotPassword(@RequestBody ForgotPasswordRequest request) {
-        authService.forgotPassword(request.getEmail());
+        authService.forgotPassword(request.email());
     }
 
     @PostMapping("/reset-password")
     @Override
     public void resetPassword(@RequestBody ResetPasswordRequest request) {
-        authService.resetPassword(request.getToken(), request.getNewPassword());
+        authService.resetPassword(request.token(), request.newPassword());
     }
 
     @PostMapping("/change-password")
@@ -79,6 +79,6 @@ public class AuthController implements AuthControllerDocs {
 
     @PostMapping("/validate-reset-code")
     public void validateResetCode(@RequestBody ResetPasswordRequest request) {
-        authService.validateResetCode(request.getToken());
+        authService.validateResetCode(request.token());
     }
 }

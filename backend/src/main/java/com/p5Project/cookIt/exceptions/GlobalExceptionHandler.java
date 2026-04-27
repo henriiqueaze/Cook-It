@@ -28,17 +28,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<ErrorResponse> handleResponseStatus(ResponseStatusException ex, HttpServletRequest request) {
         int status = ex.getStatusCode().value();
-        return ResponseEntity.status(status)
-                .body(new ErrorResponse(LocalDateTime.now(), status, ex.getReason(), request.getRequestURI()));
+        return ResponseEntity.status(status).body(new ErrorResponse(LocalDateTime.now(), status, ex.getReason(), request.getRequestURI()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request) {
-
-        String error = ex.getBindingResult().getFieldErrors().stream().findFirst()
-                .map(e -> e.getField() + ": " + e.getDefaultMessage()).orElse("Validation error");
-
+        String error = ex.getBindingResult().getFieldErrors().stream().findFirst().map(e -> e.getField() + ": " + e.getDefaultMessage()).orElse("Validation error");
         return new ErrorResponse(LocalDateTime.now(), HttpStatus.BAD_REQUEST.value(), error, request.getRequestURI());
     }
 

@@ -36,47 +36,42 @@ public class AuthService {
 
     private final SecureRandom secureRandom = new SecureRandom();
 
+    @SuppressWarnings("unused")
     @Value("${app.email-verification-base-url}")
     private String emailVerificationBaseUrl;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+        if (userRepository.findByEmail(request.email()).isPresent()) {
             throw new RuntimeException("Email already in use");
         }
 
         User user = new User();
-        user.setName(request.getName());
-        user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setName(request.name());
+        user.setEmail(request.email());
+        user.setPassword(passwordEncoder.encode(request.password()));
         user.setEmailVerified(false);
 
         userRepository.save(user);
         sendVerificationEmail(user);
 
-        AuthResponse response = new AuthResponse();
-        response.setUser(userMapper.toDTO(user));
-        response.setToken(null);
-        return response;
+        return new AuthResponse(userMapper.toDTO(user), null);
     }
 
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (!user.isEmailVerified()) {
             throw new RuntimeException("Email not verified");
         }
 
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
             throw new RuntimeException("Invalid credentials");
         }
 
-        AuthResponse response = new AuthResponse();
-        response.setUser(userMapper.toDTO(user));
-        response.setToken(jwtService.generateToken(user.getId()));
-        return response;
+        return new AuthResponse(userMapper.toDTO(user), jwtService.generateToken(user.getId()));
     }
 
     @Transactional
@@ -88,11 +83,10 @@ public class AuthService {
 
         String code = generateResetCode();
 
-        PasswordResetToken resetToken = PasswordResetToken.builder()
-                .token(code)
-                .user(user)
-                .expiresAt(LocalDateTime.now().plusMinutes(15))
-                .build();
+        PasswordResetToken resetToken = new PasswordResetToken();
+        resetToken.setToken(code);
+        resetToken.setUser(user);
+        resetToken.setExpiresAt(LocalDateTime.now().plusMinutes(15));
 
         passwordResetTokenRepository.save(resetToken);
 
@@ -130,11 +124,11 @@ public class AuthService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
             throw new RuntimeException("Invalid current password");
         }
 
-        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
         userRepository.save(user);
     }
 
@@ -161,11 +155,10 @@ public class AuthService {
 
         String token = UUID.randomUUID().toString();
 
-        EmailVerificationToken verificationToken = EmailVerificationToken.builder()
-                .token(token)
-                .user(user)
-                .expiresAt(LocalDateTime.now().plusHours(24))
-                .build();
+        EmailVerificationToken verificationToken = new EmailVerificationToken();
+        verificationToken.setToken(token);
+        verificationToken.setUser(user);
+        verificationToken.setExpiresAt(LocalDateTime.now().plusHours(24));
 
         emailVerificationTokenRepository.save(verificationToken);
 

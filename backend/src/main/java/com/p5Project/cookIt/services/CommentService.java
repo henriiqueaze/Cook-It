@@ -4,8 +4,6 @@ import com.p5Project.cookIt.dtos.CommentDTO;
 import com.p5Project.cookIt.dtos.requests.CreateCommentRequest;
 import com.p5Project.cookIt.dtos.requests.UpdateCommentRequest;
 import com.p5Project.cookIt.entities.Comment;
-import com.p5Project.cookIt.entities.Recipe;
-import com.p5Project.cookIt.entities.User;
 import com.p5Project.cookIt.exceptions.ResourceNotFoundException;
 import com.p5Project.cookIt.mappers.CommentMapper;
 import com.p5Project.cookIt.repository.CommentRepository;
@@ -14,7 +12,6 @@ import com.p5Project.cookIt.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -57,10 +54,9 @@ public class CommentService {
 
     private Comment buildComment(CreateCommentRequest request, String userId) {
         Comment comment = new Comment();
-        comment.setRecipe(recipeRepository.findById(request.getRecipeId()).orElseThrow(() -> new ResourceNotFoundException("Recipe not found!")));
+        comment.setRecipe(recipeRepository.findById(request.recipeId()).orElseThrow(() -> new ResourceNotFoundException("Recipe not found!")));
         comment.setUser(userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found!")));
-        comment.setText(request.getText().trim());
-        comment.setCreatedAt(LocalDateTime.now());
+        comment.setText(request.text().trim());
         return comment;
     }
 
