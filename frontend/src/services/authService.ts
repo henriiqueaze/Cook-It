@@ -32,6 +32,12 @@ export const authService = {
       newPassword: novaSenha,
     }),
 
+  validarSenhaExclusao: (id: Usuario["id"], password: string) =>
+    api.post<void>(`/users/${id}/validate-delete-password`, { password }),
+
+  excluirUsuario: (id: Usuario["id"], password: string) =>
+    api.delete<void>(`/users/${id}`, { password }),
+
   atualizarPerfil: async (
     id: Usuario["id"],
     dados: { name: string; email: string; photoFile?: File | null },

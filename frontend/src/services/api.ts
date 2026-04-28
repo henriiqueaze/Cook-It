@@ -2,6 +2,57 @@ const baseUrl = (import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "");
 
 type QueryValue = string | number | boolean | null | undefined;
 
+function mensagemParecePortugues(message: string) {
+  const normalizada = message.toLowerCase();
+
+  return (
+    /[ãáàâéêíóôõúç]/i.test(message) ||
+    /\b(não|nao|usuário|usuario|senha|e-mail|email|código|codigo|comentário|comentario|receita|favoritos|erro|encontramos|permissão|permissao|tente|campos|validar|redefinir|alterar|login|carregando)\b/.test(
+      normalizada,
+    )
+  );
+}
+
+function traduzirMensagemErro(message: string, status: number) {
+  const normalizada = message.toLowerCase();
+
+  if (mensagemParecePortugues(message)) {
+    return message;
+  }
+
+  if (
+    normalizada.includes("failed to fetch") ||
+    normalizada.includes("network")
+  ) {
+    return "Não foi possível conectar ao servidor. Tente novamente.";
+  }
+
+  if (
+    normalizada.includes("invalid credentials") ||
+    normalizada.includes("unauthorized") ||
+    normalizada.includes("401")
+  ) {
+    return "E-mail ou senha inválidos.";
+  }
+
+  if (
+    normalizada.includes("user not found") ||
+    normalizada.includes("not found")
+  ) {
+    return "Não encontramos o recurso solicitado.";
+  }
+
+  if (normalizada.includes("forbidden") || normalizada.includes("403")) {
+    return "Você não tem permissão para realizar esta ação.";
+  }
+
+  if (normalizada.includes("validation") || normalizada.includes("invalid")) {
+    return "Os dados informados são inválidos.";
+  }
+
+  return `Erro ${status}. Tente novamente.`;
+}
+
 function buildUrl(endpoint: string, params?: Record<string, QueryValue>) {
   const url = `${baseUrl}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
 
@@ -72,9 +123,12 @@ async function request<T>(
       if (raw) {
         try {
           const error = JSON.parse(raw) as { message?: string; error?: string };
-          message = error.message || error.error || raw;
+          message = traduzirMensagemErro(
+            error.message || error.error || raw,
+            response.status,
+          );
         } catch {
-          message = raw;
+          message = traduzirMensagemErro(raw, response.status);
         }
       }
     } catch {
@@ -135,5 +189,27 @@ export const api = {
       skipAuth,
     ),
 
-  delete: <T>(endpoint: string) => request<T>(endpoint, { method: "DELETE" }),
+  delete: <T>(
+    endpoint: string,
+    body?: unknown,
+    init?: RequestInit,
+    skipAuth = false,
+  ) =>
+    request<T>(
+      endpoint,
+      {
+        method: "DELETE",
+        body:
+          body instanceof FormData || body instanceof Blob
+            ? body
+            : body === undefined
+              ? undefined
+              : typeof body === "string"
+                ? body
+                : JSON.stringify(body),
+        ...init,
+      },
+      undefined,
+      skipAuth,
+    ),
 };

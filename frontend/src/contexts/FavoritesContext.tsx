@@ -118,7 +118,7 @@ export function useFavorites() {
   const context = useContext(FavoritesContext);
 
   if (!context) {
-    throw new Error("useFavorites must be used within FavoritesProvider");
+    throw new Error("useFavorites deve ser usado dentro de FavoritesProvider");
   }
 
   return context;
