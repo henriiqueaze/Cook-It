@@ -1,8 +1,8 @@
 CREATE TABLE users (
     id VARCHAR(255) PRIMARY KEY,
     email VARCHAR(255) NOT NULL UNIQUE,
-    name VARCHAR(255),
-    password VARCHAR(255),
+    name VARCHAR(255) NOT NULL,
+    password VARCHAR(255) NOT NULL,
     photo TEXT,
     email_verified BOOLEAN NOT NULL DEFAULT FALSE
 );
@@ -11,13 +11,13 @@ CREATE TABLE recipes (
     id VARCHAR(255) PRIMARY KEY,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     image TEXT,
-    name VARCHAR(255),
+    name VARCHAR(255) NOT NULL,
     description TEXT,
     prep_time INTEGER,
     portions INTEGER NOT NULL DEFAULT 1,
-    rating DOUBLE PRECISION,
-    ratings_count INTEGER,
-    author_id VARCHAR(255)
+    rating DOUBLE PRECISION NOT NULL DEFAULT 0,
+    ratings_count INTEGER NOT NULL DEFAULT 0,
+    author_id VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE ingredients (
@@ -40,15 +40,15 @@ CREATE TABLE favorite_recipes (
 );
 
 CREATE TABLE recipe_ingredients (
-    recipe_id VARCHAR(255),
+    recipe_id VARCHAR(255) NOT NULL,
     ingredient VARCHAR(255),
     quantity DOUBLE PRECISION,
     unit VARCHAR(255)
 );
 
 CREATE TABLE recipe_instructions (
-    recipe_id VARCHAR(255),
-    instructions VARCHAR(255)
+    recipe_id VARCHAR(255) NOT NULL,
+    instructions TEXT NOT NULL
 );
 
 CREATE TABLE user_ratings (
@@ -99,6 +99,12 @@ ALTER TABLE recipe_ingredients
 ALTER TABLE recipe_instructions
     ADD CONSTRAINT fk_recipe_instructions_recipe
         FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE;
+
+CREATE INDEX idx_email_verification_tokens_token ON email_verification_tokens(token);
+CREATE INDEX idx_email_verification_tokens_user_id ON email_verification_tokens(user_id);
+
+CREATE INDEX idx_password_reset_tokens_token ON password_reset_tokens(token);
+CREATE INDEX idx_password_reset_tokens_user_id ON password_reset_tokens(user_id);
 
 ALTER TABLE user_ratings
     ADD CONSTRAINT fk_user_ratings_user

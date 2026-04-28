@@ -3,9 +3,42 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ChefHat, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { authService } from "@/services/authService";
+import { validarEmail } from "@/lib/utils";
 
-function validarEmail(email: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+function getMensagemErroLogin(error: unknown) {
+  const mensagemPadrao = "E-mail ou senha inválidos.";
+
+  if (!(error instanceof Error) || !error.message) {
+    return mensagemPadrao;
+  }
+
+  const mensagemNormalizada = error.message.toLowerCase();
+
+  if (
+    mensagemNormalizada.includes("não foi confirmado") ||
+    mensagemNormalizada.includes("nao foi confirmado") ||
+    mensagemNormalizada.includes("confirm")
+  ) {
+    return "Seu e-mail ainda não foi confirmado. Verifique sua caixa de entrada e confirme o cadastro para entrar.";
+  }
+
+  if (
+    mensagemNormalizada.includes("credenciais") ||
+    mensagemNormalizada.includes("invalid credentials") ||
+    mensagemNormalizada.includes("unauthorized") ||
+    mensagemNormalizada.includes("401")
+  ) {
+    return mensagemPadrao;
+  }
+
+  if (
+    mensagemNormalizada.includes("failed to fetch") ||
+    mensagemNormalizada.includes("network")
+  ) {
+    return "Não foi possível conectar ao servidor. Tente novamente.";
+  }
+
+  return error.message;
 }
 
 export function Login() {
@@ -41,10 +74,8 @@ export function Login() {
 
       const destino = (location.state as { from?: string } | null)?.from ?? "/";
       navigate(destino, { replace: true });
-    } catch {
-      setErro(
-        "Seu e-mail ainda não foi confirmado. Verifique sua caixa de entrada e confirme o cadastro para entrar.",
-      );
+    } catch (error) {
+      setErro(getMensagemErroLogin(error));
     } finally {
       setCarregando(false);
     }

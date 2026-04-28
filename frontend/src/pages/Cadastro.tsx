@@ -3,10 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { ChefHat, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { authService } from "@/services/authService";
-
-function validarEmail(email: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
+import { validarEmail } from "@/lib/utils";
 
 export function Cadastro() {
   const navigate = useNavigate();

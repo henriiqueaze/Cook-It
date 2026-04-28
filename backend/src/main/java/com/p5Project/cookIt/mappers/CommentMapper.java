@@ -23,6 +23,7 @@ public interface CommentMapper {
 
     List<CommentDTO> toDTOList(List<Comment> comments);
 
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @BeanMapping(ignoreByDefault = true, nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "text", source = "text")
     void updateCommentFromRequest(UpdateCommentRequest request, @MappingTarget Comment comment);
 }

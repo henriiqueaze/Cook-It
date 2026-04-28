@@ -2,6 +2,7 @@ package com.p5Project.cookIt.services;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import com.p5Project.cookIt.exceptions.ExternalIntegrationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,7 +26,7 @@ public class CloudinaryService {
         try {
             return upload(file, assetFolder);
         } catch (IOException e) {
-            throw new RuntimeException("Erro ao fazer upload da imagem no Cloudinary", e);
+            throw new ExternalIntegrationException("Erro ao fazer upload da imagem no Cloudinary", e);
         }
     }
 

@@ -4,6 +4,7 @@ import com.p5Project.cookIt.dtos.UserDTO;
 import com.p5Project.cookIt.dtos.requests.UpdateUserRequest;
 import com.p5Project.cookIt.entities.Recipe;
 import com.p5Project.cookIt.entities.User;
+import com.p5Project.cookIt.exceptions.ForbiddenOperationException;
 import com.p5Project.cookIt.exceptions.ResourceNotFoundException;
 import com.p5Project.cookIt.mappers.UserMapper;
 import com.p5Project.cookIt.repository.RecipeRepository;
@@ -33,12 +34,16 @@ public class UserService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public UserDTO getUserById(String userId) {
+        return userMapper.toDTO(findUserById(userId));
+    }
+
     public void addFavorite(String userId, String recipeId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found!"));
         Recipe recipe = recipeRepository.findById(recipeId).orElseThrow(() -> new ResourceNotFoundException("Recipe not found!"));
 
-        if (!user.getFavoriteRecipes().contains(recipe)) {
-            user.getFavoriteRecipes().add(recipe);
+        if (user.addFavoriteRecipe(recipe)) {
             userRepository.save(user);
         }
     }
@@ -47,22 +52,37 @@ public class UserService {
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found!"));
         Recipe recipe = recipeRepository.findById(recipeId).orElseThrow(() -> new ResourceNotFoundException("Recipe not found!"));
 
-        if (user.getFavoriteRecipes().remove(recipe)) {
+        if (user.removeFavoriteRecipe(recipe)) {
             userRepository.save(user);
         }
     }
 
     public UserDTO updateUser(String userId, UpdateUserRequest request, MultipartFile photo) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found!"));
+        User user = findUserById(userId);
         userMapper.updateUserFromRequest(request, user);
         updatePhotoIfPresent(user, photo);
         return userMapper.toDTO(userRepository.save(user));
+    }
+
+    public UserDTO updateUser(String authenticatedUserId, String userId, UpdateUserRequest request, MultipartFile photo) {
+        ensureCanUpdate(authenticatedUserId, userId);
+        return updateUser(userId, request, photo);
     }
 
     private void updatePhotoIfPresent(User user, MultipartFile photo) {
         if (photo != null && !photo.isEmpty()) {
             String photoUrl = cloudinaryService.uploadImage(photo, "cookit/users");
             user.setPhoto(photoUrl);
+        }
+    }
+
+    private User findUserById(String userId) {
+        return userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found!"));
+    }
+
+    private void ensureCanUpdate(String authenticatedUserId, String userId) {
+        if (!authenticatedUserId.equals(userId)) {
+            throw new ForbiddenOperationException("You cannot update another user");
         }
     }
 }

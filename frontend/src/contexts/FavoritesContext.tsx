@@ -1,3 +1,5 @@
+/* eslint-disable react-refresh/only-export-components */
+
 import {
   createContext,
   useCallback,
@@ -20,7 +22,9 @@ interface FavoritesContextData {
   recarregarFavoritos: () => Promise<void>;
 }
 
-const FavoritesContext = createContext<FavoritesContextData | undefined>(undefined);
+const FavoritesContext = createContext<FavoritesContextData | undefined>(
+  undefined,
+);
 
 export function FavoritesProvider({ children }: { children: ReactNode }) {
   const { estaAutenticado } = useAuth();
@@ -44,7 +48,10 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
 
       setFavoritos(
         receitas
-          .filter((resultado): resultado is PromiseFulfilledResult<Receita> => resultado.status === "fulfilled")
+          .filter(
+            (resultado): resultado is PromiseFulfilledResult<Receita> =>
+              resultado.status === "fulfilled",
+          )
           .map((resultado) => resultado.value),
       );
     } catch {
@@ -59,7 +66,8 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
   }, [recarregarFavoritos]);
 
   const isFavorite = useCallback(
-    (id: Receita["id"]) => favoritos.some((receita) => String(receita.id) === String(id)),
+    (id: Receita["id"]) =>
+      favoritos.some((receita) => String(receita.id) === String(id)),
     [favoritos],
   );
 
@@ -90,11 +98,19 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
       isFavorite,
       recarregarFavoritos,
     }),
-    [favoritos, carregandoFavoritos, toggleFavorite, isFavorite, recarregarFavoritos],
+    [
+      favoritos,
+      carregandoFavoritos,
+      toggleFavorite,
+      isFavorite,
+      recarregarFavoritos,
+    ],
   );
 
   return (
-    <FavoritesContext.Provider value={value}>{children}</FavoritesContext.Provider>
+    <FavoritesContext.Provider value={value}>
+      {children}
+    </FavoritesContext.Provider>
   );
 }
 

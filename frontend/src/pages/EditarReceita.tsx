@@ -59,7 +59,9 @@ export function EditarReceita() {
     receitaInicial?.ingredientes?.length
       ? receitaInicial.ingredientes.map((ing) => ({
           nome: ing.nome,
-          quantidade: String((ing as any).quantity ?? ing.quantidade ?? ""),
+          quantidade: String(
+            (ing as { quantity?: number }).quantity ?? ing.quantidade ?? "",
+          ),
           unidade: (ing.unidade as UnidadeMedidaType) ?? "",
         }))
       : [criarIngredienteVazio()],
@@ -86,7 +88,9 @@ export function EditarReceita() {
                 nome: ing.nome,
                 // adapter retorna "quantity" mas o tipo declara "quantidade"
                 quantidade: String(
-                  (ing as any).quantity ?? ing.quantidade ?? "",
+                  (ing as { quantity?: number }).quantity ??
+                    ing.quantidade ??
+                    "",
                 ),
                 unidade: (ing.unidade as UnidadeMedidaType) ?? "",
               }))

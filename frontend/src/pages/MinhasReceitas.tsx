@@ -10,19 +10,18 @@ export function MinhasReceitas() {
   const navigate = useNavigate();
   const { usuario, estaAutenticado } = useAuth();
   const [minhasReceitas, setMinhasReceitas] = useState<Receita[]>([]);
-  const [carregando, setCarregando] = useState(true);
+  const [carregando, setCarregando] = useState(false);
   const travarRolagem =
     estaAutenticado && !carregando && minhasReceitas.length === 0;
 
   useEffect(() => {
     if (!usuario?.id) {
-      setMinhasReceitas([]);
-      setCarregando(false);
       return;
     }
 
     let ativo = true;
-    setCarregando(true);
+    // avoid synchronous setState inside effect
+    void Promise.resolve().then(() => setCarregando(true));
 
     receitaService
       .minhasReceitas(usuario.id)

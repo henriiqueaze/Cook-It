@@ -4,10 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { authService } from "@/services/authService";
-
-function validarEmail(email: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
+import { validarEmail } from "@/lib/utils";
 
 export function EditarPerfil() {
   const navigate = useNavigate();

@@ -16,7 +16,6 @@ export function Perfil() {
 
   useEffect(() => {
     if (!usuario?.id) {
-      setMinhasReceitas([]);
       return;
     }
 

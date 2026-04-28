@@ -7,6 +7,13 @@ import com.p5Project.cookIt.dtos.responses.AuthResponse;
 import com.p5Project.cookIt.entities.EmailVerificationToken;
 import com.p5Project.cookIt.entities.PasswordResetToken;
 import com.p5Project.cookIt.entities.User;
+import com.p5Project.cookIt.exceptions.EmailAlreadyInUseException;
+import com.p5Project.cookIt.exceptions.BadRequestException;
+import com.p5Project.cookIt.exceptions.EmailNotVerifiedException;
+import com.p5Project.cookIt.exceptions.InvalidCredentialsException;
+import com.p5Project.cookIt.exceptions.InvalidTokenException;
+import com.p5Project.cookIt.exceptions.ResourceNotFoundException;
+import com.p5Project.cookIt.exceptions.TokenExpiredException;
 import com.p5Project.cookIt.mappers.UserMapper;
 import com.p5Project.cookIt.repository.EmailVerificationTokenRepository;
 import com.p5Project.cookIt.repository.PasswordResetTokenRepository;
@@ -42,9 +49,7 @@ public class AuthService {
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.findByEmail(request.email()).isPresent()) {
-            throw new RuntimeException("Email already in use");
-        }
+        ensureEmailAvailable(request.email());
 
         User user = new User();
         user.setName(request.name());
@@ -60,15 +65,14 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = findUserByEmail(request.email());
 
         if (!user.isEmailVerified()) {
-            throw new RuntimeException("Email not verified");
+            throw new EmailNotVerifiedException("Email not verified");
         }
 
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-            throw new RuntimeException("Invalid credentials");
+            throw new InvalidCredentialsException("Invalid credentials");
         }
 
         return new AuthResponse(userMapper.toDTO(user), jwtService.generateToken(user.getId()));
@@ -76,8 +80,7 @@ public class AuthService {
 
     @Transactional
     public void forgotPassword(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = findUserByEmail(email);
 
         passwordResetTokenRepository.deleteAllByUser(user);
 
@@ -105,12 +108,7 @@ public class AuthService {
 
     @Transactional
     public void resetPassword(String token, String newPassword) {
-        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("Invalid token"));
-
-        if (resetToken.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Token expired");
-        }
+        PasswordResetToken resetToken = requireValidResetToken(token);
 
         User user = resetToken.getUser();
         user.setPassword(passwordEncoder.encode(newPassword));
@@ -121,11 +119,10 @@ public class AuthService {
 
     @Transactional
     public void changePassword(String userId, ChangePasswordRequest request) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = findUserById(userId);
 
         if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
-            throw new RuntimeException("Invalid current password");
+            throw new InvalidCredentialsException("Invalid current password");
         }
 
         user.setPassword(passwordEncoder.encode(request.newPassword()));
@@ -134,12 +131,7 @@ public class AuthService {
 
     @Transactional
     public String confirmEmail(String token) {
-        EmailVerificationToken verificationToken = emailVerificationTokenRepository.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("Invalid token"));
-
-        if (verificationToken.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Token expired");
-        }
+        EmailVerificationToken verificationToken = requireValidVerificationToken(token);
 
         User user = verificationToken.getUser();
         user.setEmailVerified(true);
@@ -183,10 +175,44 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public void validateResetCode(String token) {
-        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token).orElseThrow(() -> new RuntimeException("Código inválido"));
+        requireValidResetToken(token);
+    }
+
+    private void ensureEmailAvailable(String email) {
+        if (userRepository.findByEmail(email).isPresent()) {
+            throw new EmailAlreadyInUseException("Email already in use");
+        }
+    }
+
+    private User findUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    }
+
+    private User findUserById(String userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    }
+
+    private EmailVerificationToken requireValidVerificationToken(String token) {
+        EmailVerificationToken verificationToken = emailVerificationTokenRepository.findByToken(token)
+                .orElseThrow(() -> new InvalidTokenException("Invalid token"));
+
+        if (verificationToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new TokenExpiredException("Token expired");
+        }
+
+        return verificationToken;
+    }
+
+    private PasswordResetToken requireValidResetToken(String token) {
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
+                .orElseThrow(() -> new InvalidTokenException("Código inválido"));
 
         if (resetToken.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Código expirado");
+            throw new TokenExpiredException("Código expirado");
         }
+
+        return resetToken;
     }
 }

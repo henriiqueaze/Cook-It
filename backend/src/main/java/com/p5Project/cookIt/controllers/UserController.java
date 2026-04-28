@@ -58,11 +58,7 @@ public class UserController implements UserControllerDocs {
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Override
     public UserDTO updateUser(@PathVariable String id, @AuthenticationPrincipal UserPrincipal user, @RequestPart("data") UpdateUserRequest request, @RequestPart(value = "photo", required = false) MultipartFile photo) {
-        if (!user.getId().equals(id)) {
-            throw new RuntimeException("You cannot update another user");
-        }
-
-        return userService.updateUser(id, request, photo);
+        return userService.updateUser(user.getId(), id, request, photo);
     }
 
     @GetMapping("/{userId}/comments")

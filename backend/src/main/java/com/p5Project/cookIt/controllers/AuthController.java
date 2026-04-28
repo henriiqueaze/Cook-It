@@ -8,11 +8,9 @@ import com.p5Project.cookIt.dtos.requests.LoginRequest;
 import com.p5Project.cookIt.dtos.requests.RegisterRequest;
 import com.p5Project.cookIt.dtos.requests.ResetPasswordRequest;
 import com.p5Project.cookIt.dtos.responses.AuthResponse;
-import com.p5Project.cookIt.entities.User;
-import com.p5Project.cookIt.mappers.UserMapper;
-import com.p5Project.cookIt.repository.UserRepository;
 import com.p5Project.cookIt.security.UserPrincipal;
 import com.p5Project.cookIt.services.AuthService;
+import com.p5Project.cookIt.services.UserService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,8 +24,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController implements AuthControllerDocs {
 
     private final AuthService authService;
-    private final UserRepository userRepository;
-    private final UserMapper userMapper;
+    private final UserService userService;
 
     @PostMapping("/register")
     @Override
@@ -49,8 +46,7 @@ public class AuthController implements AuthControllerDocs {
     @GetMapping("/me")
     @Override
     public UserDTO me(@AuthenticationPrincipal UserPrincipal userPrincipal) {
-        User user = userRepository.findById(userPrincipal.getId()).orElseThrow();
-        return userMapper.toDTO(user);
+        return userService.getUserById(userPrincipal.getId());
     }
 
     @GetMapping("/confirm-email")

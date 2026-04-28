@@ -8,10 +8,9 @@ import com.p5Project.cookIt.dtos.requests.UpdateRecipeRequest;
 import com.p5Project.cookIt.entities.Recipe;
 import com.p5Project.cookIt.entities.RecipeIngredient;
 import com.p5Project.cookIt.entities.User;
+import com.p5Project.cookIt.exceptions.ForbiddenOperationException;
 import com.p5Project.cookIt.exceptions.ResourceNotFoundException;
 import com.p5Project.cookIt.mappers.RecipeIngredientMapper;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
 import com.p5Project.cookIt.mappers.RecipeMapper;
 import com.p5Project.cookIt.repository.RecipeRepository;
 import com.p5Project.cookIt.repository.UserRepository;
@@ -25,7 +24,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -66,8 +64,8 @@ public class RecipeService {
     @Transactional
     public RecipeDTO updateRecipe(String id, UpdateRecipeRequest request, MultipartFile image, String requestingUserId) {
         Recipe recipe = recipeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Recipe not found!"));
-        if (!recipe.getAuthor().getId().equals(requestingUserId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Você não tem permissão para editar esta receita");
+        if (!recipe.isOwnedBy(requestingUserId)) {
+            throw new ForbiddenOperationException("Você não tem permissão para editar esta receita");
         }
         recipeMapper.updateRecipeFromRequest(request, recipe);
         updateIngredientsIfPresent(recipe, request.ingredients());
@@ -88,16 +86,16 @@ public class RecipeService {
         Recipe recipe = recipeRepository.findById(recipeId).orElseThrow(() -> new ResourceNotFoundException("Recipe not found!"));
         User user = findUserById(userId);
 
-        Integer previousRating = findPreviousRating(user, recipeId);
-        updateRecipeRating(recipe, previousRating, rating);
-        updateUserRating(user, recipe, rating);
+        Integer previousRating = recipe.getPreviousUserRating(user);
+        recipe.registerRating(previousRating, rating);
+        user.rateRecipe(recipe, rating);
 
         userRepository.save(user);
         recipeRepository.save(recipe);
     }
 
     public List<RecipeDTO> searchRecipes(SearchRecipeRequest request) {
-        List<String> normalizedIngredients = normalizeIngredients(request);
+        List<String> normalizedIngredients = request.normalizedIngredients();
         List<Recipe> recipes = recipeRepository.findByIngredientNames(normalizedIngredients);
 
         if (request.exactMatch()) {
@@ -136,8 +134,8 @@ public class RecipeService {
         recipe.setDescription(request.description());
         recipe.setPrepTime(request.prepTime());
         recipe.setPortions(request.portions());
-        recipe.setIngredients(buildRecipeIngredients(request.ingredients()));
-        recipe.setInstructions(request.instructions());
+        recipe.replaceIngredients(buildRecipeIngredients(request.ingredients()));
+        recipe.replaceInstructions(request.instructions());
         recipe.setAuthor(findUserById(userId));
         recipe.setRating(0.0);
         recipe.setRatingsCount(0);
@@ -146,7 +144,7 @@ public class RecipeService {
 
     private void updateIngredientsIfPresent(Recipe recipe, List<RecipeIngredientDTO> ingredients) {
         if (ingredients != null) {
-            recipe.setIngredients(buildRecipeIngredients(ingredients));
+            recipe.replaceIngredients(buildRecipeIngredients(ingredients));
         }
     }
 
@@ -177,58 +175,12 @@ public class RecipeService {
         }
 
         User user = findUserById(userId);
-        dto.setUserRating(findUserRatingForRecipe(user, recipe.getId()));
-    }
-
-    private Integer findUserRatingForRecipe(User user, String recipeId) {
-        return user.getRatings().entrySet().stream()
-                .filter(entry -> entry.getKey().getId().equals(recipeId))
-                .map(Map.Entry::getValue)
-                .findFirst()
-                .orElse(0);
-    }
-
-    private Integer findPreviousRating(User user, String recipeId) {
-        return user.getRatings().entrySet().stream()
-                .filter(entry -> entry.getKey().getId().equals(recipeId))
-                .map(Map.Entry::getValue)
-                .findFirst()
-                .orElse(null);
-    }
-
-    private void updateRecipeRating(Recipe recipe, Integer previousRating, int newRating) {
-        double total = recipe.getRating() * recipe.getRatingsCount();
-
-        if (previousRating == null) {
-            recipe.setRatingsCount(recipe.getRatingsCount() + 1);
-        } else {
-            total -= previousRating;
-        }
-
-        total += newRating;
-        recipe.setRating(total / recipe.getRatingsCount());
-    }
-
-    private void updateUserRating(User user, Recipe recipe, int rating) {
-        user.getRatings().entrySet().removeIf(entry -> entry.getKey().getId().equals(recipe.getId()));
-        user.getRatings().put(recipe, rating);
-    }
-
-    private List<String> normalizeIngredients(SearchRecipeRequest request) {
-        if (request.ingredients() == null) {
-            return List.of();
-        }
-
-        return request.ingredients().stream()
-                .filter(ingredient -> ingredient != null && !ingredient.isBlank())
-                .map(String::toLowerCase)
-                .toList();
+        dto.setUserRating(recipe.getUserRating(user));
     }
 
     private List<Recipe> filterExactMatch(List<Recipe> recipes, List<String> ingredients) {
         return recipes.stream()
-                .filter(recipe -> recipe.getIngredients().stream()
-                        .allMatch(recipeIngredient -> ingredients.contains(recipeIngredient.getIngredient().toLowerCase())))
+                .filter(recipe -> recipe.matchesIngredients(ingredients))
                 .toList();
     }
 

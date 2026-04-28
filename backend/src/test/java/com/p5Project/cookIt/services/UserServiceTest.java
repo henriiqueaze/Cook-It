@@ -1,6 +1,5 @@
 package com.p5Project.cookIt.services;
 
-import com.p5Project.cookIt.dtos.UserDTO;
 import com.p5Project.cookIt.dtos.requests.UpdateUserRequest;
 import com.p5Project.cookIt.entities.User;
 import com.p5Project.cookIt.mappers.UserMapper;
@@ -44,6 +43,14 @@ class UserServiceTest {
         // simula busca do usuário no banco
         when(userRepository.findById("1")).thenReturn(Optional.of(user));
 
+        doAnswer(invocation -> {
+            UpdateUserRequest req = invocation.getArgument(0);
+            User target = invocation.getArgument(1);
+            target.setName(req.name());
+            target.setEmail(req.email());
+            return null;
+        }).when(userMapper).updateUserFromRequest(any(UpdateUserRequest.class), any(User.class));
+
         // simula o save retornando o próprio usuário atualizado
         when(userRepository.save(any(User.class))).thenReturn(user);
 
@@ -60,7 +67,7 @@ class UserServiceTest {
         User savedUser = userCaptor.getValue();
 
         // verifica se os dois campos foram alterados
-        assertNotEquals("nome novo", savedUser.getName());
-        assertNotEquals("emailnovo@email.com", savedUser.getEmail());
+        assertEquals("nome novo", savedUser.getName());
+        assertEquals("emailnovo@email.com", savedUser.getEmail());
     }
 }

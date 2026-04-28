@@ -3,10 +3,7 @@ import { ArrowLeft, Mail } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { authService } from "@/services/authService";
-
-function validarEmail(email: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
+import { validarEmail } from "@/lib/utils";
 
 function mapearMensagemErroEsqueciSenha(message: string) {
   const normalizado = message.toLowerCase();

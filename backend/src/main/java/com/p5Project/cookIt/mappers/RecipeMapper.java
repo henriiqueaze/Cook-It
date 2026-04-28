@@ -17,15 +17,21 @@ public interface RecipeMapper {
             @Mapping(source = "createdAt", target = "createdAt", dateFormat = "yyyy-MM-dd HH:mm:ss"),
             @Mapping(source = "ingredients", target = "ingredients"),
             @Mapping(source = "instructions", target = "instructions"),
-            @Mapping(source = "description", target = "description")
+            @Mapping(source = "description", target = "description"),
+            @Mapping(target = "userRating", ignore = true)
     })
     RecipeDTO toDTO(Recipe recipe);
 
     List<RecipeDTO> toDTOList(List<Recipe> recipes);
 
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @BeanMapping(ignoreByDefault = true, nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mappings({
-            @Mapping(target = "description", source = "description")
+            @Mapping(target = "name", source = "name"),
+            @Mapping(target = "description", source = "description"),
+            @Mapping(target = "prepTime", source = "prepTime"),
+            @Mapping(target = "portions", source = "portions"),
+            @Mapping(target = "ingredients", source = "ingredients"),
+            @Mapping(target = "instructions", source = "instructions")
     })
     void updateRecipeFromRequest(UpdateRecipeRequest request, @MappingTarget Recipe recipe);
 }

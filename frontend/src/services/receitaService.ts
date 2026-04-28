@@ -84,19 +84,6 @@ function buildRecipeFormData(
   return formData;
 }
 
-function adaptRecipeResponse(recipe: BackendRecipeDTO | Receita) {
-  if (
-    recipe &&
-    typeof recipe === "object" &&
-    "titulo" in recipe &&
-    "autor" in recipe
-  ) {
-    return recipe as Receita;
-  }
-
-  return adaptBackendRecipeToReceita(recipe as BackendRecipeDTO);
-}
-
 export const receitaService = {
   listar: async () => {
     const resposta = await api.get<
