@@ -8,7 +8,7 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "ingredients", uniqueConstraints = @UniqueConstraint(columnNames = "name"))
-public class Ingredient extends BaseEntity {
+public class Ingredient extends AuditableEntity {
 
     @Column(nullable = false)
     private String name;

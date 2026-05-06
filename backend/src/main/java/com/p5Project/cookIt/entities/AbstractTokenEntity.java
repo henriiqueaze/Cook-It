@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @MappedSuperclass
-public abstract class AbstractTokenEntity extends BaseEntity {
+public abstract class AbstractTokenEntity extends AuditableEntity {
 
     @Column(name = "token", nullable = false, unique = true)
     private String token;

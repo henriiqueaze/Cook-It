@@ -50,7 +50,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(EmailNotVerifiedException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
     public ErrorResponse handleEmailNotVerified(EmailNotVerifiedException ex, HttpServletRequest request) {
-        return new ErrorResponse(LocalDateTime.now(), HttpStatus.FORBIDDEN.value(), ex.getMessage(), request.getRequestURI());
+        String mensagem = "Seu e-mail ainda não foi confirmado. Verifique sua caixa de entrada e confirme o cadastro para entrar.";
+        return new ErrorResponse(LocalDateTime.now(), HttpStatus.FORBIDDEN.value(), mensagem, request.getRequestURI());
     }
 
     @ExceptionHandler(ForbiddenOperationException.class)
