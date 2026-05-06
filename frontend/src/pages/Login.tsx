@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ChefHat, Eye, EyeOff } from "lucide-react";
+import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { authService } from "@/services/authService";
 import { validarEmail } from "@/lib/utils";
@@ -41,6 +42,17 @@ function getMensagemErroLogin(error: unknown) {
   return error.message;
 }
 
+function erroPedeReenvioConfirmacao(message: string) {
+  const normalizada = message.toLowerCase();
+
+  return (
+    normalizada.includes("e-mail ainda não foi confirmado") ||
+    normalizada.includes("email not verified") ||
+    normalizada.includes("nao foi confirmado") ||
+    normalizada.includes("não foi confirmado")
+  );
+}
+
 export function Login() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -51,6 +63,7 @@ export function Login() {
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
+  const [reenviandoConfirmacao, setReenviandoConfirmacao] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -81,6 +94,30 @@ export function Login() {
     }
   }
 
+  async function handleReenviarConfirmacao() {
+    const emailLimpo = email.trim();
+
+    if (!emailLimpo || !validarEmail(emailLimpo)) {
+      setErro("Digite o e-mail usado no cadastro para reenviar a confirmação.");
+      return;
+    }
+
+    setReenviandoConfirmacao(true);
+
+    try {
+      await authService.resendConfirmationEmail(emailLimpo);
+      toast.success("Enviamos um novo e-mail de confirmação.");
+    } catch (error) {
+      setErro(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível reenviar o e-mail.",
+      );
+    } finally {
+      setReenviandoConfirmacao(false);
+    }
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-linear-to-b from-orange-50 to-white">
       <div className="rounded-b-3xl bg-linear-to-br from-orange-500 via-orange-600 to-red-600 px-6 pb-12 pt-10 text-center text-white">
@@ -98,7 +135,19 @@ export function Login() {
         >
           {erro && (
             <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
-              {erro}
+              <p>{erro}</p>
+              {erroPedeReenvioConfirmacao(erro) && (
+                <button
+                  type="button"
+                  onClick={handleReenviarConfirmacao}
+                  disabled={reenviandoConfirmacao}
+                  className="mt-2 font-medium text-red-700 underline decoration-red-300 underline-offset-2 transition-colors hover:text-red-800 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {reenviandoConfirmacao
+                    ? "Reenviando e-mail..."
+                    : "Reenviar e-mail de confirmação"}
+                </button>
+              )}
             </div>
           )}
 

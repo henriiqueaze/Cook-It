@@ -48,6 +48,6 @@ class AuthServiceTest {
         verify(userRepository).save(any(User.class));
         verify(emailVerificationTokenRepository).deleteAllByUser(any(User.class));
         verify(emailVerificationTokenRepository).save(any());
-        verify(emailService).sendEmail(anyString(), anyString(), anyString());
+        verify(emailService).sendEmailWithInlineLogo(anyString(), anyString(), anyString());
     }
 }

@@ -55,6 +55,11 @@ public class AuthController implements AuthControllerDocs {
         return authService.confirmEmail(token);
     }
 
+    @PostMapping("/resend-confirmation-email")
+    public void resendConfirmationEmail(@RequestBody ForgotPasswordRequest request) {
+        authService.resendConfirmationEmail(request.email());
+    }
+
     @PostMapping("/forgot-password")
     @Override
     public void forgotPassword(@RequestBody ForgotPasswordRequest request) {

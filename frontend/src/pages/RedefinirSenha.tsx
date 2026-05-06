@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { ArrowLeft, Shield } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { authService } from "@/services/authService";
 
 interface LocationState {
@@ -16,6 +17,7 @@ export function RedefinirSenha() {
   const [token, setToken] = useState("");
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState("");
+  const [reenviandoCodigo, setReenviandoCodigo] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -42,6 +44,30 @@ export function RedefinirSenha() {
       );
     } finally {
       setCarregando(false);
+    }
+  }
+
+  async function handleReenviarCodigo() {
+    if (!email) {
+      setErro(
+        "Não encontramos o e-mail desta solicitação. Volte e refaça o pedido.",
+      );
+      return;
+    }
+
+    setReenviandoCodigo(true);
+
+    try {
+      await authService.forgotPassword(email);
+      toast.success("Enviamos um novo código por e-mail.");
+    } catch (error) {
+      setErro(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível reenviar o código.",
+      );
+    } finally {
+      setReenviandoCodigo(false);
     }
   }
 
@@ -74,6 +100,18 @@ export function RedefinirSenha() {
                 ? `Enviamos o código para ${email}.`
                 : "Informe o código recebido por e-mail para continuar."}
             </p>
+            {email && (
+              <button
+                type="button"
+                onClick={handleReenviarCodigo}
+                disabled={reenviandoCodigo}
+                className="mt-3 text-sm font-medium text-orange-600 transition-colors hover:text-orange-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {reenviandoCodigo
+                  ? "Reenviando código..."
+                  : "Não recebi o código. Reenviar e-mail"}
+              </button>
+            )}
           </div>
 
           {erro && (

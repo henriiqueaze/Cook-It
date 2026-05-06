@@ -66,7 +66,7 @@ export function Cadastro() {
         <p className="mt-2 text-2xl text-orange-100">Crie sua conta</p>
       </div>
 
-      <div className="mt-14 flex-1 px-6 pb-6">
+      <div className="mt-8 flex-1 px-6 pb-6">
         <form
           className="space-y-4 rounded-2xl bg-white p-6 shadow-lg"
           onSubmit={handleSubmit}

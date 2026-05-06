@@ -15,6 +15,14 @@ export const authService = {
   forgotPassword: (email: string) =>
     api.post<void>("/auth/forgot-password", { email }, undefined, true),
 
+  resendConfirmationEmail: (email: string) =>
+    api.post<void>(
+      "/auth/resend-confirmation-email",
+      { email },
+      undefined,
+      true,
+    ),
+
   validateResetCode: (token: string) =>
     api.post<void>("/auth/validate-reset-code", { token }, undefined, true),
 

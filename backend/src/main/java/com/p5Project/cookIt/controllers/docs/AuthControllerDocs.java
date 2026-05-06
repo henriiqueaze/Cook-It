@@ -58,9 +58,18 @@ public interface AuthControllerDocs {
     })
     String confirmEmail(@RequestParam String token);
 
+    @Operation(summary = "Reenviar confirmação de email", description = "Reenvia o email de confirmação respeitando um intervalo mínimo de 5 minutos")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Confirmação reenviada"),
+            @ApiResponse(responseCode = "400", description = "Email já confirmado ou reenvio solicitado recentemente"),
+            @ApiResponse(responseCode = "404", description = "Email não encontrado")
+    })
+    void resendConfirmationEmail(@RequestBody ForgotPasswordRequest request);
+
     @Operation(summary = "Solicitar redefinição de senha", description = "Envia um código por email para redefinir a senha")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Solicitação enviada"),
+            @ApiResponse(responseCode = "400", description = "Reenvio solicitado recentemente"),
             @ApiResponse(responseCode = "404", description = "Email não encontrado")
     })
     void forgotPassword(@RequestBody ForgotPasswordRequest request);
