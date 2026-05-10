@@ -1,63 +1,93 @@
 package com.p5Project.cookIt.controllers.docs;
 
-import com.p5Project.cookIt.models.dtos.ImageDTO;
-import com.p5Project.cookIt.models.dtos.RecipeDTO;
+import com.p5Project.cookIt.dtos.CommentDTO;
+import com.p5Project.cookIt.dtos.RecipeDTO;
+import com.p5Project.cookIt.dtos.requests.CreateRecipeRequest;
+import com.p5Project.cookIt.dtos.requests.RateRecipeRequest;
+import com.p5Project.cookIt.dtos.requests.SearchRecipeRequest;
+import com.p5Project.cookIt.dtos.requests.UpdateRecipeRequest;
+import com.p5Project.cookIt.security.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import org.springframework.hateoas.EntityModel;
-import org.springframework.hateoas.PagedModel;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.UUID;
 
 public interface RecipeControllerDocs {
+    @Operation(summary = "Listar receitas", description = "Retorna receitas paginadas")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lista retornada",
+                    content = @Content(schema = @Schema(implementation = RecipeDTO.class)))
+    })
+    Page<RecipeDTO> getAll(Pageable pageable);
+
     @Operation(summary = "Buscar receita por ID", description = "Retorna uma receita específica com base no ID informado")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Receita encontrada", content = @Content(schema = @Schema(implementation = RecipeDTO.class))),
-            @ApiResponse(responseCode = "404", description = "Receita não encontrada", content = @Content)
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Receita encontrada",
+                    content = @Content(schema = @Schema(implementation = RecipeDTO.class))),
+            @ApiResponse(responseCode = "404", description = "Receita não encontrada")
     })
-    RecipeDTO findRatingById(@Parameter(description = "ID da receita", required = true) @PathVariable UUID id);
+    RecipeDTO getRecipe(@PathVariable String id, @AuthenticationPrincipal UserPrincipal user);
 
-    @Operation(summary = "Listar todas as receitas", description = "Retorna uma lista com todas as receitas cadastradas")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso", content = @Content(schema = @Schema(implementation = RecipeDTO.class)))
+    @Operation(summary = "Criar receita", description = "Cria uma nova receita")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Receita criada",
+                    content = @Content(schema = @Schema(implementation = RecipeDTO.class)))
     })
-    ResponseEntity<PagedModel<EntityModel<RecipeDTO>>> findAllRating(Integer page, Integer size, String direction);
+    RecipeDTO create(@Valid @RequestPart("data") CreateRecipeRequest request,
+                     @RequestPart(value = "image", required = false) MultipartFile image,
+                     @AuthenticationPrincipal UserPrincipal user);
 
-    @Operation(summary = "Criar nova receita", description = "Cria uma nova receita no sistema")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Receita criada com sucesso", content = @Content(schema = @Schema(implementation = RecipeDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Dados inválidos", content = @Content)
+    @Operation(summary = "Atualizar receita", description = "Atualiza uma receita existente")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Receita atualizada",
+                    content = @Content(schema = @Schema(implementation = RecipeDTO.class))),
+            @ApiResponse(responseCode = "404", description = "Receita não encontrada")
     })
-    RecipeDTO createRating(@RequestBody(description = "Objeto contendo os dados da receita", required = true, content = @Content(schema = @Schema(implementation = RecipeDTO.class))) @org.springframework.web.bind.annotation.RequestBody RecipeDTO recipe);
+    RecipeDTO update(@PathVariable String id,
+                     @RequestPart("data") UpdateRecipeRequest request,
+                     @RequestPart(value = "image", required = false) MultipartFile image,
+                     @AuthenticationPrincipal UserPrincipal user);
 
-    @Operation(summary = "Atualizar receita completa", description = "Atualiza todas as informações de uma receita existente")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Receita atualizada com sucesso", content = @Content(schema = @Schema(implementation = RecipeDTO.class))),
-            @ApiResponse(responseCode = "404", description = "Receita não encontrada", content = @Content)
+    @Operation(summary = "Excluir receita", description = "Remove uma receita")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Receita removida"),
+            @ApiResponse(responseCode = "404", description = "Receita não encontrada")
     })
-    RecipeDTO updateRating(@RequestBody(description = "Objeto contendo os dados atualizados da receita", required = true, content = @Content(schema = @Schema(implementation = RecipeDTO.class))) @org.springframework.web.bind.annotation.RequestBody RecipeDTO recipe);
+    void delete(@PathVariable String id);
 
-    @Operation(summary = "Atualizar campo específico da receita", description = "Atualiza apenas campos específicos de uma receita existente")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Receita atualizada parcialmente com sucesso", content = @Content(schema = @Schema(implementation = RecipeDTO.class))),
-            @ApiResponse(responseCode = "404", description = "Receita não encontrada", content = @Content)
+    @Operation(summary = "Buscar receitas", description = "Busca receitas por filtros")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Resultados encontrados",
+                    content = @Content(schema = @Schema(implementation = RecipeDTO.class)))
     })
-    RecipeDTO updateRatingField(@Parameter(description = "ID da receita", required = true) @PathVariable UUID id,
-                                @RequestBody(description = "Objeto contendo apenas os campos que serão atualizados", required = true, content = @Content(schema = @Schema(implementation = RecipeDTO.class))) @org.springframework.web.bind.annotation.RequestBody RecipeDTO recipe);
+    List<RecipeDTO> search(@RequestBody SearchRecipeRequest request);
 
-    @Operation(summary = "Deletar receita", description = "Remove uma receita do sistema com base no ID informado")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Receita deletada com sucesso"),
-            @ApiResponse(responseCode = "404", description = "Receita não encontrada", content = @Content)
+    @Operation(summary = "Avaliar receita", description = "Adiciona uma avaliação a uma receita")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Avaliação registrada"),
+            @ApiResponse(responseCode = "404", description = "Receita não encontrada")
     })
-    ResponseEntity<?> deleteRating(@Parameter(description = "ID da receita", required = true) @PathVariable UUID id);
+    void rateRecipe(@PathVariable String id,
+                    @Valid @RequestBody RateRecipeRequest request,
+                    @AuthenticationPrincipal UserPrincipal user);
+
+    @Operation(summary = "Comentários da receita", description = "Lista comentários de uma receita")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Comentários retornados",
+                    content = @Content(schema = @Schema(implementation = CommentDTO.class)))
+    })
+    @GetMapping("/{recipeId}/comments")
+    List<CommentDTO> getRecipeComments(@PathVariable String recipeId);
+
+    @GetMapping("/top-rated")
+    public List<RecipeDTO> getTopRatedRecipes();
 }

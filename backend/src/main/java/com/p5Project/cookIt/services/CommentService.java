@@ -1,105 +1,74 @@
 package com.p5Project.cookIt.services;
 
-import com.p5Project.cookIt.controllers.CommentController;
-import com.p5Project.cookIt.exceptions.IdNotFoundException;
-import com.p5Project.cookIt.mappers.Mapper;
-import com.p5Project.cookIt.models.dtos.CommentDTO;
-import com.p5Project.cookIt.models.entities.Comment;
-import com.p5Project.cookIt.repositories.CommentRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PagedResourcesAssembler;
-import org.springframework.hateoas.EntityModel;
-import org.springframework.hateoas.Link;
-import org.springframework.hateoas.PagedModel;
-import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
+import com.p5Project.cookIt.dtos.CommentDTO;
+import com.p5Project.cookIt.dtos.requests.CreateCommentRequest;
+import com.p5Project.cookIt.dtos.requests.UpdateCommentRequest;
+import com.p5Project.cookIt.entities.Comment;
+import com.p5Project.cookIt.exceptions.ResourceNotFoundException;
+import com.p5Project.cookIt.mappers.CommentMapper;
+import com.p5Project.cookIt.repository.CommentRepository;
+import com.p5Project.cookIt.repository.RecipeRepository;
+import com.p5Project.cookIt.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.UUID;
-
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @Service
+@RequiredArgsConstructor
 public class CommentService {
 
-    @Autowired
-    private CommentRepository repository;
+    private final CommentRepository commentRepository;
+    private final RecipeRepository recipeRepository;
+    private final UserRepository userRepository;
+    private final CommentMapper commentMapper;
 
-    @Autowired
-    private PagedResourcesAssembler<CommentDTO> assembler;
-
-    public CommentDTO findCommentById(UUID id) {
-        var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
-        var dto = Mapper.parseItem(entity, CommentDTO.class);
-        addHATEOASLinks(dto);
-
-        return dto;
+    public List<CommentDTO> getRecipeComments(String recipeId) {
+        ensureRecipeExists(recipeId);
+        return commentMapper.toDTOList(commentRepository.findByRecipeId(recipeId));
     }
 
-    public PagedModel<EntityModel<CommentDTO>> findAllComments(Pageable pageable) {
-        var entities = repository.findAll(pageable);
-
-        var commentsWithLinks = entities.map(comment -> {
-            var dto = Mapper.parseItem(comment, CommentDTO.class);
-            addHATEOASLinks(dto);
-            return dto;
-        });
-
-        Link findAllLink = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(CommentController.class).findAllComments(pageable.getPageNumber(), pageable.getPageSize(), String.valueOf(pageable.getSort()))).withSelfRel();
-        return assembler.toModel(commentsWithLinks, findAllLink);
+    public CommentDTO createComment(CreateCommentRequest request, String userId) {
+        Comment comment = buildComment(request, userId);
+        Comment saved = commentRepository.save(comment);
+        return commentMapper.toDTO(saved);
     }
 
-    public CommentDTO createComment(CommentDTO comment) {
-        var entity = Mapper.parseItem(comment, Comment.class);
-        repository.save(entity);
+    public CommentDTO updateComment(String id, UpdateCommentRequest request, String userId) {
+        Comment comment = commentRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Comment not found!"));
+        ensureOwner(comment, userId);
 
-        var dto = Mapper.parseItem(entity, CommentDTO.class);
-        addHATEOASLinks(dto);
-
-        return dto;
+        commentMapper.updateCommentFromRequest(request, comment);
+        return commentMapper.toDTO(commentRepository.save(comment));
     }
 
-    public CommentDTO updateComment(CommentDTO comment) {
-        var entity = repository.findById(comment.getId()).orElseThrow(() -> new IdNotFoundException("Id not found!"));
-
-        Mapper.mapNonNullFields(comment, entity);
-
-        repository.save(entity);
-
-        var dto = Mapper.parseItem(entity, CommentDTO.class);
-        addHATEOASLinks(dto);
-
-        return dto;
+    public void deleteComment(String id, String userId) {
+        Comment comment = commentRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Comment not found!"));
+        ensureOwner(comment, userId);
+        commentRepository.delete(comment);
     }
 
-    public CommentDTO updateCommentField(UUID id, CommentDTO comment) {
-        var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
-        Mapper.mapNonNullFields(comment, entity);
-
-        repository.save(entity);
-
-        var dto = Mapper.parseItem(entity, CommentDTO.class);
-        addHATEOASLinks(dto);
-
-        return dto;
+    public List<CommentDTO> getUserComments(String userId) {
+        return commentMapper.toDTOList(commentRepository.findByUserId(userId));
     }
 
-    public void deleteComment(UUID id) {
-        var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found"));
-        var dto = Mapper.parseItem(entity, CommentDTO.class);
-        addHATEOASLinks(dto);
-
-        repository.delete(entity);
+    private Comment buildComment(CreateCommentRequest request, String userId) {
+        Comment comment = new Comment();
+        comment.setRecipe(recipeRepository.findById(request.recipeId()).orElseThrow(() -> new ResourceNotFoundException("Recipe not found!")));
+        comment.setUser(userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found!")));
+        comment.setText(request.text().trim());
+        return comment;
     }
 
-    private void addHATEOASLinks(CommentDTO comment) {
-        comment.add(linkTo(methodOn(CommentController.class).findCommentById(comment.getId())).withSelfRel().withType("GET"));
-        //comment.add(linkTo(methodOn(CommentController.class).findAllComments(0, 12, "asc")).withRel("findAll").withType("GET"));
-        comment.add(linkTo(methodOn(CommentController.class).createComment(comment)).withRel("create").withType("POST"));
-        comment.add(linkTo(methodOn(CommentController.class).updateComment(comment)).withRel("update").withType("PUT"));
-        comment.add(linkTo(methodOn(CommentController.class).updateCommentField(comment.getId(), comment)).withRel("patch").withType("PATCH"));
-        comment.add(linkTo(methodOn(CommentController.class).deleteComment(comment.getId())).withRel("delete").withType("DELETE"));
+    private void ensureRecipeExists(String recipeId) {
+        if (!recipeRepository.existsById(recipeId)) {
+            throw new ResourceNotFoundException("Recipe not found!");
+        }
+    }
+
+    private void ensureOwner(Comment comment, String userId) {
+        if (!comment.getUser().getId().equals(userId)) {
+            throw new ResourceNotFoundException("Comment not found!");
+        }
     }
 }

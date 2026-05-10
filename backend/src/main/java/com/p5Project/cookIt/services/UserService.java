@@ -1,102 +1,153 @@
 package com.p5Project.cookIt.services;
 
-import com.p5Project.cookIt.controllers.UserController;
-import com.p5Project.cookIt.exceptions.IdNotFoundException;
-import com.p5Project.cookIt.mappers.Mapper;
-import com.p5Project.cookIt.models.dtos.UserDTO;
-import com.p5Project.cookIt.models.entities.User;
-import com.p5Project.cookIt.repositories.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PagedResourcesAssembler;
-import org.springframework.hateoas.EntityModel;
-import org.springframework.hateoas.Link;
-import org.springframework.hateoas.PagedModel;
-import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
+import com.p5Project.cookIt.dtos.UserDTO;
+import com.p5Project.cookIt.dtos.requests.DeleteUserRequest;
+import com.p5Project.cookIt.dtos.requests.UpdateUserRequest;
+import com.p5Project.cookIt.entities.Ingredient;
+import com.p5Project.cookIt.entities.Recipe;
+import com.p5Project.cookIt.entities.RecipeIngredient;
+import com.p5Project.cookIt.entities.User;
+import com.p5Project.cookIt.exceptions.ForbiddenOperationException;
+import com.p5Project.cookIt.exceptions.InvalidCredentialsException;
+import com.p5Project.cookIt.exceptions.ResourceNotFoundException;
+import com.p5Project.cookIt.mappers.UserMapper;
+import com.p5Project.cookIt.repository.CommentRepository;
+import com.p5Project.cookIt.repository.EmailVerificationTokenRepository;
+import com.p5Project.cookIt.repository.IngredientRepository;
+import com.p5Project.cookIt.repository.RecipeRepository;
+import com.p5Project.cookIt.repository.PasswordResetTokenRepository;
+import com.p5Project.cookIt.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.UUID;
-
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
+@Transactional
 public class UserService {
 
-    @Autowired
-    private UserRepository repository;
+    private final UserRepository userRepository;
+    private final RecipeRepository recipeRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final EmailVerificationTokenRepository emailVerificationTokenRepository;
+    private final CommentRepository commentRepository;
+    private final IngredientRepository ingredientRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final UserMapper userMapper;
+    private final CloudinaryService cloudinaryService;
 
-    @Autowired
-    private PagedResourcesAssembler<UserDTO> assembler;
-
-    public UserDTO findUserById(UUID id) {
-        var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
-        var dto = Mapper.parseItem(entity, UserDTO.class);
-        addHATEOASLinks(dto);
-
-        return dto;
+    @Transactional(readOnly = true)
+    public List<String> getFavorites(String userId) {
+        return userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found!"))
+                .getFavoriteRecipes().stream()
+                .map(Recipe::getId)
+                .toList();
     }
 
-    public PagedModel<EntityModel<UserDTO>> findAllUsers(Pageable pageable) {
-        var entities = repository.findAll(pageable);
-
-        var commentsWithLinks = entities.map(user -> {
-            var dto = Mapper.parseItem(user, UserDTO.class);
-            addHATEOASLinks(dto);
-            return dto;
-        });
-
-        Link findAllLink = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(UserController.class).findAllUsers(pageable.getPageNumber(), pageable.getPageSize(), String.valueOf(pageable.getSort()))).withSelfRel();
-        return assembler.toModel(commentsWithLinks, findAllLink);
+    @Transactional(readOnly = true)
+    public UserDTO getUserById(String userId) {
+        return userMapper.toDTO(findUserById(userId));
     }
 
-    public UserDTO createUser(UserDTO user) {
-        var entity = Mapper.parseItem(user, User.class);
-        repository.save(entity);
-        var dto = Mapper.parseItem(entity, UserDTO.class);
-        addHATEOASLinks(dto);
+    public void addFavorite(String userId, String recipeId) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found!"));
+        Recipe recipe = recipeRepository.findById(recipeId).orElseThrow(() -> new ResourceNotFoundException("Recipe not found!"));
 
-        return dto;
+        if (user.addFavoriteRecipe(recipe)) {
+            userRepository.save(user);
+        }
     }
 
-    public UserDTO updateUser(UserDTO user) {
-        var entity = repository.findById(user.getId()).orElseThrow(() -> new IdNotFoundException("Id not found!"));
+    public void removeFavorite(String userId, String recipeId) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found!"));
+        Recipe recipe = recipeRepository.findById(recipeId).orElseThrow(() -> new ResourceNotFoundException("Recipe not found!"));
 
-        Mapper.mapNonNullFields(user, entity);
-        repository.save(entity);
-
-        var dto = Mapper.parseItem(entity, UserDTO.class);
-        addHATEOASLinks(dto);
-
-        return dto;
+        if (user.removeFavoriteRecipe(recipe)) {
+            userRepository.save(user);
+        }
     }
 
-    public UserDTO updateUserField(UUID id, UserDTO user) {
-        var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found!"));
-
-        Mapper.mapNonNullFields(user, entity);
-        repository.save(entity);
-
-        var dto = Mapper.parseItem(entity, UserDTO.class);
-        addHATEOASLinks(dto);
-
-        return dto;
+    public UserDTO updateUser(String userId, UpdateUserRequest request, MultipartFile photo) {
+        User user = findUserById(userId);
+        userMapper.updateUserFromRequest(request, user);
+        updatePhotoIfPresent(user, photo);
+        return userMapper.toDTO(userRepository.save(user));
     }
 
-    public void deleteUser(UUID id) {
-        var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found"));
-        var dto = Mapper.parseItem(entity, UserDTO.class);
-        addHATEOASLinks(dto);
-        repository.delete(entity);
+    public UserDTO updateUser(String authenticatedUserId, String userId, UpdateUserRequest request, MultipartFile photo) {
+        ensureCanUpdate(authenticatedUserId, userId);
+        return updateUser(userId, request, photo);
     }
 
-    private void addHATEOASLinks(UserDTO user) {
-        user.add(linkTo(methodOn(UserController.class).findUserById(user.getId())).withSelfRel().withType("GET"));
-        //comment.add(linkTo(methodOn(CommentController.class).findAllComments(0, 12, "asc")).withRel("findAll").withType("GET"));
-        user.add(linkTo(methodOn(UserController.class).createUser(user)).withRel("create").withType("POST"));
-        user.add(linkTo(methodOn(UserController.class).updateUser(user)).withRel("update").withType("PUT"));
-        user.add(linkTo(methodOn(UserController.class).updateUserField(user.getId(), user)).withRel("patch").withType("PATCH"));
-        user.add(linkTo(methodOn(UserController.class).deleteUser(user.getId())).withRel("delete").withType("DELETE"));
+    public void deleteUser(String authenticatedUserId, String userId, DeleteUserRequest request) {
+        validateDeletePassword(authenticatedUserId, userId, request);
+
+        User user = findUserById(userId);
+
+        commentRepository.deleteByUserId(userId);
+        passwordResetTokenRepository.deleteAllByUser(user);
+        emailVerificationTokenRepository.deleteAllByUser(user);
+        recipeRepository.deleteByAuthorId(userId);
+        deleteOrphanIngredients();
+        userRepository.delete(user);
+    }
+
+    public void validateDeletePassword(String authenticatedUserId, String userId, DeleteUserRequest request) {
+        ensureCanDelete(authenticatedUserId, userId);
+
+        User user = findUserById(userId);
+        ensurePasswordMatches(request.password(), user.getPassword());
+    }
+
+    private void updatePhotoIfPresent(User user, MultipartFile photo) {
+        if (photo != null && !photo.isEmpty()) {
+            String photoUrl = cloudinaryService.uploadImage(photo, "cookit/users");
+            user.setPhoto(photoUrl);
+        }
+    }
+
+    private User findUserById(String userId) {
+        return userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found!"));
+    }
+
+    private void ensureCanUpdate(String authenticatedUserId, String userId) {
+        if (!authenticatedUserId.equals(userId)) {
+            throw new ForbiddenOperationException("You cannot update another user");
+        }
+    }
+
+    private void ensureCanDelete(String authenticatedUserId, String userId) {
+        if (!authenticatedUserId.equals(userId)) {
+            throw new ForbiddenOperationException("You cannot delete another user");
+        }
+    }
+
+    private void ensurePasswordMatches(String rawPassword, String encodedPassword) {
+        if (!passwordEncoder.matches(rawPassword, encodedPassword)) {
+            throw new InvalidCredentialsException("Invalid password");
+        }
+    }
+
+    private void deleteOrphanIngredients() {
+        Set<String> usedIngredients = recipeRepository.findAll().stream()
+                .flatMap(recipe -> recipe.getIngredients() == null ? java.util.stream.Stream.empty() : recipe.getIngredients().stream())
+                .map(RecipeIngredient::getIngredient)
+                .filter(name -> name != null && !name.isBlank())
+                .map(String::toLowerCase)
+                .collect(Collectors.toSet());
+
+        List<Ingredient> orphanIngredients = ingredientRepository.findAll().stream()
+                .filter(ingredient -> ingredient.getName() == null || !usedIngredients.contains(ingredient.getName().toLowerCase()))
+                .toList();
+
+        if (!orphanIngredients.isEmpty()) {
+            ingredientRepository.deleteAllInBatch(orphanIngredients);
+        }
     }
 }
