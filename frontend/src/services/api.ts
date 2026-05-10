@@ -27,21 +27,6 @@ function traduzirMensagemErro(message: string, status: number) {
     return "Não foi possível conectar ao servidor. Tente novamente.";
   }
 
-  if (
-    normalizada.includes("invalid credentials") ||
-    normalizada.includes("unauthorized") ||
-    normalizada.includes("401")
-  ) {
-    return "E-mail ou senha inválidos.";
-  }
-
-  if (
-    normalizada.includes("user not found") ||
-    normalizada.includes("not found")
-  ) {
-    return "Não encontramos o recurso solicitado.";
-  }
-
   if (normalizada.includes("forbidden") || normalizada.includes("403")) {
     return "Você não tem permissão para realizar esta ação.";
   }
@@ -50,11 +35,41 @@ function traduzirMensagemErro(message: string, status: number) {
     return "Os dados informados são inválidos.";
   }
 
-  return `Erro ${status}. Tente novamente.`;
+  if (status === 400 || status === 422) {
+    return "Os dados informados são inválidos.";
+  }
+
+  if (status === 401) {
+    return "Sua sessão expirou. Faça login novamente.";
+  }
+
+  if (status === 404) {
+    return "Não encontramos o recurso solicitado.";
+  }
+
+  if (status === 409) {
+    return "Já existe um registro com esses dados.";
+  }
+
+  if (status === 429) {
+    return "Muitas tentativas. Aguarde um instante e tente novamente.";
+  }
+
+  if (status >= 500) {
+    return "O servidor encontrou um problema. Tente novamente em instantes.";
+  }
+
+  return "Não foi possível concluir esta solicitação.";
 }
 
 function buildUrl(endpoint: string, params?: Record<string, QueryValue>) {
-  const url = `${baseUrl}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
+  const API_PREFIX = "/api";
+
+  const normalizedEndpoint = endpoint.startsWith("/")
+    ? endpoint
+    : `/${endpoint}`;
+
+  const url = `${baseUrl}${API_PREFIX}${normalizedEndpoint}`;
 
   if (!params) {
     return url;
@@ -71,6 +86,7 @@ function buildUrl(endpoint: string, params?: Record<string, QueryValue>) {
   }
 
   const query = searchParams.toString();
+
   return query ? `${url}${url.includes("?") ? "&" : "?"}${query}` : url;
 }
 

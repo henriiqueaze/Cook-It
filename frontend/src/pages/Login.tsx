@@ -27,7 +27,10 @@ function getMensagemErroLogin(error: unknown) {
     mensagemNormalizada.includes("credenciais") ||
     mensagemNormalizada.includes("invalid credentials") ||
     mensagemNormalizada.includes("unauthorized") ||
-    mensagemNormalizada.includes("401")
+    mensagemNormalizada.includes("401") ||
+    mensagemNormalizada.includes("não encontramos o recurso solicitado") ||
+    mensagemNormalizada.includes("nao encontramos o recurso solicitado") ||
+    mensagemNormalizada.includes("not found")
   ) {
     return mensagemPadrao;
   }
