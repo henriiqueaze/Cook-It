@@ -97,29 +97,7 @@ export function Login() {
     }
   }
 
-  async function handleReenviarConfirmacao() {
-    const emailLimpo = email.trim();
-
-    if (!emailLimpo || !validarEmail(emailLimpo)) {
-      setErro("Digite o e-mail usado no cadastro para reenviar a confirmação.");
-      return;
-    }
-
-    setReenviandoConfirmacao(true);
-
-    try {
-      await authService.resendConfirmationEmail(emailLimpo);
-      toast.success("Enviamos um novo e-mail de confirmação.");
-    } catch (error) {
-      setErro(
-        error instanceof Error
-          ? error.message
-          : "Não foi possível reenviar o e-mail.",
-      );
-    } finally {
-      setReenviandoConfirmacao(false);
-    }
-  }
+  // email confirmation resend removed
 
   return (
     <div className="flex min-h-screen flex-col bg-linear-to-b from-orange-50 to-white">
@@ -139,18 +117,7 @@ export function Login() {
           {erro && (
             <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
               <p>{erro}</p>
-              {erroPedeReenvioConfirmacao(erro) && (
-                <button
-                  type="button"
-                  onClick={handleReenviarConfirmacao}
-                  disabled={reenviandoConfirmacao}
-                  className="mt-2 font-medium text-red-700 underline decoration-red-300 underline-offset-2 transition-colors hover:text-red-800 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {reenviandoConfirmacao
-                    ? "Reenviando e-mail..."
-                    : "Reenviar e-mail de confirmação"}
-                </button>
-              )}
+              {/* resend confirmation removed */}
             </div>
           )}
 
@@ -190,14 +157,7 @@ export function Login() {
             </div>
           </div>
 
-          <div className="text-right">
-            <Link
-              to="/esqueci-senha"
-              className="text-sm font-medium text-orange-600 transition-colors hover:text-orange-700"
-            >
-              Esqueci a senha
-            </Link>
-          </div>
+          <div className="text-right">&nbsp;</div>
 
           <button
             type="submit"

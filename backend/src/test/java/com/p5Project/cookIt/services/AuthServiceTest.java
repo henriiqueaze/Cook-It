@@ -3,7 +3,7 @@ package com.p5Project.cookIt.services;
 import com.p5Project.cookIt.dtos.requests.RegisterRequest;
 import com.p5Project.cookIt.entities.User;
 import com.p5Project.cookIt.mappers.UserMapper;
-import com.p5Project.cookIt.repository.EmailVerificationTokenRepository;
+
 import com.p5Project.cookIt.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,11 +27,7 @@ class AuthServiceTest {
     @Mock
     private UserMapper userMapper;
 
-    @Mock
-    private EmailVerificationTokenRepository emailVerificationTokenRepository;
-
-    @Mock
-    private EmailService emailService;
+    // email-related collaborators removed from test
 
     @InjectMocks
     private AuthService authService;
@@ -46,8 +42,5 @@ class AuthServiceTest {
         authService.register(request);
 
         verify(userRepository).save(any(User.class));
-        verify(emailVerificationTokenRepository).deleteAllByUser(any(User.class));
-        verify(emailVerificationTokenRepository).save(any());
-        verify(emailService).sendEmailWithInlineLogo(anyString(), anyString(), anyString());
     }
 }

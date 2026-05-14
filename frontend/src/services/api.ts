@@ -1,4 +1,7 @@
-const baseUrl = (import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "");
+const rawBaseUrl = (import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "");
+const baseUrl = rawBaseUrl.endsWith("/api")
+  ? rawBaseUrl.slice(0, -4)
+  : rawBaseUrl;
 
 type QueryValue = string | number | boolean | null | undefined;
 

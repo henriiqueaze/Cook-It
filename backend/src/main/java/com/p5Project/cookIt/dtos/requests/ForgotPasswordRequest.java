@@ -1,9 +1,0 @@
-package com.p5Project.cookIt.dtos.requests;
-
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-
-public record ForgotPasswordRequest(
-        @Email(message = "Email must be valid") @NotBlank(message = "Email is required") String email
-) {
-}

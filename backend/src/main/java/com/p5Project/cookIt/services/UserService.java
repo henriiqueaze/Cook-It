@@ -12,10 +12,8 @@ import com.p5Project.cookIt.exceptions.InvalidCredentialsException;
 import com.p5Project.cookIt.exceptions.ResourceNotFoundException;
 import com.p5Project.cookIt.mappers.UserMapper;
 import com.p5Project.cookIt.repository.CommentRepository;
-import com.p5Project.cookIt.repository.EmailVerificationTokenRepository;
 import com.p5Project.cookIt.repository.IngredientRepository;
 import com.p5Project.cookIt.repository.RecipeRepository;
-import com.p5Project.cookIt.repository.PasswordResetTokenRepository;
 import com.p5Project.cookIt.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -34,8 +32,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final RecipeRepository recipeRepository;
-    private final PasswordResetTokenRepository passwordResetTokenRepository;
-    private final EmailVerificationTokenRepository emailVerificationTokenRepository;
+    
     private final CommentRepository commentRepository;
     private final IngredientRepository ingredientRepository;
     private final PasswordEncoder passwordEncoder;
@@ -91,8 +88,6 @@ public class UserService {
         User user = findUserById(userId);
 
         commentRepository.deleteByUserId(userId);
-        passwordResetTokenRepository.deleteAllByUser(user);
-        emailVerificationTokenRepository.deleteAllByUser(user);
         recipeRepository.deleteByAuthorId(userId);
         deleteOrphanIngredients();
         userRepository.delete(user);
