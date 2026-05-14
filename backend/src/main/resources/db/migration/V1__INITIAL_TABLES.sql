@@ -64,24 +64,6 @@ CREATE TABLE user_ratings (
     PRIMARY KEY (user_id, recipe_id)
 );
 
-CREATE TABLE email_verification_tokens (
-    id VARCHAR(255) PRIMARY KEY,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    token VARCHAR(255) NOT NULL UNIQUE,
-    user_id VARCHAR(255) NOT NULL,
-    expires_at TIMESTAMP NOT NULL
-);
-
-CREATE TABLE password_reset_tokens (
-    id VARCHAR(255) PRIMARY KEY,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    token VARCHAR(255) NOT NULL UNIQUE,
-    user_id VARCHAR(255) NOT NULL,
-    expires_at TIMESTAMP NOT NULL
-);
-
 ALTER TABLE recipes
     ADD CONSTRAINT fk_recipes_author
         FOREIGN KEY (author_id) REFERENCES users(id);
@@ -110,12 +92,6 @@ ALTER TABLE recipe_instructions
     ADD CONSTRAINT fk_recipe_instructions_recipe
         FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE;
 
-CREATE INDEX idx_email_verification_tokens_token ON email_verification_tokens(token);
-CREATE INDEX idx_email_verification_tokens_user_id ON email_verification_tokens(user_id);
-
-CREATE INDEX idx_password_reset_tokens_token ON password_reset_tokens(token);
-CREATE INDEX idx_password_reset_tokens_user_id ON password_reset_tokens(user_id);
-
 ALTER TABLE user_ratings
     ADD CONSTRAINT fk_user_ratings_user
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
@@ -124,10 +100,3 @@ ALTER TABLE user_ratings
     ADD CONSTRAINT fk_user_ratings_recipe
         FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE;
 
-ALTER TABLE email_verification_tokens
-    ADD CONSTRAINT fk_email_verification_tokens_user
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
-
-ALTER TABLE password_reset_tokens
-    ADD CONSTRAINT fk_password_reset_tokens_user
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;

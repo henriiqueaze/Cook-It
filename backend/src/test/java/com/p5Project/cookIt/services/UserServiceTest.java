@@ -10,9 +10,7 @@ import com.p5Project.cookIt.exceptions.ForbiddenOperationException;
 import com.p5Project.cookIt.exceptions.InvalidCredentialsException;
 import com.p5Project.cookIt.mappers.UserMapper;
 import com.p5Project.cookIt.repository.CommentRepository;
-import com.p5Project.cookIt.repository.EmailVerificationTokenRepository;
 import com.p5Project.cookIt.repository.IngredientRepository;
-import com.p5Project.cookIt.repository.PasswordResetTokenRepository;
 import com.p5Project.cookIt.repository.RecipeRepository;
 import com.p5Project.cookIt.repository.UserRepository;
 import org.junit.jupiter.api.Test;
@@ -39,12 +37,6 @@ class UserServiceTest {
 
     @Mock
     private RecipeRepository recipeRepository;
-
-    @Mock
-    private PasswordResetTokenRepository passwordResetTokenRepository;
-
-    @Mock
-    private EmailVerificationTokenRepository emailVerificationTokenRepository;
 
     @Mock
     private CommentRepository commentRepository;
@@ -129,8 +121,6 @@ class UserServiceTest {
         userService.deleteUser("1", "1", request);
 
         verify(commentRepository).deleteByUserId("1");
-        verify(passwordResetTokenRepository).deleteAllByUser(user);
-        verify(emailVerificationTokenRepository).deleteAllByUser(user);
         verify(recipeRepository).deleteByAuthorId("1");
         verify(ingredientRepository).deleteAllInBatch(argThat(this::hasOnlyOrphanIngredient));
         verify(userRepository).delete(user);
@@ -142,7 +132,7 @@ class UserServiceTest {
 
         assertThrows(ForbiddenOperationException.class, () -> userService.deleteUser("1", "2", request));
 
-        verifyNoInteractions(userRepository, recipeRepository, passwordResetTokenRepository, emailVerificationTokenRepository, commentRepository, ingredientRepository, passwordEncoder);
+        verifyNoInteractions(userRepository, recipeRepository, commentRepository, ingredientRepository, passwordEncoder);
     }
 
     @Test
@@ -158,7 +148,7 @@ class UserServiceTest {
         assertThrows(InvalidCredentialsException.class, () -> userService.deleteUser("1", "1", request));
 
         verify(passwordEncoder).matches("errada", user.getPassword());
-        verifyNoInteractions(commentRepository, recipeRepository, passwordResetTokenRepository, emailVerificationTokenRepository, ingredientRepository);
+        verifyNoInteractions(commentRepository, recipeRepository, ingredientRepository);
     }
 
     @Test
@@ -174,7 +164,7 @@ class UserServiceTest {
         userService.validateDeletePassword("1", "1", request);
 
         verify(passwordEncoder).matches("senha123", user.getPassword());
-        verifyNoInteractions(commentRepository, recipeRepository, passwordResetTokenRepository, emailVerificationTokenRepository, ingredientRepository);
+        verifyNoInteractions(commentRepository, recipeRepository, ingredientRepository);
         verify(userRepository).findById("1");
     }
 
@@ -191,7 +181,7 @@ class UserServiceTest {
         assertThrows(InvalidCredentialsException.class, () -> userService.validateDeletePassword("1", "1", request));
 
         verify(passwordEncoder).matches("errada", user.getPassword());
-        verifyNoInteractions(commentRepository, recipeRepository, passwordResetTokenRepository, emailVerificationTokenRepository, ingredientRepository);
+        verifyNoInteractions(commentRepository, recipeRepository, ingredientRepository);
         verify(userRepository).findById("1");
     }
 

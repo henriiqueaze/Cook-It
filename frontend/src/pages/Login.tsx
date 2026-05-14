@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ChefHat, Eye, EyeOff } from "lucide-react";
-import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { authService } from "@/services/authService";
 import { validarEmail } from "@/lib/utils";
@@ -45,17 +44,6 @@ function getMensagemErroLogin(error: unknown) {
   return error.message;
 }
 
-function erroPedeReenvioConfirmacao(message: string) {
-  const normalizada = message.toLowerCase();
-
-  return (
-    normalizada.includes("e-mail ainda não foi confirmado") ||
-    normalizada.includes("email not verified") ||
-    normalizada.includes("nao foi confirmado") ||
-    normalizada.includes("não foi confirmado")
-  );
-}
-
 export function Login() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -66,7 +54,6 @@ export function Login() {
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
-  const [reenviandoConfirmacao, setReenviandoConfirmacao] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -97,8 +84,6 @@ export function Login() {
     }
   }
 
-  // email confirmation resend removed
-
   return (
     <div className="flex min-h-screen flex-col bg-linear-to-b from-orange-50 to-white">
       <div className="rounded-b-3xl bg-linear-to-br from-orange-500 via-orange-600 to-red-600 px-6 pb-12 pt-10 text-center text-white">
@@ -117,7 +102,6 @@ export function Login() {
           {erro && (
             <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
               <p>{erro}</p>
-              {/* resend confirmation removed */}
             </div>
           )}
 
