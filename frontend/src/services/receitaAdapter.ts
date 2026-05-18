@@ -116,7 +116,7 @@ function buildIngredients(
         ("ingredient" in item ? item.id : undefined) ??
         `ingrediente-${index}`,
       nome: ingredientName,
-      quantity,
+      quantidade: quantity,
       unidade,
     };
   });
