@@ -29,3 +29,17 @@ export const UnidadeMedidaLabel: Record<UnidadeMedida, string> = {
   FATIA: "fatia",
   PACOTE: "pacote",
 };
+
+export const UnidadeMedidaLabelPlural: Record<UnidadeMedida, string> = {
+  GRAMA: "g",
+  QUILOGRAMA: "kg",
+  MILILITRO: "ml",
+  LITRO: "L",
+  COLHER_DE_SOPA: "colheres (sopa)",
+  COLHER_DE_CHA: "colheres (chá)",
+  XICARA: "xícaras",
+  PITADA: "pitadas",
+  UNIDADE: "un",
+  FATIA: "fatias",
+  PACOTE: "pacotes",
+};

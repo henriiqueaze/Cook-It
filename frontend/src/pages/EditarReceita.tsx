@@ -32,6 +32,15 @@ export function EditarReceita() {
   const navigate = useNavigate();
   const { usuario } = useAuth();
 
+  function handleVoltar() {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+
+    navigate(`/receita/${id}`, { replace: true });
+  }
+
   const receitaInicial =
     (location.state as EditarReceitaLocationState | null)?.receita ?? null;
 
@@ -169,7 +178,7 @@ export function EditarReceita() {
     const tempo = Number(tempoPreparo);
     const totalPorcoes = Number(porcoes);
 
-    if (!tituloLimpo || !descricaoLimpa || !tempo || !totalPorcoes) {
+    if (!tituloLimpo || !tempo || !totalPorcoes) {
       setErro("Preencha todos os campos obrigatórios.");
       return;
     }
@@ -203,7 +212,7 @@ export function EditarReceita() {
       });
 
       toast.success("Receita atualizada!");
-      navigate(`/receita/${id}`);
+      navigate(`/receita/${id}`, { replace: true });
     } catch (error) {
       setErro(
         error instanceof Error
@@ -256,11 +265,7 @@ export function EditarReceita() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="flex items-center gap-3 rounded-b-3xl bg-linear-to-br from-orange-500 via-orange-600 to-red-600 px-6 pb-6 pt-12 text-white shadow-lg">
-        <button
-          type="button"
-          onClick={() => navigate(`/receita/${id}`)}
-          aria-label="Voltar"
-        >
+        <button type="button" onClick={handleVoltar} aria-label="Voltar">
           <ArrowLeft size={22} />
         </button>
         <h1 className="text-xl font-bold">Editar receita</h1>

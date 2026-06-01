@@ -1,10 +1,16 @@
 import { useEffect, useLayoutEffect } from "react";
-import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+import {
+  BrowserRouter,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+} from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { RotaProtegida } from "@/components/RotaProtegida";
 import { Cadastro } from "@/pages/Cadastro";
-import { CriarReceita } from "@/pages/CriarReceita";
 import { AlterarSenha } from "@/pages/AlterarSenha";
+import { CriarReceita } from "@/pages/CriarReceita";
 import { EditarReceita } from "@/pages/EditarReceita";
 import { DetalheReceita } from "@/pages/DetalheDeReceita";
 import { EditarPerfil } from "@/pages/EditarPerfil";
@@ -15,6 +21,12 @@ import { MinhasReceitas } from "@/pages/MinhasReceitas";
 import { NaoEncontrado } from "@/pages/NaoEncontrado";
 import { Perfil } from "@/pages/Perfil";
 import { ResultadosBusca } from "@/pages/ResultadosBusca";
+import { AdminLayout } from "@/pages/admin/AdminLayout";
+import { AdminOverview } from "@/pages/admin/AdminOverview";
+import { AdminWords } from "@/pages/admin/AdminWords";
+import { AdminUsers } from "@/pages/admin/AdminUsers";
+import { AdminRecipes } from "@/pages/admin/AdminRecipes";
+import { AdminComments } from "@/pages/admin/AdminComments";
 
 function RotasComScrollTop() {
   const { pathname } = useLocation();
@@ -89,6 +101,22 @@ function RotasComScrollTop() {
       </Route>
 
       <Route
+        path="/admin"
+        element={
+          <RotaProtegida role="ADMIN">
+            <AdminLayout />
+          </RotaProtegida>
+        }
+      >
+        <Route index element={<Navigate to="overview" replace />} />
+        <Route path="overview" element={<AdminOverview />} />
+        <Route path="words" element={<AdminWords />} />
+        <Route path="users" element={<AdminUsers />} />
+        <Route path="recipes" element={<AdminRecipes />} />
+        <Route path="comments" element={<AdminComments />} />
+      </Route>
+
+      <Route
         path="/editar-perfil"
         element={
           <RotaProtegida>
@@ -105,7 +133,6 @@ function RotasComScrollTop() {
         }
       />
       <Route path="/login" element={<Login />} />
-      {/* password recovery pages removed */}
       <Route path="/cadastro" element={<Cadastro />} />
       <Route path="*" element={<NaoEncontrado />} />
     </Routes>

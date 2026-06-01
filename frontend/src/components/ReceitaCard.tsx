@@ -8,6 +8,9 @@ interface ReceitaCardProps {
 }
 
 export function ReceitaCard({ receita, compatibilidade }: ReceitaCardProps) {
+  const avaliacaoValor = Number.isFinite(Number(receita.avaliacao))
+    ? Number(receita.avaliacao)
+    : 0;
   return (
     <Link
       to={`/receita/${receita.id}`}
@@ -42,7 +45,7 @@ export function ReceitaCard({ receita, compatibilidade }: ReceitaCardProps) {
 
           <div className="flex items-center gap-1 text-xs">
             <Star size={14} className="fill-yellow-400 text-yellow-400" />
-            <span className="text-gray-600">{receita.avaliacao.toFixed(1)}</span>
+            <span className="text-gray-600">{avaliacaoValor.toFixed(1)}</span>
           </div>
         </div>
 

@@ -6,7 +6,9 @@ CREATE TABLE users (
     name VARCHAR(255) NOT NULL,
     password VARCHAR(255) NOT NULL,
     photo TEXT,
-    email_verified BOOLEAN NOT NULL DEFAULT FALSE
+    email_verified BOOLEAN NOT NULL DEFAULT FALSE,
+    role VARCHAR(50) NOT NULL DEFAULT 'USER',
+    banned BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE recipes (
@@ -64,6 +66,16 @@ CREATE TABLE user_ratings (
     PRIMARY KEY (user_id, recipe_id)
 );
 
+CREATE TABLE banned_words (
+    id VARCHAR(255) PRIMARY KEY,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    term VARCHAR(255) NOT NULL UNIQUE,
+    applies_to_recipes BOOLEAN NOT NULL DEFAULT TRUE,
+    applies_to_ingredients BOOLEAN NOT NULL DEFAULT TRUE,
+    applies_to_comments BOOLEAN NOT NULL DEFAULT TRUE
+);
+
 ALTER TABLE recipes
     ADD CONSTRAINT fk_recipes_author
         FOREIGN KEY (author_id) REFERENCES users(id);
@@ -99,4 +111,3 @@ ALTER TABLE user_ratings
 ALTER TABLE user_ratings
     ADD CONSTRAINT fk_user_ratings_recipe
         FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE;
-

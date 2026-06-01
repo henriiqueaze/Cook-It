@@ -32,7 +32,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String userId = jwtService.extractUserId(token);
                 User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-                UserPrincipal principal = new UserPrincipal(user.getId(), user.getEmail(), user.getPassword());
+                if (user.isBanned()) {
+                    SecurityContextHolder.clearContext();
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+
+                UserPrincipal principal = new UserPrincipal(user.getId(), user.getEmail(), user.getPassword(), user.getRole(), user.isBanned());
 
                 UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
 

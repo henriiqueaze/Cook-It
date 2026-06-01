@@ -11,6 +11,8 @@ export interface Usuario {
   name: string;
   email: string;
   photo?: string | null;
+  role?: "USER" | "ADMIN";
+  banned?: boolean;
   createdRecipes?: Id[];
   favoriteRecipes?: Id[];
   ratings?: Record<string, number>;

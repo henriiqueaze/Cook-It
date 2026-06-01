@@ -4,10 +4,11 @@ import { useAuth } from "@/contexts/AuthContext";
 
 interface RotaProtegidaProps {
   children: ReactNode;
+  role?: "USER" | "ADMIN";
 }
 
-export function RotaProtegida({ children }: RotaProtegidaProps) {
-  const { estaAutenticado } = useAuth();
+export function RotaProtegida({ children, role }: RotaProtegidaProps) {
+  const { estaAutenticado, usuario } = useAuth();
   const location = useLocation();
 
   if (!estaAutenticado) {
@@ -18,6 +19,10 @@ export function RotaProtegida({ children }: RotaProtegidaProps) {
         state={{ from: `${location.pathname}${location.search}` }}
       />
     );
+  }
+
+  if (role && usuario?.role !== role) {
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;

@@ -9,6 +9,8 @@ public interface CommentRepository extends JpaRepository<Comment, String> {
 
     List<Comment> findByRecipeId(String recipeId);
 
+    void deleteByRecipeId(String recipeId);
+
     List<Comment> findByUserId(String userId);
 
     void deleteByUserId(String userId);

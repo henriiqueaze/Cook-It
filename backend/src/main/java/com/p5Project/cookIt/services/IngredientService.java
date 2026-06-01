@@ -16,6 +16,7 @@ public class IngredientService {
 
     private final IngredientRepository ingredientRepository;
     private final IngredientMapper ingredientMapper;
+    private final ModerationService moderationService;
 
     @Transactional(readOnly = true)
     public List<IngredientDTO> getAll() {
@@ -37,6 +38,7 @@ public class IngredientService {
     @Transactional
     public Ingredient findOrCreate(String name) {
         String normalized = normalize(name);
+        moderationService.ensureIngredientAllowed(normalized);
 
         return ingredientRepository.findByNameIgnoreCase(normalized).orElseGet(() -> createAndSave(normalized));
     }

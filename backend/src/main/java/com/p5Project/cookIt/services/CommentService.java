@@ -22,6 +22,7 @@ public class CommentService {
     private final RecipeRepository recipeRepository;
     private final UserRepository userRepository;
     private final CommentMapper commentMapper;
+    private final ModerationService moderationService;
 
     public List<CommentDTO> getRecipeComments(String recipeId) {
         ensureRecipeExists(recipeId);
@@ -29,6 +30,7 @@ public class CommentService {
     }
 
     public CommentDTO createComment(CreateCommentRequest request, String userId) {
+        moderationService.ensureCommentAllowed(request.text());
         Comment comment = buildComment(request, userId);
         Comment saved = commentRepository.save(comment);
         return commentMapper.toDTO(saved);
@@ -37,6 +39,7 @@ public class CommentService {
     public CommentDTO updateComment(String id, UpdateCommentRequest request, String userId) {
         Comment comment = commentRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Comment not found!"));
         ensureOwner(comment, userId);
+        moderationService.ensureCommentAllowed(request.text());
 
         commentMapper.updateCommentFromRequest(request, comment);
         return commentMapper.toDTO(commentRepository.save(comment));

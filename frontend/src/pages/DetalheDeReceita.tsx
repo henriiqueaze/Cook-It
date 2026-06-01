@@ -14,13 +14,17 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { RatingStars } from "@/components/AvaliacaoEstrelas";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { comentarioService } from "@/services/comentarioService";
 import { receitaService } from "@/services/receitaService";
 import type { Comentario, Receita } from "@/types";
-import { UnidadeMedidaLabel } from "@/enums/UnidadeMedida";
+import {
+  UnidadeMedidaLabel,
+  UnidadeMedidaLabelPlural,
+} from "@/enums/UnidadeMedida";
 
 function formatarData(data?: string) {
   if (!data) {
@@ -33,14 +37,22 @@ function formatarData(data?: string) {
   }).format(new Date(data));
 }
 
-function obterLabelUnidade(unidade?: string) {
+function obterLabelUnidade(unidade?: string, quantidade = 1) {
   if (!unidade) {
     return "";
   }
 
-  return (
-    UnidadeMedidaLabel[unidade as keyof typeof UnidadeMedidaLabel] ?? unidade
-  );
+  const key = unidade as keyof typeof UnidadeMedidaLabel;
+
+  if (quantidade > 1) {
+    return (
+      UnidadeMedidaLabelPlural[key as keyof typeof UnidadeMedidaLabelPlural] ??
+      UnidadeMedidaLabel[key as keyof typeof UnidadeMedidaLabel] ??
+      unidade
+    );
+  }
+
+  return UnidadeMedidaLabel[key as keyof typeof UnidadeMedidaLabel] ?? unidade;
 }
 
 export function DetalheReceita() {
@@ -61,6 +73,10 @@ export function DetalheReceita() {
   >(null);
   const [textoEdicaoComentario, setTextoEdicaoComentario] = useState("");
   const [enviandoComentario, setEnviandoComentario] = useState(false);
+  const [comentarioParaExcluir, setComentarioParaExcluir] = useState<
+    Comentario["id"] | null
+  >(null);
+  const [receitaParaExcluir, setReceitaParaExcluir] = useState(false);
 
   const favoritada = useMemo(() => {
     if (!receita) {
@@ -69,6 +85,8 @@ export function DetalheReceita() {
 
     return isFavorite(receita.id);
   }, [isFavorite, receita]);
+
+  const isAdmin = usuario?.role === "ADMIN";
 
   useEffect(() => {
     if (!id) {
@@ -289,19 +307,29 @@ export function DetalheReceita() {
   }
 
   async function excluirComentario(comentarioId: Comentario["id"]) {
+    setComentarioParaExcluir(comentarioId);
+  }
+
+  async function confirmarExclusaoComentario() {
+    if (!comentarioParaExcluir) {
+      return;
+    }
+
     try {
-      await comentarioService.deletar(comentarioId);
+      await comentarioService.deletar(comentarioParaExcluir);
       setComentarios((current) =>
-        current.filter((comentario) => comentario.id !== comentarioId),
+        current.filter((comentario) => comentario.id !== comentarioParaExcluir),
       );
 
-      if (comentarioEditandoId === comentarioId) {
+      if (comentarioEditandoId === comentarioParaExcluir) {
         cancelarEdicao();
       }
 
       toast.success("Comentário excluído!");
     } catch {
       toast.error("Não foi possível excluir o comentário");
+    } finally {
+      setComentarioParaExcluir(null);
     }
   }
 
@@ -310,28 +338,26 @@ export function DetalheReceita() {
       return;
     }
 
+    setReceitaParaExcluir(true);
+  }
+
+  async function confirmarExclusaoReceita() {
+    if (!receita) {
+      return;
+    }
+
+    const destinoDepoisExclusao = ehMinhaReceita
+      ? "/minhas-receitas"
+      : "/admin";
+
     try {
       await receitaService.deletar(receita.id);
       toast.success("Receita deletada!");
-      navigate("/minhas-receitas");
+      navigate(destinoDepoisExclusao);
     } catch {
-      try {
-        const listaComentarios = await comentarioService.listarPorReceita(
-          receita.id,
-        );
-
-        await Promise.allSettled(
-          listaComentarios.map((comentario) =>
-            comentarioService.deletar(comentario.id),
-          ),
-        );
-
-        await receitaService.deletar(receita.id);
-        toast.success("Receita deletada!");
-        navigate("/minhas-receitas");
-      } catch {
-        toast.error("Não foi possível deletar a receita");
-      }
+      toast.error("Não foi possível deletar a receita");
+    } finally {
+      setReceitaParaExcluir(false);
     }
   }
 
@@ -358,6 +384,7 @@ export function DetalheReceita() {
   }
 
   const ehMinhaReceita = usuario?.id === receita.autor.id;
+  const podeGerenciarReceita = ehMinhaReceita || isAdmin;
   const porcoesBase = receita.porcoes || 1;
   const botaoComentarioDesabilitado =
     !novoComentario.trim() || enviandoComentario;
@@ -413,7 +440,7 @@ export function DetalheReceita() {
           </button>
         )}
 
-        {ehMinhaReceita && (
+        {podeGerenciarReceita && (
           <button
             type="button"
             onClick={handleDeletar}
@@ -424,6 +451,24 @@ export function DetalheReceita() {
           </button>
         )}
       </div>
+
+      <ConfirmDialog
+        open={receitaParaExcluir}
+        title="Excluir receita"
+        message="Tem certeza que deseja excluir esta receita? Os comentários dela também serão removidos."
+        confirmLabel="Excluir"
+        onConfirm={confirmarExclusaoReceita}
+        onCancel={() => setReceitaParaExcluir(false)}
+      />
+
+      <ConfirmDialog
+        open={comentarioParaExcluir !== null}
+        title="Excluir comentário"
+        message="Tem certeza que deseja excluir este comentário?"
+        confirmLabel="Excluir"
+        onConfirm={confirmarExclusaoComentario}
+        onCancel={() => setComentarioParaExcluir(null)}
+      />
 
       <div className="space-y-4 px-6 py-4">
         <section>
@@ -507,7 +552,7 @@ export function DetalheReceita() {
                   <span className="text-gray-700">{ingrediente.nome}</span>
                   <span className="text-gray-400">
                     {quantidadeFormatada}{" "}
-                    {obterLabelUnidade(ingrediente.unidade)}
+                    {obterLabelUnidade(ingrediente.unidade, quantidade)}
                   </span>
                 </li>
               );
@@ -583,7 +628,8 @@ export function DetalheReceita() {
               </div>
             ) : (
               comentarios.map((comentario) => {
-                const podeGerenciar = usuario?.id === comentario.userId;
+                const podeGerenciar =
+                  isAdmin || usuario?.id === comentario.userId;
                 const estaEditando = comentarioEditandoId === comentario.id;
 
                 return (
@@ -618,19 +664,25 @@ export function DetalheReceita() {
 
                       {podeGerenciar && !estaEditando && (
                         <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => iniciarEdicao(comentario)}
-                            className="text-gray-400 transition-colors hover:text-orange-600"
-                            aria-label="Editar comentário"
-                          >
-                            <PencilLine size={16} />
-                          </button>
+                          {usuario?.id === comentario.userId && (
+                            <button
+                              type="button"
+                              onClick={() => iniciarEdicao(comentario)}
+                              className="text-gray-400 transition-colors hover:text-orange-600"
+                              aria-label="Editar comentário"
+                            >
+                              <PencilLine size={16} />
+                            </button>
+                          )}
                           <button
                             type="button"
                             onClick={() => excluirComentario(comentario.id)}
                             className="text-gray-400 transition-colors hover:text-red-600"
-                            aria-label="Excluir comentário"
+                            aria-label={
+                              isAdmin && usuario?.id !== comentario.userId
+                                ? "Excluir comentário como admin"
+                                : "Excluir comentário"
+                            }
                           >
                             <Trash2 size={16} />
                           </button>

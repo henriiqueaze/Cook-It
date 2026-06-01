@@ -19,6 +19,13 @@ import lombok.ToString;
 @Table(name = "users")
 public class User extends AuditableEntity {
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UserRole role = UserRole.USER;
+
+    @Column(nullable = false)
+    private boolean banned = false;
+
     @Column(unique = true, nullable = false)
     private String email;
 

@@ -5,7 +5,9 @@ import com.p5Project.cookIt.dtos.requests.LoginRequest;
 import com.p5Project.cookIt.dtos.requests.RegisterRequest;
 import com.p5Project.cookIt.dtos.responses.AuthResponse;
 import com.p5Project.cookIt.entities.User;
+import com.p5Project.cookIt.entities.UserRole;
 import com.p5Project.cookIt.exceptions.EmailAlreadyInUseException;
+import com.p5Project.cookIt.exceptions.ForbiddenOperationException;
 import com.p5Project.cookIt.exceptions.InvalidCredentialsException;
 import com.p5Project.cookIt.exceptions.ResourceNotFoundException;
 import com.p5Project.cookIt.mappers.UserMapper;
@@ -33,6 +35,8 @@ public class AuthService {
         user.setName(request.name());
         user.setEmail(request.email());
         user.setPassword(passwordEncoder.encode(request.password()));
+        user.setRole(UserRole.USER);
+        user.setBanned(false);
         // Emails/confirmation removed: mark verified by default
         user.setEmailVerified(true);
 
@@ -47,6 +51,10 @@ public class AuthService {
 
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
             throw new InvalidCredentialsException("Invalid credentials");
+        }
+
+        if (user.isBanned()) {
+            throw new ForbiddenOperationException("Sua conta foi banida. Entre em contato com um administrador para revisar o acesso.");
         }
 
         return new AuthResponse(userMapper.toDTO(user), jwtService.generateToken(user.getId()));

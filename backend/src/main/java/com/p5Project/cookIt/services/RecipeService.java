@@ -12,6 +12,7 @@ import com.p5Project.cookIt.exceptions.ForbiddenOperationException;
 import com.p5Project.cookIt.exceptions.ResourceNotFoundException;
 import com.p5Project.cookIt.mappers.RecipeIngredientMapper;
 import com.p5Project.cookIt.mappers.RecipeMapper;
+import com.p5Project.cookIt.repository.CommentRepository;
 import com.p5Project.cookIt.repository.RecipeRepository;
 import com.p5Project.cookIt.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -36,7 +37,9 @@ public class RecipeService {
     private final RecipeMapper recipeMapper;
     private final RecipeIngredientMapper recipeIngredientMapper;
     private final IngredientService ingredientService;
+    private final ModerationService moderationService;
     private final CloudinaryService cloudinaryService;
+    private final CommentRepository commentRepository;
 
     public Page<RecipeDTO> getAllRecipes(Pageable pageable) {
         return recipeRepository.findAll(pageable).map(recipeMapper::toDTO);
@@ -55,6 +58,7 @@ public class RecipeService {
 
     @Transactional
     public RecipeDTO createRecipe(CreateRecipeRequest request, String userId, MultipartFile image) {
+        moderationService.ensureRecipeAllowed(request.name(), request.description(), request.ingredients(), request.instructions());
         Recipe recipe = buildRecipeFromCreateRequest(request, userId);
         applyImageIfPresent(recipe, image);
         recipeRepository.saveAndFlush(recipe);
@@ -67,6 +71,7 @@ public class RecipeService {
         if (!recipe.isOwnedBy(requestingUserId)) {
             throw new ForbiddenOperationException("Você não tem permissão para editar esta receita");
         }
+        moderationService.ensureRecipeAllowed(request.name(), request.description(), request.ingredients(), request.instructions());
         recipeMapper.updateRecipeFromRequest(request, recipe);
         updateIngredientsIfPresent(recipe, request.ingredients());
         applyImageIfPresent(recipe, image);
@@ -76,6 +81,7 @@ public class RecipeService {
 
     @Transactional
     public void deleteRecipe(String id) {
+        commentRepository.deleteByRecipeId(id);
         recipeRepository.deleteFromFavoritesByRecipeId(id);
         recipeRepository.deleteFromUserRatingsByRecipeId(id);
         recipeRepository.deleteById(id);

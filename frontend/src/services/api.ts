@@ -10,7 +10,7 @@ function mensagemParecePortugues(message: string) {
 
   return (
     /[ãáàâéêíóôõúç]/i.test(message) ||
-    /\b(não|nao|usuário|usuario|senha|e-mail|email|código|codigo|comentário|comentario|receita|favoritos|erro|encontramos|permissão|permissao|tente|campos|validar|redefinir|alterar|login|carregando)\b/.test(
+    /\b(não|nao|usuário|usuario|senha|e-mail|email|código|codigo|comentário|comentario|receita|favoritos|erro|encontramos|permissão|permissao|tente|campos|validar|redefinir|alterar|login|carregando|banid|banida|bloquead|conta|palavra)\b/.test(
       normalizada,
     )
   );
@@ -31,6 +31,15 @@ function traduzirMensagemErro(message: string, status: number) {
   }
 
   if (normalizada.includes("forbidden") || normalizada.includes("403")) {
+    if (
+      normalizada.includes("banid") ||
+      normalizada.includes("bloquead") ||
+      normalizada.includes("palavra") ||
+      normalizada.includes("conta")
+    ) {
+      return message;
+    }
+
     return "Você não tem permissão para realizar esta ação.";
   }
 

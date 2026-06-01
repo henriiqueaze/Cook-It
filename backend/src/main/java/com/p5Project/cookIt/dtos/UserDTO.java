@@ -8,6 +8,8 @@ public record UserDTO(
         String name,
         String email,
         String photo,
+        String role,
+        boolean banned,
         boolean emailVerified,
         List<String> createdRecipes,
         List<String> favoriteRecipes,

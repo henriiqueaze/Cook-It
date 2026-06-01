@@ -13,6 +13,8 @@ import java.util.stream.Collectors;
 @Mapper(componentModel = "spring")
 public interface UserMapper {
 
+    @Mapping(target = "role", expression = "java(user.getRole() != null ? user.getRole().name() : null)")
+    @Mapping(target = "banned", source = "banned")
     @Mapping(target = "createdRecipes", expression = "java(mapRecipeIds(user.getCreatedRecipes()))")
     @Mapping(target = "favoriteRecipes", expression = "java(mapRecipeIds(user.getFavoriteRecipes()))")
     @Mapping(target = "ratings", expression = "java(mapRatings(user.getRatings()))")

@@ -108,7 +108,7 @@ export function CriarReceita() {
     const tempo = Number(tempoPreparo);
     const totalPorcoes = Number(porcoes);
 
-    if (!tituloLimpo || !descricaoLimpa || !tempo || !totalPorcoes) {
+    if (!tituloLimpo || !tempo || !totalPorcoes) {
       setErro("Preencha todos os campos.");
       return;
     }
@@ -142,8 +142,12 @@ export function CriarReceita() {
       });
 
       navigate("/minhas-receitas");
-    } catch {
-      setErro("Erro ao salvar receita. Tente novamente.");
+    } catch (error) {
+      setErro(
+        error instanceof Error
+          ? error.message
+          : "Erro ao salvar receita. Tente novamente.",
+      );
     } finally {
       setCarregando(false);
     }

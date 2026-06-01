@@ -50,7 +50,9 @@ function buildRecipeData(
 ) {
   return {
     ...(receita.titulo ? { name: receita.titulo.trim() } : {}),
-    ...(receita.descricao ? { description: receita.descricao.trim() } : {}),
+    ...("descricao" in receita
+      ? { description: receita.descricao?.trim() ?? "" }
+      : {}),
     ...(receita.tempoPreparo ? { prepTime: receita.tempoPreparo } : {}),
     ...(receita.porcoes ? { portions: receita.porcoes } : {}),
     ...(receita.ingredientes

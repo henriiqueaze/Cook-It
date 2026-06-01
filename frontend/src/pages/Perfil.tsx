@@ -1,5 +1,13 @@
 import { useEffect, useState } from "react";
-import { BookOpen, Edit, Heart, LogOut, Star, User } from "lucide-react";
+import {
+  BookOpen,
+  Edit,
+  Heart,
+  LogOut,
+  Shield,
+  Star,
+  User,
+} from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ReceitaCard } from "@/components/ReceitaCard";
@@ -105,6 +113,15 @@ export function Perfil() {
           <Edit size={16} />
           Configurações
         </Link>
+
+        {usuario?.role === "ADMIN" && (
+          <Link
+            to="/admin"
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-white/25 bg-black/10 px-4 py-2 font-medium transition-colors hover:bg-black/20"
+          >
+            <Shield size={16} /> Painel admin
+          </Link>
+        )}
       </div>
 
       <div className="mt-6 space-y-4 px-6 pb-4">
