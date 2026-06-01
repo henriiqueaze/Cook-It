@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ChangeEvent } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, ChevronDown, Plus, X } from "lucide-react";
@@ -9,6 +9,11 @@ import {
   UnidadeMedidaLabel,
   type UnidadeMedida as UnidadeMedidaType,
 } from "@/enums/UnidadeMedida";
+import {
+  buscarCorrecaoPortugues,
+  type SugestaoCorrecao,
+} from "@/services/correcaoPortuguesService";
+import { ingredienteService } from "@/services/ingredienteService";
 import { receitaService } from "@/services/receitaService";
 import type { Receita } from "@/types";
 
@@ -22,8 +27,35 @@ interface EditarReceitaLocationState {
   receita?: Receita;
 }
 
+interface SugestaoIngrediente {
+  index: number;
+  sugestao: string;
+  tipo: "autocomplete" | "correcao";
+}
+
 function criarIngredienteVazio(): IngredienteForm {
   return { nome: "", quantidade: "", unidade: "" };
+}
+
+function normalizarTexto(valor: string) {
+  return valor
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function capitalizarPrimeiraLetra(valor: string) {
+  return valor
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/^./, (letra) => letra.toUpperCase());
+}
+
+function aplicarCorrecao(texto: string, correcao: SugestaoCorrecao) {
+  return `${texto.slice(0, correcao.inicio)}${correcao.sugestao}${texto.slice(
+    correcao.fim,
+  )}`;
 }
 
 export function EditarReceita() {
@@ -64,6 +96,12 @@ export function EditarReceita() {
   const [instrucoes, setInstrucoes] = useState<string[]>(
     receitaInicial?.instrucoes?.length ? receitaInicial.instrucoes : [""],
   );
+  const [nomesIngredientes, setNomesIngredientes] = useState<string[]>([]);
+  const [sugestaoTitulo, setSugestaoTitulo] =
+    useState<SugestaoCorrecao | null>(null);
+  const [sugestaoIngrediente, setSugestaoIngrediente] =
+    useState<SugestaoIngrediente | null>(null);
+  const [ingredienteEmEdicao, setIngredienteEmEdicao] = useState(0);
   const [ingredientes, setIngredientes] = useState<IngredienteForm[]>(() =>
     receitaInicial?.ingredientes?.length
       ? receitaInicial.ingredientes.map((ing) => ({
@@ -74,6 +112,15 @@ export function EditarReceita() {
           unidade: (ing.unidade as UnidadeMedidaType) ?? "",
         }))
       : [criarIngredienteVazio()],
+  );
+
+  const ingredientesNormalizados = useMemo(
+    () =>
+      nomesIngredientes.map((nome) => ({
+        nome,
+        normalizado: normalizarTexto(nome),
+      })),
+    [nomesIngredientes],
   );
 
   useEffect(() => {
@@ -126,6 +173,94 @@ export function EditarReceita() {
     return () => URL.revokeObjectURL(url);
   }, [imagemArquivo]);
 
+  useEffect(() => {
+    ingredienteService
+      .listar()
+      .then((itens) =>
+        setNomesIngredientes(
+          itens.map((item) => capitalizarPrimeiraLetra(item.nome)),
+        ),
+      )
+      .catch(() => setNomesIngredientes([]));
+  }, []);
+
+  useEffect(() => {
+    let ativo = true;
+
+    const timeout = window.setTimeout(() => {
+      buscarCorrecaoPortugues(titulo)
+        .then((correcao) => {
+          if (ativo) {
+            setSugestaoTitulo(correcao);
+          }
+        })
+        .catch(() => {
+          if (ativo) {
+            setSugestaoTitulo(null);
+          }
+        });
+    }, 500);
+
+    return () => {
+      ativo = false;
+      window.clearTimeout(timeout);
+    };
+  }, [titulo]);
+
+  useEffect(() => {
+    const ingredienteAtivo = ingredientes[ingredienteEmEdicao];
+
+    if (!ingredienteAtivo || ingredienteAtivo.nome.trim().length < 3) {
+      setSugestaoIngrediente(null);
+      return;
+    }
+
+    const termo = normalizarTexto(ingredienteAtivo.nome);
+    const sugestaoAutocomplete = ingredientesNormalizados.find(
+      (item) => item.normalizado.startsWith(termo) && item.normalizado !== termo,
+    );
+
+    if (sugestaoAutocomplete) {
+      setSugestaoIngrediente({
+        index: ingredienteEmEdicao,
+        sugestao: sugestaoAutocomplete.nome,
+        tipo: "autocomplete",
+      });
+      return;
+    }
+
+    let ativo = true;
+
+    const timeout = window.setTimeout(() => {
+      buscarCorrecaoPortugues(ingredienteAtivo.nome)
+        .then((correcao) => {
+          if (!ativo) {
+            return;
+          }
+
+          setSugestaoIngrediente(
+            correcao
+              ? {
+                  index: ingredienteEmEdicao,
+                  sugestao: capitalizarPrimeiraLetra(correcao.sugestao),
+                  tipo: "correcao",
+                }
+              : null,
+          );
+        })
+        .catch(() => {
+          if (ativo) {
+            setSugestaoIngrediente(null);
+          }
+        });
+    }, 500);
+
+    return () => {
+      ativo = false;
+      window.clearTimeout(timeout);
+    };
+  }, [ingredienteEmEdicao, ingredientes, ingredientesNormalizados]);
+
   function adicionarIngrediente() {
     setIngredientes((current) => [...current, criarIngredienteVazio()]);
   }
@@ -144,6 +279,19 @@ export function EditarReceita() {
         i === index ? { ...item, [campo]: valor } : item,
       ),
     );
+  }
+
+  function aplicarSugestaoIngrediente() {
+    if (!sugestaoIngrediente) {
+      return;
+    }
+
+    atualizarIngrediente(
+      sugestaoIngrediente.index,
+      "nome",
+      sugestaoIngrediente.sugestao,
+    );
+    setSugestaoIngrediente(null);
   }
 
   function adicionarInstrucao() {
@@ -288,10 +436,25 @@ export function EditarReceita() {
             <input
               type="text"
               value={titulo}
-              onChange={(event) => setTitulo(event.target.value)}
+              onChange={(event) => {
+                setTitulo(event.target.value);
+                setSugestaoTitulo(null);
+              }}
               placeholder="Ex: Frango grelhado com legumes"
               className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-orange-500"
             />
+            {sugestaoTitulo && (
+              <button
+                type="button"
+                onClick={() => {
+                  setTitulo(aplicarCorrecao(titulo, sugestaoTitulo));
+                  setSugestaoTitulo(null);
+                }}
+                className="mt-2 text-left text-xs font-medium text-orange-600"
+              >
+                Você quis dizer: {sugestaoTitulo.sugestao}?
+              </button>
+            )}
           </div>
 
           <div>
@@ -384,11 +547,12 @@ export function EditarReceita() {
           <h2 className="font-semibold text-gray-800">Ingredientes</h2>
 
           {ingredientes.map((ingrediente, index) => (
-            <div key={index} className="flex items-start gap-2">
+            <div key={index} className="flex flex-wrap items-start gap-2">
               <div className="grid flex-1 grid-cols-3 gap-2">
                 <input
                   type="text"
                   value={ingrediente.nome}
+                  onFocus={() => setIngredienteEmEdicao(index)}
                   onChange={(event) =>
                     atualizarIngrediente(index, "nome", event.target.value)
                   }
@@ -448,6 +612,17 @@ export function EditarReceita() {
                   aria-label="Remover ingrediente"
                 >
                   <X size={18} />
+                </button>
+              )}
+              {sugestaoIngrediente?.index === index && (
+                <button
+                  type="button"
+                  onClick={aplicarSugestaoIngrediente}
+                  className="basis-full text-left text-xs font-medium text-orange-600"
+                >
+                  {sugestaoIngrediente.tipo === "autocomplete"
+                    ? `Sugestão: ${sugestaoIngrediente.sugestao}`
+                    : `Você quis dizer: ${sugestaoIngrediente.sugestao}?`}
                 </button>
               )}
             </div>

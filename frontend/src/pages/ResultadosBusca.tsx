@@ -8,6 +8,7 @@ import { receitaService } from "@/services/receitaService";
 import type { Ingrediente, Receita } from "@/types";
 
 type OpcaoOrdenacao = "compatibilidade" | "tempo" | "avaliacao";
+type ModoBusca = "ingredientes" | "receita";
 
 function calcularCompatibilidade(
   receita: Receita,
@@ -43,18 +44,31 @@ export function ResultadosBusca() {
         .filter(Boolean) ?? [],
     [searchParams],
   );
+  const receitaDaUrl = useMemo(
+    () => searchParams.get("receita")?.trim() ?? "",
+    [searchParams],
+  );
 
   const [busca, setBusca] = useState("");
+  const [nomeReceita, setNomeReceita] = useState(receitaDaUrl);
+  const [modoBusca, setModoBusca] = useState<ModoBusca>(
+    receitaDaUrl ? "receita" : "ingredientes",
+  );
+  const [modoResultado, setModoResultado] = useState<ModoBusca>(
+    receitaDaUrl ? "receita" : "ingredientes",
+  );
   const [mostrarSugestoes, setMostrarSugestoes] = useState(false);
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [ordenacao, setOrdenacao] = useState<OpcaoOrdenacao>("compatibilidade");
   const [ingredientesDisponiveis, setIngredientesDisponiveis] = useState<
     Ingrediente[]
   >([]);
+  const [carregandoIngredientes, setCarregandoIngredientes] = useState(false);
   const [ingredientesSelecionados, setIngredientesSelecionados] =
     useState<string[]>(ingredientesDaUrl);
   const [ingredientesBuscados, setIngredientesBuscados] =
     useState<string[]>(ingredientesDaUrl);
+  const [receitaBuscada, setReceitaBuscada] = useState(receitaDaUrl);
   const [resultados, setResultados] = useState<Receita[]>([]);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState("");
@@ -62,36 +76,46 @@ export function ResultadosBusca() {
   useEffect(() => {
     setIngredientesSelecionados(ingredientesDaUrl);
     setIngredientesBuscados(ingredientesDaUrl);
-  }, [ingredientesDaUrl]);
+    setNomeReceita(receitaDaUrl);
+    setReceitaBuscada(receitaDaUrl);
+    setModoBusca(receitaDaUrl ? "receita" : "ingredientes");
+    setModoResultado(receitaDaUrl ? "receita" : "ingredientes");
+  }, [ingredientesDaUrl, receitaDaUrl]);
 
   useEffect(() => {
     const termo = busca.trim();
 
     if (!termo) {
       setIngredientesDisponiveis([]);
+      setCarregandoIngredientes(false);
       return;
     }
 
     const timer = window.setTimeout(() => {
+      setCarregandoIngredientes(true);
       ingredienteService
         .buscar(termo)
         .then(setIngredientesDisponiveis)
-        .catch(() => setIngredientesDisponiveis([]));
+        .catch(() => setIngredientesDisponiveis([]))
+        .finally(() => setCarregandoIngredientes(false));
     }, 250);
 
     return () => window.clearTimeout(timer);
   }, [busca]);
 
   useEffect(() => {
-    if (ingredientesDaUrl.length === 0) {
+    if (ingredientesDaUrl.length === 0 && !receitaDaUrl) {
       setResultados([]);
       setErro("");
       setCarregando(false);
       return;
     }
 
-    void buscarReceitas(ingredientesDaUrl);
-  }, [ingredientesDaUrl]);
+    void buscarReceitas({
+      ingredientes: ingredientesDaUrl,
+      nomeReceita: receitaDaUrl,
+    });
+  }, [ingredientesDaUrl, receitaDaUrl]);
 
   const sugestoesFiltradas = useMemo(() => {
     const termo = busca.trim().toLowerCase();
@@ -115,7 +139,12 @@ export function ResultadosBusca() {
         ...receita,
         compatibilidade: calcularCompatibilidade(receita, ingredientesBuscados),
       }))
-      .filter((receita) => receita.compatibilidade > 0);
+      .filter(
+        (receita) =>
+          modoResultado === "receita" ||
+          ingredientesBuscados.length === 0 ||
+          receita.compatibilidade > 0,
+      );
 
     const ordenados = [...receitasComCompatibilidade];
 
@@ -128,12 +157,13 @@ export function ResultadosBusca() {
     }
 
     return ordenados;
-  }, [ingredientesBuscados, ordenacao, resultados]);
+  }, [ingredientesBuscados, modoResultado, ordenacao, resultados]);
 
   const travarRolagem =
     !carregando &&
     resultadosOrdenados.length === 0 &&
-    ingredientesSelecionados.length === 0;
+    ingredientesSelecionados.length === 0 &&
+    !nomeReceita.trim();
 
   useEffect(() => {
     if (!travarRolagem) {
@@ -152,8 +182,14 @@ export function ResultadosBusca() {
     };
   }, [travarRolagem]);
 
-  async function buscarReceitas(ingredientes: string[]) {
-    if (!ingredientes.length) {
+  async function buscarReceitas({
+    ingredientes,
+    nomeReceita,
+  }: {
+    ingredientes: string[];
+    nomeReceita?: string;
+  }) {
+    if (!ingredientes.length && !nomeReceita?.trim()) {
       setResultados([]);
       return;
     }
@@ -162,7 +198,10 @@ export function ResultadosBusca() {
     setErro("");
 
     try {
-      const retorno = await receitaService.buscarPorIngredientes(ingredientes);
+      const retorno = await receitaService.buscar({
+        ingredientes,
+        nomeReceita,
+      });
       setResultados(retorno);
     } catch {
       setResultados([]);
@@ -190,15 +229,44 @@ export function ResultadosBusca() {
 
   function handleBuscar() {
     const params = new URLSearchParams();
+    const nomeReceitaNormalizado = nomeReceita.trim();
 
-    if (ingredientesSelecionados.length > 0) {
+    if (modoBusca === "ingredientes" && ingredientesSelecionados.length > 0) {
       params.set("ingredientes", ingredientesSelecionados.join(","));
     }
 
-    setIngredientesBuscados(ingredientesSelecionados);
+    if (modoBusca === "receita" && nomeReceitaNormalizado) {
+      params.set("receita", nomeReceitaNormalizado);
+    }
+
+    const proximosIngredientes =
+      modoBusca === "ingredientes" ? ingredientesSelecionados : [];
+    const proximaReceita =
+      modoBusca === "receita" ? nomeReceitaNormalizado : "";
+
+    setIngredientesBuscados(proximosIngredientes);
+    setReceitaBuscada(proximaReceita);
+    setModoResultado(modoBusca);
     navigate(`/busca${params.toString() ? `?${params.toString()}` : ""}`);
-    void buscarReceitas(ingredientesSelecionados);
+    void buscarReceitas({
+      ingredientes: proximosIngredientes,
+      nomeReceita: proximaReceita,
+    });
   }
+
+  const ingredienteNaoEncontrado =
+    modoBusca === "ingredientes" &&
+    mostrarSugestoes &&
+    !carregandoIngredientes &&
+    busca.trim().length > 0 &&
+    sugestoesFiltradas.length === 0;
+  const temBuscaAtiva =
+    ingredientesBuscados.length > 0 || receitaBuscada.trim().length > 0;
+  const buscaPorReceita = modoResultado === "receita";
+  const buscaVazia =
+    modoBusca === "ingredientes"
+      ? ingredientesSelecionados.length === 0
+      : nomeReceita.trim().length === 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -218,7 +286,7 @@ export function ResultadosBusca() {
           </button>
         </div>
         <p className="text-sm text-orange-100">
-          Adicione ingredientes e clique em buscar para ver as receitas
+          Busque pelo que você tem em casa ou pelo nome da receita
         </p>
       </div>
 
@@ -256,45 +324,93 @@ export function ResultadosBusca() {
           }}
           className="rounded-2xl bg-white p-6 shadow-lg"
         >
-          <label className="mb-2 block text-sm font-medium text-gray-700">
-            Quais ingredientes você tem?
-          </label>
-
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              value={busca}
-              onChange={(event) => {
-                setBusca(event.target.value);
-                setMostrarSugestoes(true);
-              }}
-              onFocus={() => setMostrarSugestoes(true)}
-              onBlur={() =>
-                window.setTimeout(() => setMostrarSugestoes(false), 150)
-              }
-              placeholder="Digite um ingrediente..."
-              className="w-full rounded-lg border border-gray-300 py-3 pl-10 pr-4 outline-none transition focus:border-transparent focus:ring-2 focus:ring-orange-500"
-            />
-
-            {mostrarSugestoes && sugestoesFiltradas.length > 0 && (
-              <div className="absolute z-10 mt-2 max-h-48 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
-                {sugestoesFiltradas.map((ingrediente) => (
-                  <button
-                    key={ingrediente.id}
-                    type="button"
-                    onMouseDown={(event) => event.preventDefault()}
-                    onClick={() => adicionarIngrediente(ingrediente.nome)}
-                    className="w-full px-4 py-2 text-left text-sm transition-colors hover:bg-orange-50"
-                  >
-                    {ingrediente.nome}
-                  </button>
-                ))}
-              </div>
-            )}
+          <div className="mb-5 grid grid-cols-2 gap-2 rounded-lg bg-gray-100 p-1">
+            <button
+              type="button"
+              onClick={() => setModoBusca("ingredientes")}
+              className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                modoBusca === "ingredientes"
+                  ? "bg-white text-orange-600 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Ingredientes
+            </button>
+            <button
+              type="button"
+              onClick={() => setModoBusca("receita")}
+              className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                modoBusca === "receita"
+                  ? "bg-white text-orange-600 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Receita
+            </button>
           </div>
 
-          {ingredientesSelecionados.length > 0 && (
+          <label className="mb-2 block text-sm font-medium text-gray-700">
+            {modoBusca === "ingredientes"
+              ? "Quais ingredientes você tem?"
+              : "Qual receita você quer encontrar?"}
+          </label>
+
+          {modoBusca === "ingredientes" ? (
+            <div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  value={busca}
+                  onChange={(event) => {
+                    setBusca(event.target.value);
+                    setMostrarSugestoes(true);
+                  }}
+                  onFocus={() => setMostrarSugestoes(true)}
+                  onBlur={() =>
+                    window.setTimeout(() => setMostrarSugestoes(false), 150)
+                  }
+                  placeholder="Digite um ingrediente..."
+                  className="w-full rounded-lg border border-gray-300 py-3 pl-10 pr-4 outline-none transition focus:border-transparent focus:ring-2 focus:ring-orange-500"
+                />
+
+                {mostrarSugestoes && sugestoesFiltradas.length > 0 && (
+                  <div className="absolute z-10 mt-2 max-h-48 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+                    {sugestoesFiltradas.map((ingrediente) => (
+                      <button
+                        key={ingrediente.id}
+                        type="button"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => adicionarIngrediente(ingrediente.nome)}
+                        className="w-full px-4 py-2 text-left text-sm transition-colors hover:bg-orange-50"
+                      >
+                        {ingrediente.nome}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {ingredienteNaoEncontrado && (
+                <p className="mt-2 text-sm text-red-600">
+                  Ingrediente não encontrado
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                value={nomeReceita}
+                onChange={(event) => setNomeReceita(event.target.value)}
+                placeholder="Digite o nome da receita..."
+                className="w-full rounded-lg border border-gray-300 py-3 pl-10 pr-4 outline-none transition focus:border-transparent focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+          )}
+
+          {modoBusca === "ingredientes" && ingredientesSelecionados.length > 0 && (
             <div className="mt-4">
               <p className="mb-2 text-sm text-gray-600">
                 Ingredientes selecionados:
@@ -313,7 +429,7 @@ export function ResultadosBusca() {
 
           <button
             type="submit"
-            disabled={ingredientesSelecionados.length === 0 || carregando}
+            disabled={buscaVazia || carregando}
             className="mt-6 w-full rounded-lg bg-linear-to-r from-orange-500 to-orange-600 py-3 font-medium text-white transition-all hover:from-orange-600 hover:to-orange-700 disabled:cursor-not-allowed disabled:bg-gray-300"
           >
             {carregando ? "Buscando..." : "Buscar receitas"}
@@ -327,11 +443,11 @@ export function ResultadosBusca() {
             </div>
           )}
 
-          {ingredientesBuscados.length === 0 ? (
+          {!temBuscaAtiva ? (
             <div className="flex flex-col items-center justify-center pt-8 pb-24 text-center">
               <ChefHat size={48} className="mb-4 text-gray-300" />
               <h2 className="text-lg font-semibold text-gray-500">
-                Adicione ingredientes e clique em buscar
+                Escolha uma busca e clique em buscar
               </h2>
               <p className="mt-1 text-sm text-gray-400">
                 As receitas vão aparecer somente após a busca.
@@ -341,10 +457,14 @@ export function ResultadosBusca() {
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <ChefHat size={48} className="mb-4 text-gray-300" />
               <h2 className="text-lg font-semibold text-gray-500">
-                Nenhuma receita encontrada
+                {buscaPorReceita
+                  ? "Receita não encontrada"
+                  : "Nenhuma receita encontrada"}
               </h2>
               <p className="mt-1 text-sm text-gray-400">
-                Adicione mais ingredientes ou tente buscar outros.
+                {buscaPorReceita
+                  ? "Confira o nome digitado ou tente outra receita."
+                  : "Adicione mais ingredientes ou tente buscar outros."}
               </p>
             </div>
           ) : (
@@ -352,14 +472,20 @@ export function ResultadosBusca() {
               <p className="mb-4 text-sm text-gray-500">
                 {resultadosOrdenados.length} receita
                 {resultadosOrdenados.length !== 1 ? "s" : ""} encontrada
-                {resultadosOrdenados.length !== 1 ? "s" : ""} — ordenado por{" "}
-                <span className="font-medium text-orange-600">
-                  {ordenacao === "compatibilidade"
-                    ? "compatibilidade"
-                    : ordenacao === "tempo"
-                      ? "tempo de preparo"
-                      : "avaliação"}
-                </span>
+                {resultadosOrdenados.length !== 1 ? "s" : ""}
+                {!buscaPorReceita && (
+                  <>
+                    {" "}
+                    — ordenado por{" "}
+                    <span className="font-medium text-orange-600">
+                      {ordenacao === "compatibilidade"
+                        ? "compatibilidade"
+                        : ordenacao === "tempo"
+                          ? "tempo de preparo"
+                          : "avaliação"}
+                    </span>
+                  </>
+                )}
               </p>
 
               <div className="grid grid-cols-2 gap-3">
@@ -367,7 +493,9 @@ export function ResultadosBusca() {
                   <ReceitaCard
                     key={receita.id}
                     receita={receita}
-                    compatibilidade={receita.compatibilidade}
+                    compatibilidade={
+                      buscaPorReceita ? undefined : receita.compatibilidade
+                    }
                   />
                 ))}
               </div>

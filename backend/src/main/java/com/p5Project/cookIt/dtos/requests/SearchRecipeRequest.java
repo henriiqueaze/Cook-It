@@ -5,6 +5,7 @@ import java.util.Objects;
 
 public record SearchRecipeRequest(
         List<String> ingredients,
+        String recipeName,
         boolean exactMatch,
         String sortBy
 ) {
@@ -20,5 +21,9 @@ public record SearchRecipeRequest(
                 .filter(ingredient -> !ingredient.isBlank())
                 .map(String::toLowerCase)
                 .toList();
+    }
+
+    public String normalizedRecipeName() {
+        return recipeName == null ? "" : recipeName.trim().toLowerCase();
     }
 }

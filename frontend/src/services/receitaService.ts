@@ -8,6 +8,7 @@ import type { Id, Receita } from "@/types";
 
 interface SearchRecipePayload {
   ingredients: string[];
+  recipeName?: string;
   exactMatch?: boolean;
   sortBy?: string;
 }
@@ -104,9 +105,16 @@ export const receitaService = {
     return adaptBackendRecipeToReceita(resposta);
   },
 
-  buscarPorIngredientes: async (ingredientes: string[]) => {
+  buscar: async ({
+    ingredientes,
+    nomeReceita,
+  }: {
+    ingredientes?: string[];
+    nomeReceita?: string;
+  }) => {
     const resposta = await api.post<BackendRecipeDTO[]>("/recipes/search", {
-      ingredients: ingredientes,
+      ingredients: ingredientes ?? [],
+      recipeName: nomeReceita?.trim() || undefined,
       exactMatch: false,
       sortBy: "compatibility",
     } satisfies SearchRecipePayload);
@@ -115,6 +123,9 @@ export const receitaService = {
       ? resposta.map(adaptBackendRecipeToReceita)
       : [];
   },
+
+  buscarPorIngredientes: async (ingredientes: string[]) =>
+    receitaService.buscar({ ingredientes }),
 
   criar: async (receita: ReceitaFormPayload) => {
     const resposta = await api.post<BackendRecipeDTO>(

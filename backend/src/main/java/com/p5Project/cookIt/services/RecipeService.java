@@ -102,10 +102,22 @@ public class RecipeService {
 
     public List<RecipeDTO> searchRecipes(SearchRecipeRequest request) {
         List<String> normalizedIngredients = request.normalizedIngredients();
-        List<Recipe> recipes = recipeRepository.findByIngredientNames(normalizedIngredients);
+        String normalizedRecipeName = request.normalizedRecipeName();
+
+        if (normalizedIngredients.isEmpty() && normalizedRecipeName.isBlank()) {
+            return List.of();
+        }
+
+        List<Recipe> recipes = normalizedIngredients.isEmpty()
+                ? recipeRepository.findByNameContainingIgnoreCase(normalizedRecipeName)
+                : recipeRepository.findByIngredientNames(normalizedIngredients);
 
         if (request.exactMatch()) {
             recipes = filterExactMatch(recipes, normalizedIngredients);
+        }
+
+        if (!normalizedRecipeName.isBlank() && !normalizedIngredients.isEmpty()) {
+            recipes = filterByRecipeName(recipes, normalizedRecipeName);
         }
 
         return sortRecipes(recipes, request.sortBy()).stream()
@@ -187,6 +199,12 @@ public class RecipeService {
     private List<Recipe> filterExactMatch(List<Recipe> recipes, List<String> ingredients) {
         return recipes.stream()
                 .filter(recipe -> recipe.matchesIngredients(ingredients))
+                .toList();
+    }
+
+    private List<Recipe> filterByRecipeName(List<Recipe> recipes, String normalizedRecipeName) {
+        return recipes.stream()
+                .filter(recipe -> recipe.getName() != null && recipe.getName().toLowerCase().contains(normalizedRecipeName))
                 .toList();
     }
 
