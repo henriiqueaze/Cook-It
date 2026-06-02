@@ -23,18 +23,16 @@ export function ConfirmDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-      <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
-        <div className="flex items-start gap-4">
-          <div className="rounded-2xl bg-amber-50 p-3 text-amber-600">
+      <div className="w-full max-w-md rounded-3xl bg-white p-6 text-center shadow-2xl">
+        <div>
+          <div className="inline-flex items-center justify-center gap-2 text-amber-600">
             <AlertTriangle size={22} />
-          </div>
-          <div className="flex-1">
             <h2 className="text-lg font-bold text-gray-900">{title}</h2>
-            <p className="mt-2 text-sm leading-6 text-gray-600">{message}</p>
           </div>
+          <p className="mt-3 text-sm leading-6 text-gray-600">{message}</p>
         </div>
 
-        <div className="mt-6 flex flex-wrap justify-end gap-3">
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
           <button
             type="button"
             onClick={onCancel}

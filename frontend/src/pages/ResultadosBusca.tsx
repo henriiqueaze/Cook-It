@@ -3,12 +3,42 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { ChefHat, Search, SlidersHorizontal } from "lucide-react";
 import { IngredientTag } from "@/components/IngredientTag";
 import { ReceitaCard } from "@/components/ReceitaCard";
+import {
+  buscarCorrecaoPortugues,
+  type SugestaoCorrecao,
+} from "@/services/correcaoPortuguesService";
 import { ingredienteService } from "@/services/ingredienteService";
 import { receitaService } from "@/services/receitaService";
 import type { Ingrediente, Receita } from "@/types";
+import {
+  encontrarOpcaoDeReceitaRelacionada,
+  normalizarSugestaoReceita,
+} from "@/utils/sugestoesReceita";
 
 type OpcaoOrdenacao = "compatibilidade" | "tempo" | "avaliacao";
 type ModoBusca = "ingredientes" | "receita";
+
+interface SugestaoBusca {
+  sugestao: string;
+  tipo: "autocomplete" | "correcao";
+}
+
+function normalizarTexto(valor: string) {
+  return normalizarSugestaoReceita(valor);
+}
+
+function capitalizarPrimeiraLetra(valor: string) {
+  return valor
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/^./, (letra) => letra.toUpperCase());
+}
+
+function aplicarCorrecao(texto: string, correcao: SugestaoCorrecao) {
+  return `${texto.slice(0, correcao.inicio)}${correcao.sugestao}${texto.slice(
+    correcao.fim,
+  )}`;
+}
 
 function calcularCompatibilidade(
   receita: Receita,
@@ -63,6 +93,8 @@ export function ResultadosBusca() {
   const [ingredientesDisponiveis, setIngredientesDisponiveis] = useState<
     Ingrediente[]
   >([]);
+  const [nomesIngredientes, setNomesIngredientes] = useState<string[]>([]);
+  const [nomesReceitas, setNomesReceitas] = useState<string[]>([]);
   const [carregandoIngredientes, setCarregandoIngredientes] = useState(false);
   const [ingredientesSelecionados, setIngredientesSelecionados] =
     useState<string[]>(ingredientesDaUrl);
@@ -72,6 +104,28 @@ export function ResultadosBusca() {
   const [resultados, setResultados] = useState<Receita[]>([]);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState("");
+  const [sugestaoIngrediente, setSugestaoIngrediente] =
+    useState<SugestaoBusca | null>(null);
+  const [sugestaoReceita, setSugestaoReceita] =
+    useState<SugestaoBusca | null>(null);
+
+  const ingredientesNormalizados = useMemo(
+    () =>
+      nomesIngredientes.map((nome) => ({
+        nome,
+        normalizado: normalizarTexto(nome),
+      })),
+    [nomesIngredientes],
+  );
+
+  const receitasNormalizadas = useMemo(
+    () =>
+      nomesReceitas.map((nome) => ({
+        nome,
+        normalizado: normalizarTexto(nome),
+      })),
+    [nomesReceitas],
+  );
 
   useEffect(() => {
     setIngredientesSelecionados(ingredientesDaUrl);
@@ -83,6 +137,22 @@ export function ResultadosBusca() {
   }, [ingredientesDaUrl, receitaDaUrl]);
 
   useEffect(() => {
+    ingredienteService
+      .listar()
+      .then((itens) =>
+        setNomesIngredientes(
+          itens.map((item) => capitalizarPrimeiraLetra(item.nome)),
+        ),
+      )
+      .catch(() => setNomesIngredientes([]));
+
+    receitaService
+      .listar()
+      .then((itens) => setNomesReceitas(itens.map((item) => item.titulo)))
+      .catch(() => setNomesReceitas([]));
+  }, []);
+
+  useEffect(() => {
     const termo = busca.trim();
 
     if (!termo) {
@@ -91,8 +161,9 @@ export function ResultadosBusca() {
       return;
     }
 
+    setCarregandoIngredientes(true);
+
     const timer = window.setTimeout(() => {
-      setCarregandoIngredientes(true);
       ingredienteService
         .buscar(termo)
         .then(setIngredientesDisponiveis)
@@ -132,6 +203,144 @@ export function ResultadosBusca() {
       )
       .slice(0, 5);
   }, [busca, ingredientesDisponiveis, ingredientesSelecionados]);
+
+  useEffect(() => {
+    const termoDigitado = busca.trim();
+
+    if (termoDigitado.length < 3) {
+      setSugestaoIngrediente(null);
+      return;
+    }
+
+    const termo = normalizarTexto(termoDigitado);
+    const sugestaoAutocomplete = ingredientesNormalizados.find(
+      (item) =>
+        item.normalizado.startsWith(termo) &&
+        item.normalizado !== termo &&
+        !ingredientesSelecionados.includes(item.nome),
+    );
+
+    if (sugestaoAutocomplete) {
+      setSugestaoIngrediente({
+        sugestao: sugestaoAutocomplete.nome,
+        tipo: "autocomplete",
+      });
+      return;
+    }
+
+    let ativo = true;
+
+    const timeout = window.setTimeout(() => {
+      buscarCorrecaoPortugues(termoDigitado)
+        .then((correcao) => {
+          if (!ativo) {
+            return;
+          }
+
+          setSugestaoIngrediente(
+            correcao
+              ? (() => {
+                  const sugestaoRelacionada =
+                    encontrarOpcaoDeReceitaRelacionada(
+                      correcao.sugestao,
+                      nomesIngredientes,
+                    );
+
+                  return sugestaoRelacionada
+                    ? {
+                        sugestao: capitalizarPrimeiraLetra(
+                          sugestaoRelacionada,
+                        ),
+                        tipo: "correcao" as const,
+                      }
+                    : null;
+                })()
+              : null,
+          );
+        })
+        .catch(() => {
+          if (ativo) {
+            setSugestaoIngrediente(null);
+          }
+        });
+    }, 500);
+
+    return () => {
+      ativo = false;
+      window.clearTimeout(timeout);
+    };
+  }, [
+    busca,
+    ingredientesNormalizados,
+    ingredientesSelecionados,
+    nomesIngredientes,
+  ]);
+
+  useEffect(() => {
+    const termoDigitado = nomeReceita.trim();
+
+    if (termoDigitado.length < 3) {
+      setSugestaoReceita(null);
+      return;
+    }
+
+    const termo = normalizarTexto(termoDigitado);
+    const sugestaoAutocomplete = receitasNormalizadas.find(
+      (item) => item.normalizado.startsWith(termo) && item.normalizado !== termo,
+    );
+
+    if (sugestaoAutocomplete) {
+      setSugestaoReceita({
+        sugestao: sugestaoAutocomplete.nome,
+        tipo: "autocomplete",
+      });
+      return;
+    }
+
+    let ativo = true;
+
+    const timeout = window.setTimeout(() => {
+      buscarCorrecaoPortugues(termoDigitado)
+        .then((correcao) => {
+          if (!ativo) {
+            return;
+          }
+
+          setSugestaoReceita(
+            correcao
+              ? (() => {
+                  const sugestaoCorrigida = aplicarCorrecao(
+                    termoDigitado,
+                    correcao,
+                  );
+                  const sugestaoRelacionada =
+                    encontrarOpcaoDeReceitaRelacionada(
+                      sugestaoCorrigida,
+                      nomesReceitas,
+                    );
+
+                  return sugestaoRelacionada
+                    ? {
+                        sugestao: sugestaoRelacionada,
+                        tipo: "correcao" as const,
+                      }
+                    : null;
+                })()
+              : null,
+          );
+        })
+        .catch(() => {
+          if (ativo) {
+            setSugestaoReceita(null);
+          }
+        });
+    }, 500);
+
+    return () => {
+      ativo = false;
+      window.clearTimeout(timeout);
+    };
+  }, [nomeReceita, nomesReceitas, receitasNormalizadas]);
 
   const resultadosOrdenados = useMemo(() => {
     const receitasComCompatibilidade = resultados
@@ -219,12 +428,37 @@ export function ResultadosBusca() {
     setIngredientesSelecionados((current) => [...current, nome]);
     setBusca("");
     setMostrarSugestoes(false);
+    setSugestaoIngrediente(null);
   }
 
   function removerIngrediente(nome: string) {
     setIngredientesSelecionados((current) =>
       current.filter((item) => item !== nome),
     );
+  }
+
+  function aplicarSugestaoIngrediente() {
+    if (!sugestaoIngrediente) {
+      return;
+    }
+
+    if (sugestaoIngrediente.tipo === "autocomplete") {
+      adicionarIngrediente(sugestaoIngrediente.sugestao);
+      return;
+    }
+
+    setBusca(sugestaoIngrediente.sugestao);
+    setMostrarSugestoes(true);
+    setSugestaoIngrediente(null);
+  }
+
+  function aplicarSugestaoReceita() {
+    if (!sugestaoReceita) {
+      return;
+    }
+
+    setNomeReceita(sugestaoReceita.sugestao);
+    setSugestaoReceita(null);
   }
 
   function handleBuscar() {
@@ -259,6 +493,7 @@ export function ResultadosBusca() {
     mostrarSugestoes &&
     !carregandoIngredientes &&
     busca.trim().length > 0 &&
+    !sugestaoIngrediente &&
     sugestoesFiltradas.length === 0;
   const temBuscaAtiva =
     ingredientesBuscados.length > 0 || receitaBuscada.trim().length > 0;
@@ -327,7 +562,10 @@ export function ResultadosBusca() {
           <div className="mb-5 grid grid-cols-2 gap-2 rounded-lg bg-gray-100 p-1">
             <button
               type="button"
-              onClick={() => setModoBusca("ingredientes")}
+              onClick={() => {
+                setModoBusca("ingredientes");
+                setSugestaoReceita(null);
+              }}
               className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                 modoBusca === "ingredientes"
                   ? "bg-white text-orange-600 shadow-sm"
@@ -338,7 +576,11 @@ export function ResultadosBusca() {
             </button>
             <button
               type="button"
-              onClick={() => setModoBusca("receita")}
+              onClick={() => {
+                setModoBusca("receita");
+                setSugestaoIngrediente(null);
+                setMostrarSugestoes(false);
+              }}
               className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                 modoBusca === "receita"
                   ? "bg-white text-orange-600 shadow-sm"
@@ -364,6 +606,7 @@ export function ResultadosBusca() {
                   value={busca}
                   onChange={(event) => {
                     setBusca(event.target.value);
+                    setSugestaoIngrediente(null);
                     setMostrarSugestoes(true);
                   }}
                   onFocus={() => setMostrarSugestoes(true)}
@@ -391,6 +634,18 @@ export function ResultadosBusca() {
                 )}
               </div>
 
+              {sugestaoIngrediente && (
+                <button
+                  type="button"
+                  onClick={aplicarSugestaoIngrediente}
+                  className="mt-2 text-left text-xs font-medium text-orange-600"
+                >
+                  {sugestaoIngrediente.tipo === "autocomplete"
+                    ? `Sugestão: ${sugestaoIngrediente.sugestao}`
+                    : `Você quis dizer: ${sugestaoIngrediente.sugestao}?`}
+                </button>
+              )}
+
               {ingredienteNaoEncontrado && (
                 <p className="mt-2 text-sm text-red-600">
                   Ingrediente não encontrado
@@ -398,15 +653,31 @@ export function ResultadosBusca() {
               )}
             </div>
           ) : (
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                value={nomeReceita}
-                onChange={(event) => setNomeReceita(event.target.value)}
-                placeholder="Digite o nome da receita..."
-                className="w-full rounded-lg border border-gray-300 py-3 pl-10 pr-4 outline-none transition focus:border-transparent focus:ring-2 focus:ring-orange-500"
-              />
+            <div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  value={nomeReceita}
+                  onChange={(event) => {
+                    setNomeReceita(event.target.value);
+                    setSugestaoReceita(null);
+                  }}
+                  placeholder="Digite o nome da receita..."
+                  className="w-full rounded-lg border border-gray-300 py-3 pl-10 pr-4 outline-none transition focus:border-transparent focus:ring-2 focus:ring-orange-500"
+                />
+              </div>
+              {sugestaoReceita && (
+                <button
+                  type="button"
+                  onClick={aplicarSugestaoReceita}
+                  className="mt-2 text-left text-xs font-medium text-orange-600"
+                >
+                  {sugestaoReceita.tipo === "autocomplete"
+                    ? `Sugestão: ${sugestaoReceita.sugestao}`
+                    : `Você quis dizer: ${sugestaoReceita.sugestao}?`}
+                </button>
+              )}
             </div>
           )}
 

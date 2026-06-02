@@ -14,6 +14,10 @@ import {
 } from "@/services/correcaoPortuguesService";
 import { ingredienteService } from "@/services/ingredienteService";
 import { receitaService } from "@/services/receitaService";
+import {
+  encontrarOpcaoDeReceitaRelacionada,
+  normalizarSugestaoReceita,
+} from "@/utils/sugestoesReceita";
 
 interface IngredienteForm {
   nome: string;
@@ -32,11 +36,7 @@ function criarIngredienteVazio(): IngredienteForm {
 }
 
 function normalizarTexto(valor: string) {
-  return valor
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
+  return normalizarSugestaoReceita(valor);
 }
 
 function capitalizarPrimeiraLetra(valor: string) {
@@ -167,11 +167,23 @@ export function CriarReceita() {
 
           setSugestaoIngrediente(
             correcao
-              ? {
-                  index: indexAtivo,
-                  sugestao: capitalizarPrimeiraLetra(correcao.sugestao),
-                  tipo: "correcao",
-                }
+              ? (() => {
+                  const sugestaoRelacionada =
+                    encontrarOpcaoDeReceitaRelacionada(
+                      correcao.sugestao,
+                      nomesIngredientes,
+                    );
+
+                  return sugestaoRelacionada
+                    ? {
+                        index: indexAtivo,
+                        sugestao: capitalizarPrimeiraLetra(
+                          sugestaoRelacionada,
+                        ),
+                        tipo: "correcao" as const,
+                      }
+                    : null;
+                })()
               : null,
           );
         })
@@ -186,7 +198,12 @@ export function CriarReceita() {
       ativo = false;
       window.clearTimeout(timeout);
     };
-  }, [ingredienteEmEdicao, ingredientes, ingredientesNormalizados]);
+  }, [
+    ingredienteEmEdicao,
+    ingredientes,
+    ingredientesNormalizados,
+    nomesIngredientes,
+  ]);
 
   function adicionarIngrediente() {
     setIngredientes((current) => [...current, criarIngredienteVazio()]);
