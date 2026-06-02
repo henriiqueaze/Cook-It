@@ -50,6 +50,8 @@ export const adminService = {
     api.put<Usuario>(`/admin/users/${id}/ban`, undefined),
   desbanirUsuario: (id: string) =>
     api.put<Usuario>(`/admin/users/${id}/unban`, undefined),
+  promoverUsuario: (id: string) =>
+    api.put<Usuario>(`/admin/users/${id}/promote`, undefined),
   removerReceita: (id: string) => api.delete<void>(`/admin/recipes/${id}`),
   removerComentario: (id: string) => api.delete<void>(`/admin/comments/${id}`),
 };

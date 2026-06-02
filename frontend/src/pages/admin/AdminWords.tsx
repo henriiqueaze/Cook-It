@@ -180,21 +180,16 @@ export function AdminWords() {
 
   return (
     <div className="space-y-5">
-      <section className="overflow-hidden rounded-2xl bg-white shadow-lg shadow-gray-200/60">
-        <div className="border-b border-orange-100 bg-orange-50/70 px-5 py-5 sm:px-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-orange-600 text-white shadow-md shadow-orange-200">
-                <Ban size={21} />
-              </div>
-              <div>
+      <section className="rounded-3xl bg-white p-6 shadow-lg shadow-gray-200/60">
+        <div>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
                 <h1 className="text-2xl font-black text-gray-900">
                   Palavras banidas
                 </h1>
-                <p className="mt-1 text-sm text-gray-600">
+                <p className="mt-2 text-sm text-gray-500">
                   Defina termos bloqueados por área do aplicativo.
                 </p>
-              </div>
             </div>
 
             <button
@@ -213,7 +208,7 @@ export function AdminWords() {
         </div>
 
         {showForm && (
-          <form className="space-y-5 px-5 py-5 sm:px-6" onSubmit={save}>
+          <form className="mt-5 space-y-5" onSubmit={save}>
             <div>
               <label className="mb-2 block text-sm font-semibold text-gray-800">
                 Termo proibido

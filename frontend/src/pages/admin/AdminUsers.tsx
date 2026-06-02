@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Ban, Search } from "lucide-react";
+import { Ban, Search, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { adminService } from "@/services/adminService";
@@ -9,6 +9,8 @@ export function AdminUsers() {
   const [users, setUsers] = useState<Usuario[]>([]);
   const [query, setQuery] = useState("");
   const [pendingUser, setPendingUser] = useState<Usuario | null>(null);
+  const [pendingPromoteUser, setPendingPromoteUser] =
+    useState<Usuario | null>(null);
 
   useEffect(() => {
     adminService.usuarios().then(setUsers);
@@ -30,6 +32,14 @@ export function AdminUsers() {
       return;
     }
     setPendingUser(user);
+  }
+
+  async function promote(user: Usuario) {
+    if (user.role === "ADMIN") {
+      return;
+    }
+
+    setPendingPromoteUser(user);
   }
 
   async function confirmToggle() {
@@ -54,6 +64,33 @@ export function AdminUsers() {
       );
     } finally {
       setPendingUser(null);
+    }
+  }
+
+  async function confirmPromote() {
+    if (!pendingPromoteUser) {
+      return;
+    }
+
+    try {
+      const updated = await adminService.promoverUsuario(
+        String(pendingPromoteUser.id),
+      );
+
+      setUsers((current) =>
+        current.map((item) =>
+          item.id === pendingPromoteUser.id ? updated : item,
+        ),
+      );
+      toast.success("Usuário promovido a admin");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível promover o usuário",
+      );
+    } finally {
+      setPendingPromoteUser(null);
     }
   }
 
@@ -96,13 +133,22 @@ export function AdminUsers() {
             </div>
 
             {user.role !== "ADMIN" ? (
-              <button
-                type="button"
-                onClick={() => toggle(user)}
-                className={`inline-flex items-center gap-2 self-start rounded-xl px-3 py-2 text-sm font-medium ${user.banned ? "border border-emerald-200 text-emerald-700" : "border border-red-200 text-red-600"}`}
-              >
-                <Ban size={14} /> {user.banned ? "Desbanir" : "Banir"}
-              </button>
+              <div className="flex flex-wrap gap-2 sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => promote(user)}
+                  className="inline-flex items-center gap-2 self-start rounded-xl border border-orange-200 px-3 py-2 text-sm font-medium text-orange-700"
+                >
+                  <ShieldCheck size={14} /> Promover
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toggle(user)}
+                  className={`inline-flex items-center gap-2 self-start rounded-xl px-3 py-2 text-sm font-medium ${user.banned ? "border border-emerald-200 text-emerald-700" : "border border-red-200 text-red-600"}`}
+                >
+                  <Ban size={14} /> {user.banned ? "Desbanir" : "Banir"}
+                </button>
+              </div>
             ) : null}
           </div>
         ))}
@@ -119,6 +165,19 @@ export function AdminUsers() {
         confirmLabel={pendingUser?.banned ? "Desbanir" : "Banir"}
         onConfirm={confirmToggle}
         onCancel={() => setPendingUser(null)}
+      />
+
+      <ConfirmDialog
+        open={pendingPromoteUser !== null}
+        title="Promover usuário"
+        message={
+          pendingPromoteUser
+            ? `Tem certeza que deseja promover ${pendingPromoteUser.name} a administrador?`
+            : ""
+        }
+        confirmLabel="Promover"
+        onConfirm={confirmPromote}
+        onCancel={() => setPendingPromoteUser(null)}
       />
     </section>
   );

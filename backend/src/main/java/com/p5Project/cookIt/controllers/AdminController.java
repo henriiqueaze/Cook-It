@@ -87,6 +87,15 @@ public class AdminController {
         return updateUserBanStatus(id, false);
     }
 
+    @PutMapping("/users/{id}/promote")
+    @Transactional
+    public UserDTO promoteUser(@PathVariable String id) {
+        var user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        user.setRole(UserRole.ADMIN);
+        return userMapper.toDTO(userRepository.save(user));
+    }
+
     @GetMapping("/recipes")
     @Transactional(readOnly = true)
     public List<RecipeDTO> listRecipes() {
