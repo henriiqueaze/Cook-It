@@ -14,12 +14,15 @@ import { CriarReceita } from "@/pages/CriarReceita";
 import { EditarReceita } from "@/pages/EditarReceita";
 import { DetalheReceita } from "@/pages/DetalheDeReceita";
 import { EditarPerfil } from "@/pages/EditarPerfil";
+import { EsqueciSenha } from "@/pages/EsqueciSenha";
 import { Favoritos } from "@/pages/Favoritos";
 import { Home } from "@/pages/Home";
 import { Login } from "@/pages/Login";
 import { MinhasReceitas } from "@/pages/MinhasReceitas";
+import { NovaSenha } from "@/pages/NovaSenha";
 import { NaoEncontrado } from "@/pages/NaoEncontrado";
 import { Perfil } from "@/pages/Perfil";
+import { RedefinirSenha } from "@/pages/RedefinirSenha";
 import { ResultadosBusca } from "@/pages/ResultadosBusca";
 import { AdminLayout } from "@/pages/admin/AdminLayout";
 import { AdminOverview } from "@/pages/admin/AdminOverview";
@@ -133,6 +136,9 @@ function RotasComScrollTop() {
         }
       />
       <Route path="/login" element={<Login />} />
+      <Route path="/esqueci-senha" element={<EsqueciSenha />} />
+      <Route path="/redefinir-senha" element={<RedefinirSenha />} />
+      <Route path="/nova-senha" element={<NovaSenha />} />
       <Route path="/cadastro" element={<Cadastro />} />
       <Route path="*" element={<NaoEncontrado />} />
     </Routes>

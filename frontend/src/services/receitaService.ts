@@ -91,7 +91,7 @@ export const receitaService = {
   listar: async () => {
     const resposta = await api.get<
       BackendRecipeDTO[] | { content?: BackendRecipeDTO[] }
-    >("/recipes");
+    >("/recipes", { size: 50 });
     return adaptBackendRecipeListToReceitas(resposta as BackendRecipeDTO[]);
   },
 

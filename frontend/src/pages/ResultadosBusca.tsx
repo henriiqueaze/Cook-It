@@ -40,6 +40,14 @@ function aplicarCorrecao(texto: string, correcao: SugestaoCorrecao) {
   )}`;
 }
 
+function tipoSugestaoLocal(termoNormalizado: string, sugestao: string) {
+  const sugestaoNormalizada = normalizarTexto(sugestao);
+
+  return sugestaoNormalizada.startsWith(termoNormalizado)
+    ? "autocomplete"
+    : "correcao";
+}
+
 function calcularCompatibilidade(
   receita: Receita,
   ingredientesBuscados: string[],
@@ -228,6 +236,21 @@ export function ResultadosBusca() {
       return;
     }
 
+    const sugestaoRelacionada = encontrarOpcaoDeReceitaRelacionada(
+      termoDigitado,
+      nomesIngredientes.filter(
+        (nome) => !ingredientesSelecionados.includes(nome),
+      ),
+    );
+
+    if (sugestaoRelacionada && normalizarTexto(sugestaoRelacionada) !== termo) {
+      setSugestaoIngrediente({
+        sugestao: capitalizarPrimeiraLetra(sugestaoRelacionada),
+        tipo: tipoSugestaoLocal(termo, sugestaoRelacionada),
+      });
+      return;
+    }
+
     let ativo = true;
 
     const timeout = window.setTimeout(() => {
@@ -293,6 +316,19 @@ export function ResultadosBusca() {
       setSugestaoReceita({
         sugestao: sugestaoAutocomplete.nome,
         tipo: "autocomplete",
+      });
+      return;
+    }
+
+    const sugestaoRelacionada = encontrarOpcaoDeReceitaRelacionada(
+      termoDigitado,
+      nomesReceitas,
+    );
+
+    if (sugestaoRelacionada && normalizarTexto(sugestaoRelacionada) !== termo) {
+      setSugestaoReceita({
+        sugestao: sugestaoRelacionada,
+        tipo: tipoSugestaoLocal(termo, sugestaoRelacionada),
       });
       return;
     }

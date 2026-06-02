@@ -3,8 +3,10 @@ package com.p5Project.cookIt.controllers;
 import com.p5Project.cookIt.controllers.docs.AuthControllerDocs;
 import com.p5Project.cookIt.dtos.UserDTO;
 import com.p5Project.cookIt.dtos.requests.ChangePasswordRequest;
+import com.p5Project.cookIt.dtos.requests.ForgotPasswordRequest;
 import com.p5Project.cookIt.dtos.requests.LoginRequest;
 import com.p5Project.cookIt.dtos.requests.RegisterRequest;
+import com.p5Project.cookIt.dtos.requests.ResetPasswordRequest;
 import com.p5Project.cookIt.dtos.responses.AuthResponse;
 import com.p5Project.cookIt.security.UserPrincipal;
 import com.p5Project.cookIt.services.AuthService;
@@ -47,9 +49,39 @@ public class AuthController implements AuthControllerDocs {
         return userService.getUserById(userPrincipal.getId());
     }
 
+    @GetMapping("/confirm-email")
+    @Override
+    public String confirmEmail(@RequestParam String token) {
+        return authService.confirmEmail(token);
+    }
+
+    @PostMapping("/resend-confirmation-email")
+    @Override
+    public void resendConfirmationEmail(@Valid @RequestBody ForgotPasswordRequest request) {
+        authService.resendConfirmationEmail(request.email());
+    }
+
+    @PostMapping("/forgot-password")
+    @Override
+    public void forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authService.forgotPassword(request.email());
+    }
+
+    @PostMapping("/reset-password")
+    @Override
+    public void resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request.token(), request.newPassword());
+    }
+
     @PostMapping("/change-password")
     @Override
     public void changePassword(@AuthenticationPrincipal UserPrincipal userPrincipal,@Valid @RequestBody ChangePasswordRequest request) {
         authService.changePassword(userPrincipal.getId(), request);
+    }
+
+    @PostMapping("/validate-reset-code")
+    @Override
+    public void validateResetCode(@RequestBody ResetPasswordRequest request) {
+        authService.validateResetCode(request.token());
     }
 }

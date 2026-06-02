@@ -12,6 +12,28 @@ export const authService = {
 
   me: () => api.get<Usuario>("/auth/me"),
 
+  forgotPassword: (email: string) =>
+    api.post<void>("/auth/forgot-password", { email }, undefined, true),
+
+  resendConfirmationEmail: (email: string) =>
+    api.post<void>(
+      "/auth/resend-confirmation-email",
+      { email },
+      undefined,
+      true,
+    ),
+
+  validateResetCode: (token: string) =>
+    api.post<void>("/auth/validate-reset-code", { token }, undefined, true),
+
+  resetPassword: (token: string, newPassword: string) =>
+    api.post<void>(
+      "/auth/reset-password",
+      { token, newPassword },
+      undefined,
+      true,
+    ),
+
   alterarSenha: (senhaAtual: string, novaSenha: string) =>
     api.post<void>("/auth/change-password", {
       currentPassword: senhaAtual,

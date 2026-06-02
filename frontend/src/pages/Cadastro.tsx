@@ -47,7 +47,7 @@ export function Cadastro() {
 
     try {
       await authService.cadastrar(nomeLimpo, emailLimpo, senha);
-      toast.success("Conta criada com sucesso! Faça login para continuar.");
+      toast.success("Conta criada! Verifique seu e-mail para confirmar o cadastro.");
       navigate("/login", { replace: true });
     } catch (error) {
       setErro(error instanceof Error ? error.message : "Erro ao criar conta.");
